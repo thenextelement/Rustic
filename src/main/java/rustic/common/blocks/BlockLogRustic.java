@@ -1,129 +1,76 @@
 package rustic.common.blocks;
 
-import net.minecraft.block.Block;
+import java.util.List;
+
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.BlockLog;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyEnum;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import rustic.common.blocks.BlockPlanksRustic.EnumType;
+import net.minecraft.util.IIcon;
 import rustic.core.Rustic;
 
-public class BlockLogRustic extends BlockLog {
-
-	public static final PropertyEnum<BlockPlanksRustic.EnumType> VARIANT = PropertyEnum.<BlockPlanksRustic.EnumType>create("variant", BlockPlanksRustic.EnumType.class);
+/** Metadata: low 2 bits = wood type, bits 4/8 = axis (like vanilla logs). */
+public class BlockLogRustic extends BlockLog implements ItemBlockMeta.INamedVariants {
 
 	public BlockLogRustic() {
 		super();
-		setRegistryName("log");
-		setUnlocalizedName(Rustic.MODID + "." + "log");
+		setBlockName(Rustic.MODID + ".log");
 		setCreativeTab(Rustic.farmingTab);
-		ItemBlock item = new ItemBlock(this) {
-			@Override
-			public String getUnlocalizedName(ItemStack stack) {
-				IBlockState state = BlockLogRustic.this.getStateFromMeta(stack.getMetadata());
-				return getUnlocalizedName() + "_" + state.getValue(BlockPlanksRustic.VARIANT);
-			}
-
-			@Override
-			public int getMetadata(int damage) {
-				return damage;
-			}
-		};
-		item.setHasSubtypes(true);
-		item.setMaxDamage(0);
-		item.setRegistryName(this.getRegistryName());
-		GameRegistry.findRegistry(Block.class).register(this);
-		GameRegistry.findRegistry(Item.class).register(item);
-		setDefaultState(this.blockState.getBaseState().withProperty(VARIANT, BlockPlanksRustic.EnumType.OLIVE).withProperty(LOG_AXIS, BlockLog.EnumAxis.Y));
-		
-		Blocks.FIRE.setFireInfo(this, 5, 5);
-	}
-
-	@SideOnly(Side.CLIENT)
-	public void initModel() {
-		for (int i = 0; i < EnumType.values().length && i < 4; i++) {
-			ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(this), i, new ModelResourceLocation(getRegistryName() + "_" + EnumType.byMetadata(i).getName(), "inventory"));
-		}
-	}
-
-	public int damageDropped(IBlockState state) {
-		return ((BlockPlanksRustic.EnumType) state.getValue(VARIANT)).getMetadata();
-	}
-
-	public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
-		return this.getStateFromMeta(meta).withProperty(LOG_AXIS, BlockLog.EnumAxis.fromFacingAxis(facing.getAxis()));
+		GameRegistry.registerBlock(this, ItemBlockMeta.class, "log");
+		Blocks.fire.setFireInfo(this, 5, 5);
 	}
 
 	@Override
-	public void getSubBlocks(CreativeTabs tab, NonNullList<ItemStack> list) {
-		for (BlockPlanksRustic.EnumType blockplanks$enumtype : BlockPlanksRustic.EnumType.values()) {
-			if (blockplanks$enumtype.getMetadata() < 4) {
-				list.add(new ItemStack(Item.getItemFromBlock(this), 1, blockplanks$enumtype.getMetadata()));
-			}
+	public String[] getVariantNames() {
+		return BlockPlanksRustic.EnumType.NAMES;
+	}
+
+	@Override
+	public int damageDropped(int meta) {
+		return BlockPlanksRustic.EnumType.byMetadata(meta & 3).getMetadata();
+	}
+
+	@Override
+	protected ItemStack createStackedBlock(int meta) {
+		return new ItemStack(this, 1, damageDropped(meta));
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void getSubBlocks(Item item, CreativeTabs tab, List list) {
+		for (BlockPlanksRustic.EnumType type : BlockPlanksRustic.EnumType.values()) {
+			list.add(new ItemStack(item, 1, type.getMetadata()));
 		}
 	}
 
-	public IBlockState getStateFromMeta(int meta) {
-		IBlockState iblockstate = this.getDefaultState().withProperty(VARIANT, BlockPlanksRustic.EnumType.byMetadata((meta & 3) % 4));
-
-		switch (meta & 12) {
-		case 0:
-			iblockstate = iblockstate.withProperty(LOG_AXIS, BlockLog.EnumAxis.Y);
-			break;
-		case 4:
-			iblockstate = iblockstate.withProperty(LOG_AXIS, BlockLog.EnumAxis.X);
-			break;
-		case 8:
-			iblockstate = iblockstate.withProperty(LOG_AXIS, BlockLog.EnumAxis.Z);
-			break;
-		default:
-			iblockstate = iblockstate.withProperty(LOG_AXIS, BlockLog.EnumAxis.NONE);
+	@Override
+	@SideOnly(Side.CLIENT)
+	public void registerBlockIcons(IIconRegister register) {
+		int n = BlockPlanksRustic.EnumType.values().length;
+		field_150167_a = new IIcon[n];
+		field_150166_b = new IIcon[n];
+		for (BlockPlanksRustic.EnumType type : BlockPlanksRustic.EnumType.values()) {
+			field_150167_a[type.getMetadata()] = register.registerIcon(Rustic.MODID + ":log_" + type.getName());
+			field_150166_b[type.getMetadata()] = register.registerIcon(Rustic.MODID + ":log_" + type.getName() + "_top");
 		}
-
-		return iblockstate;
 	}
 
-	@SuppressWarnings("incomplete-switch")
-	public int getMetaFromState(IBlockState state) {
-		int i = 0;
-		i = i | ((BlockPlanksRustic.EnumType) state.getValue(VARIANT)).getMetadata();
-
-		switch ((BlockLog.EnumAxis) state.getValue(LOG_AXIS)) {
-		case X:
-			i |= 4;
-			break;
-		case Z:
-			i |= 8;
-			break;
-		case NONE:
-			i |= 12;
-		}
-
-		return i;
+	@Override
+	@SideOnly(Side.CLIENT)
+	protected IIcon getSideIcon(int meta) {
+		return field_150167_a[(meta & 3) % field_150167_a.length];
 	}
 
-	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] { VARIANT, LOG_AXIS });
-	}
-
-	protected ItemStack getSilkTouchDrop(IBlockState state) {
-		return new ItemStack(Item.getItemFromBlock(this), 1, ((BlockPlanksRustic.EnumType) state.getValue(VARIANT)).getMetadata());
+	@Override
+	@SideOnly(Side.CLIENT)
+	protected IIcon getTopIcon(int meta) {
+		return field_150166_b[(meta & 3) % field_150166_b.length];
 	}
 
 }

@@ -1,93 +1,69 @@
 package rustic.common.blocks;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.SoundType;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyBool;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.init.Blocks;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockAccess;
+import java.util.HashMap;
+import java.util.Map;
 
-public class BlockTable extends BlockBase {
-	
-	public static final PropertyBool NW = PropertyBool.create("nw");
-    public static final PropertyBool NE = PropertyBool.create("ne");
-    public static final PropertyBool SE = PropertyBool.create("se");
-    public static final PropertyBool SW = PropertyBool.create("sw");
-	
+import net.minecraft.block.material.Material;
+import net.minecraft.init.Blocks;
+import net.minecraft.world.IBlockAccess;
+import net.minecraftforge.common.util.ForgeDirection;
+
+public class BlockTable extends BlockBase implements IModelBlock, ISupportShape {
+
 	public BlockTable(String type) {
-		super(Material.WOOD, "table_" + type);
+		super(Material.wood, "table_" + type);
 		setHardness(1F);
-		setSoundType(SoundType.WOOD);
-		this.setDefaultState(this.blockState.getBaseState().withProperty(NW, true).withProperty(NE, true).withProperty(SE, true).withProperty(SW, true));
-		
-		Blocks.FIRE.setFireInfo(this, 5, 20);
+		setStepSound(soundTypeWood);
+		setBlockBounds(0F, 0.875F, 0F, 1F, 1F, 1F);
+		Blocks.fire.setFireInfo(this, 5, 20);
 	}
-	
+
 	@Override
-	public boolean isSideSolid(IBlockState state, IBlockAccess ba, BlockPos pos, EnumFacing side) {
-		if (side == EnumFacing.UP) {
-			return true;
-		}
+	public boolean isSideSolid(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+		return side == ForgeDirection.UP;
+	}
+
+	@Override
+	public boolean canSupportOnSide(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+		return side == ForgeDirection.UP;
+	}
+
+	@Override
+	public boolean isOpaqueCube() {
 		return false;
 	}
-	
-	public boolean isOpaqueCube(IBlockState state)
-    {
-        return false;
-    }
 
-    public boolean isFullCube(IBlockState state)
-    {
-        return false;
-    }
-    
-    public int getMetaFromState(IBlockState state)
-    {
-        return 0;
-    }
-    
-    public IBlockState getActualState(IBlockState state, IBlockAccess worldIn, BlockPos pos)
-    {
-    	IBlockState stateTemp = worldIn.getBlockState(pos.north());
-        Block blockTemp = stateTemp.getBlock();
-    	boolean blockNorth = blockTemp instanceof BlockTable;
-    	stateTemp = worldIn.getBlockState(pos.south());
-    	blockTemp = stateTemp.getBlock();
-    	boolean blockSouth = blockTemp instanceof BlockTable;
-    	stateTemp = worldIn.getBlockState(pos.east());
-    	blockTemp = stateTemp.getBlock();
-    	boolean blockEast = blockTemp instanceof BlockTable;
-    	stateTemp = worldIn.getBlockState(pos.west());
-    	blockTemp = stateTemp.getBlock();
-    	boolean blockWest = blockTemp instanceof BlockTable;
-    	
-        return state.withProperty(NW, !blockNorth && !blockWest)
-                .withProperty(NE, !blockNorth && !blockEast)
-                .withProperty(SE, !blockSouth && !blockEast)
-                .withProperty(SW, !blockSouth && !blockWest);
-    }
-    
-    protected BlockStateContainer createBlockState() {
-        return new BlockStateContainer(this, new IProperty[] {NW, NE, SE, SW});
-    }
-    
-    public static final AxisAlignedBB AABB = new AxisAlignedBB(0, 0.875, 0, 1, 1, 1);
-    
-    @Override
-	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-    	return AABB;
+	@Override
+	public boolean renderAsNormalBlock() {
+		return false;
 	}
-    
-    @Override
-	public BlockFaceShape getBlockFaceShape(IBlockAccess world, IBlockState state, BlockPos pos, EnumFacing side) {
-		return (side == EnumFacing.UP) ? BlockFaceShape.SOLID : BlockFaceShape.UNDEFINED;
+
+	@Override
+	public String getBlockStateName() {
+		return name;
+	}
+
+	@Override
+	public Map<String, String> getRenderProperties(IBlockAccess world, int x, int y, int z) {
+		boolean north = world.getBlock(x, y, z - 1) instanceof BlockTable;
+		boolean south = world.getBlock(x, y, z + 1) instanceof BlockTable;
+		boolean east = world.getBlock(x + 1, y, z) instanceof BlockTable;
+		boolean west = world.getBlock(x - 1, y, z) instanceof BlockTable;
+		return legs(!north && !west, !north && !east, !south && !east, !south && !west);
+	}
+
+	@Override
+	public Map<String, String> getInventoryProperties(int meta) {
+		return legs(true, true, true, true);
+	}
+
+	private static Map<String, String> legs(boolean nw, boolean ne, boolean se, boolean sw) {
+		Map<String, String> props = new HashMap<>();
+		props.put("nw", String.valueOf(nw));
+		props.put("ne", String.valueOf(ne));
+		props.put("se", String.valueOf(se));
+		props.put("sw", String.valueOf(sw));
+		return props;
 	}
 
 }

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
+
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayer.SleepResult;
@@ -12,16 +12,16 @@ import net.minecraft.entity.projectile.EntityFireball;
 import net.minecraft.entity.projectile.EntityLargeFireball;
 import net.minecraft.entity.projectile.EntitySmallFireball;
 import net.minecraft.init.Items;
-import net.minecraft.init.MobEffects;
+import net.minecraft.potion.Potion;
 import net.minecraft.init.PotionTypes;
-import net.minecraft.init.SoundEvents;
+
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.potion.PotionUtils;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.math.BlockPos;
+
+
+
 import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
@@ -31,10 +31,10 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import cpw.mods.fml.common.eventhandler.EventPriority;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import rustic.common.network.MessageFirePowerAttack;
 import rustic.common.network.PacketHandler;
 
@@ -46,9 +46,9 @@ public class EventHandlerPotions {
 	public void onWaterBottleUse(LivingEntityUseItemEvent.Finish event) {
 		EntityLivingBase entity = event.getEntityLiving();
 		PotionEffect effect = entity.getActivePotionEffect(PotionsRustic.TIPSY);
-		if (effect != null && !entity.world.isRemote) {
+		if (effect != null && !entity.worldObj.isRemote) {
 			ItemStack stack = event.getItem();
-			if (stack.getItem() == Items.POTIONITEM && PotionUtils.getPotionFromItem(stack) == PotionTypes.WATER) {
+			if (stack.getItem() == Items.potionitem && PotionUtils.getPotionFromItem(stack) == PotionTypes.WATER) {
 				int duration = effect.getDuration();
 				int amplifier = effect.getAmplifier();
 				if (rand.nextFloat() < 0.1F) {
@@ -58,7 +58,7 @@ public class EventHandlerPotions {
 				}
 				entity.removePotionEffect(PotionsRustic.TIPSY);
 				if (amplifier >= 0 && duration > 0) {
-					entity.addPotionEffect(new PotionEffect(PotionsRustic.TIPSY, duration, amplifier, false, false));
+					entity.addPotionEffect(new PotionEffect(PotionsRustic.TIPSY.id, duration, amplifier, false, false));
 				}
 			}
 		}
@@ -147,7 +147,7 @@ public class EventHandlerPotions {
 		if (effect == null) return;
 		
 		
-		if (p.world.getBlockState(new BlockPos(p.posX, p.posY + p.getEyeHeight(), p.posZ)).getMaterial() == Material.WATER) {
+		if (p.world.getBlockState(new BlockPos(p.posX, p.posY + p.getEyeHeight(), p.posZ)).getMaterial() == Material.water) {
         	return;
 		}
 		
@@ -239,8 +239,8 @@ public class EventHandlerPotions {
 		
 		p.setHealth(1.0F);
         p.clearActivePotions();
-        p.addPotionEffect(new PotionEffect(MobEffects.REGENERATION, 900, 1));
-        p.addPotionEffect(new PotionEffect(MobEffects.ABSORPTION, 100, 1));
+        p.addPotionEffect(new PotionEffect(Potion.regeneration.id, 900, 1));
+        p.addPotionEffect(new PotionEffect(Potion.field_76444_x.id, 100, 1));
         p.world.setEntityState(p, (byte) 35);
         
         if (effect.getAmplifier() > 0) {

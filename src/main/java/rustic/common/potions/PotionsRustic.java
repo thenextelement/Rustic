@@ -2,7 +2,7 @@ package rustic.common.potions;
 
 import net.minecraft.potion.Potion;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.registry.GameRegistry;
+import cpw.mods.fml.common.registry.GameRegistry;
 
 public class PotionsRustic {
 

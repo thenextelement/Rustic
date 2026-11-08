@@ -1,16 +1,15 @@
 package rustic.common.util;
 
-import javax.annotation.Nonnull;
 
 import net.minecraft.block.BlockDispenser;
 import net.minecraft.block.SoundType;
-import net.minecraft.block.state.IBlockState;
+
 import net.minecraft.dispenser.BehaviorDefaultDispenseItem;
 import net.minecraft.dispenser.IBlockSource;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.math.BlockPos;
+
+
+
 import net.minecraft.world.World;
 import rustic.common.blocks.BlockRopeBase;
 import rustic.common.blocks.ModBlocks;
@@ -41,14 +40,14 @@ public class DispenseRope extends BehaviorDefaultDispenseItem {
         if (world.getBlockState(pos).getBlock() == ModBlocks.ROPE) {
         	if (addRope(world, pos)) {
         		ItemStack ret = stack.copy();
-        		ret.shrink(1);
+        		ret.stackSize -= 1;
         		return ret;
         	}
         } else if (world.isAirBlock(pos) && world.getBlockState(pos.offset(facing)).getBlock() == ModBlocks.ROPE) {
         	pos = pos.offset(facing);
         	if (addRope(world, pos)) {
         		ItemStack ret = stack.copy();
-        		ret.shrink(1);
+        		ret.stackSize -= 1;
         		return ret;
         	}
         }

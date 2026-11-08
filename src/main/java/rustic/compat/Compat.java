@@ -8,9 +8,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fml.common.Optional;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import cpw.mods.fml.common.Optional;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import rustic.common.blocks.ModBlocks;
 import rustic.common.items.ModItems;
 import rustic.compat.dynamictrees.DynamicTreesCompat;
@@ -218,10 +218,10 @@ public class Compat {
 			forestry.api.recipes.RecipeManagers.squeezerManager.addRecipe(10, new ItemStack(ModItems.IRONBERRIES),
 					new FluidStack(FluidRegistry.getFluid("ironberryjuice"), 250),
 					new ItemStack(ModItems.IRON_DUST_TINY), 5);
-			forestry.api.recipes.RecipeManagers.squeezerManager.addRecipe(10, new ItemStack(Items.GOLDEN_APPLE, 1, 0),
+			forestry.api.recipes.RecipeManagers.squeezerManager.addRecipe(10, new ItemStack(Items.golden_apple, 1, 0),
 					new FluidStack(FluidRegistry.getFluid("goldenapplejuice"), 100),
 					new ItemStack(ModItems.GOLD_DUST, 1), 20);
-			forestry.api.recipes.RecipeManagers.squeezerManager.addRecipe(10, new ItemStack(Items.GOLDEN_APPLE, 1, 1),
+			forestry.api.recipes.RecipeManagers.squeezerManager.addRecipe(10, new ItemStack(Items.golden_apple, 1, 1),
 					new FluidStack(FluidRegistry.getFluid("goldenapplejuice"), 1000),
 					new ItemStack(ModItems.GOLD_DUST, 1), 90);
 			forestry.api.recipes.RecipeManagers.squeezerManager.addRecipe(10, new ItemStack(ModItems.WILDBERRIES),

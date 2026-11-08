@@ -1,42 +1,41 @@
 package rustic.common.blocks;
 
-import net.minecraft.block.Block;
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.BlockFenceGate;
-import net.minecraft.block.BlockPlanks;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.client.renderer.block.statemap.StateMap;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.util.IIcon;
 import rustic.core.Rustic;
 
 public class BlockFenceGateRustic extends BlockFenceGate {
 
-	public BlockFenceGateRustic(IBlockState state, String name) {
-		super(BlockPlanks.EnumType.OAK);
-		setRegistryName(name);
-		setUnlocalizedName(Rustic.MODID + "." + name);
-		GameRegistry.findRegistry(Block.class).register(this);
-		GameRegistry.findRegistry(Item.class).register(new ItemBlock(this).setRegistryName(getRegistryName()));
+	private final String planksTexture;
+
+	/** @param planksTexture icon name of the planks texture, e.g. "rustic:planks_olive" */
+	public BlockFenceGateRustic(String planksTexture, String name) {
+		super();
+		this.planksTexture = planksTexture;
+		setBlockName(Rustic.MODID + "." + name);
 		setHardness(2F);
-		setSoundType(state.getBlock().getSoundType());
+		setResistance(5F);
+		setStepSound(soundTypeWood);
 		setCreativeTab(Rustic.decorTab);
-		
-		Blocks.FIRE.setFireInfo(this, 5, 20);
+		GameRegistry.registerBlock(this, name);
+		Blocks.fire.setFireInfo(this, 5, 20);
 	}
 
+	@Override
 	@SideOnly(Side.CLIENT)
-	public void initModel() {
-		ModelLoader.setCustomStateMapper(this,
-				(new StateMap.Builder()).ignore(new IProperty[] { BlockFenceGate.POWERED }).build());
-		ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(this), 0,
-				new ModelResourceLocation(getRegistryName().toString(), "inventory"));
+	public void registerBlockIcons(IIconRegister register) {
+		blockIcon = register.registerIcon(planksTexture);
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public IIcon getIcon(int side, int meta) {
+		return blockIcon;
 	}
 
 }

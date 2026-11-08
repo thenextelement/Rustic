@@ -20,11 +20,11 @@ import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
 import net.minecraft.util.Tuple;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.client.resources.I18n;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import cpw.mods.fml.common.registry.ForgeRegistries;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 
 public class ElixirUtils {
 
@@ -77,7 +77,7 @@ public class ElixirUtils {
 		}
 
 		NBTTagCompound effectTag = new NBTTagCompound();
-		effectTag.setString("Effect", effect.getPotion().getRegistryName().toString());
+		effectTag.setString("Effect", Potion.potionTypes[effect.getPotionID()].getRegistryName().toString());
 		effectTag.setInteger("Duration", effect.getDuration());
 		effectTag.setInteger("Amplifier", effect.getAmplifier());
 
@@ -128,11 +128,11 @@ public class ElixirUtils {
 		return stack;
 	}
 	public static NBTTagCompound setVantaOilEffect(NBTTagCompound vantaTag, PotionEffect effect) {
-		if ((effect == null) || (effect.getPotion() == null) || (effect.getDuration() < 1) || (effect.getAmplifier() < 0)) {			
+		if ((effect == null) || (Potion.potionTypes[effect.getPotionID()] == null) || (effect.getDuration() < 1) || (effect.getAmplifier() < 0)) {			
 			return null;
 		}
 		if (vantaTag == null) vantaTag = new NBTTagCompound();
-		vantaTag.setString("Effect", effect.getPotion().getRegistryName().toString());
+		vantaTag.setString("Effect", Potion.potionTypes[effect.getPotionID()].getRegistryName().toString());
 		vantaTag.setInteger("Duration", effect.getDuration());
 		vantaTag.setInteger("Amplifier", effect.getAmplifier());
 		return vantaTag;
@@ -165,11 +165,11 @@ public class ElixirUtils {
 
 		if (list.isEmpty()) {
 			String s = I18n.format("effect.none").trim();
-			lores.add(TextFormatting.GRAY + s);
+			lores.add(EnumChatFormatting.GRAY + s);
 		} else {
 			for (PotionEffect potioneffect : list) {
 				String s1 = I18n.format(potioneffect.getEffectName()).trim();
-				Potion potion = potioneffect.getPotion();
+				Potion potion = Potion.potionTypes[potioneffect.getPotionID()];
 				Map<IAttribute, AttributeModifier> map = potion.getAttributeModifierMap();
 
 				if (!map.isEmpty()) {
@@ -191,16 +191,16 @@ public class ElixirUtils {
 				}
 
 				if (potion.isBadEffect()) {
-					lores.add(TextFormatting.RED + s1);
+					lores.add(EnumChatFormatting.RED + s1);
 				} else {
-					lores.add(TextFormatting.BLUE + s1);
+					lores.add(EnumChatFormatting.BLUE + s1);
 				}
 			}
 		}
 
 		if (!list1.isEmpty()) {
 			lores.add("");
-			lores.add(TextFormatting.DARK_PURPLE + I18n.format("potion.whenDrank"));
+			lores.add(EnumChatFormatting.DARK_PURPLE + I18n.format("potion.whenDrank"));
 
 			for (Tuple<String, AttributeModifier> tuple : list1) {
 				AttributeModifier attributemodifier2 = tuple.getSecond();
@@ -214,13 +214,13 @@ public class ElixirUtils {
 				}
 
 				if (d0 > 0.0D) {
-					lores.add(TextFormatting.BLUE + I18n.format(
+					lores.add(EnumChatFormatting.BLUE + I18n.format(
 							"attribute.modifier.plus." + attributemodifier2.getOperation(),
 							ItemStack.DECIMALFORMAT.format(d1),
 							I18n.format("attribute.name." + (String) tuple.getFirst())));
 				} else if (d0 < 0.0D) {
 					d1 = d1 * -1.0D;
-					lores.add(TextFormatting.RED + I18n.format(
+					lores.add(EnumChatFormatting.RED + I18n.format(
 							"attribute.modifier.take." + attributemodifier2.getOperation(),
 							ItemStack.DECIMALFORMAT.format(d1),
 							I18n.format("attribute.name." + (String) tuple.getFirst())));
@@ -238,7 +238,7 @@ public class ElixirUtils {
 		if (duration <= 0)
 			return 0;
 		
-		if (effect.getPotion().isInstant())
+		if (Potion.potionTypes[effect.getPotionID()].isInstant())
 			return duration;
 		
 		int hits = duration / VANTA_OIL_EFFECT_DURATION;
@@ -260,11 +260,11 @@ public class ElixirUtils {
 		// TODO: implement
 		
 		if (!lores.isEmpty()) lores.add("");
-		lores.add(TextFormatting.DARK_PURPLE + I18n.format("tooltip.rustic.vanta_oil", vantaEffect.getDuration()).trim());
+		lores.add(EnumChatFormatting.DARK_PURPLE + I18n.format("tooltip.rustic.vanta_oil", vantaEffect.getDuration()).trim());
 		
 		
 		String effectName = I18n.format(vantaEffect.getEffectName()).trim();
-		Potion potion = vantaEffect.getPotion();
+		Potion potion = Potion.potionTypes[vantaEffect.getPotionID()];
 
 		if (vantaEffect.getAmplifier() > 0) {
 			effectName = effectName + " " + I18n.format("potion.potency." + vantaEffect.getAmplifier()).trim();
@@ -278,9 +278,9 @@ public class ElixirUtils {
 		}
 		
 		if (potion.isBadEffect()) {
-			lores.add(" " + TextFormatting.RED + effectName);
+			lores.add(" " + EnumChatFormatting.RED + effectName);
 		} else {
-			lores.add(" " + TextFormatting.BLUE + effectName);
+			lores.add(" " + EnumChatFormatting.BLUE + effectName);
 		}
 		
 		int uses = getRemainingVantaUses(vantaEffect);

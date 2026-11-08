@@ -1,113 +1,109 @@
 package rustic.common.blocks.crops;
 
-import net.minecraft.block.SoundType;
+import java.util.Collections;
+import java.util.Map;
+
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.ForgeDirection;
 import rustic.common.blocks.BlockBase;
+import rustic.common.blocks.IModelBlock;
+import rustic.common.blocks.ISupportShape;
 import rustic.common.blocks.ModBlocks;
 import rustic.common.items.ItemStakeCropSeed;
 import rustic.core.Rustic;
 
-public class BlockCropStake extends BlockBase {
+public class BlockCropStake extends BlockBase implements IModelBlock, ISupportShape {
 
-	public static final Material CROP_STAKE = new Material(MapColor.WOOD) {
+	public static final Material CROP_STAKE = new Material(MapColor.woodColor) {
 		@Override
 		public boolean isSolid() {
 			return false;
 		}
 	};
 
-	protected static final AxisAlignedBB STAKE_SELECTION_AABB = new AxisAlignedBB(0.375F, 0.0F, 0.375F, 0.625F, 1.0F, 0.625F);
-	protected static final AxisAlignedBB STAKE_AABB = new AxisAlignedBB(0.4375F, 0.0F, 0.4375F, 0.5625F, 1.0F, 0.5625F);
-	
 	public BlockCropStake() {
 		super(CROP_STAKE, "crop_stake");
 		setHardness(2F);
 		setResistance(5F);
 		setCreativeTab(Rustic.farmingTab);
-		setSoundType(SoundType.WOOD);
-		
-		Blocks.FIRE.setFireInfo(this, 5, 20);
+		setStepSound(soundTypeWood);
+		setHarvestLevel("axe", 0);
+		setBlockBounds(0.375F, 0.0F, 0.375F, 0.625F, 1.0F, 0.625F);
+		Blocks.fire.setFireInfo(this, 5, 20);
 	}
-	
+
 	@Override
-	public boolean isToolEffective(String type, IBlockState state) {
-		return type.equals("axe");
-	}
-	
-	@Override
-	public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand,
-			EnumFacing side, float hitX, float hitY, float hitZ) {
-		ItemStack stack = player.getHeldItem(hand);
-		if (!stack.isEmpty() && stack.getItem() instanceof ItemStakeCropSeed) {
-			if (world.getBlockState(pos.down()).getBlock().canSustainPlant(world.getBlockState(pos.down()), world, pos.down(), EnumFacing.UP, ((ItemStakeCropSeed) stack.getItem()).getCrop())) {
-				world.setBlockState(pos, ((ItemStakeCropSeed) stack.getItem()).getCropState(), 3);
-				if (!player.capabilities.isCreativeMode) {
-					player.getHeldItem(hand).shrink(1);
-				}
+	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+			float hitY, float hitZ) {
+		ItemStack stack = player.getCurrentEquippedItem();
+		if (stack == null) return false;
+		if (stack.getItem() instanceof ItemStakeCropSeed) {
+			ItemStakeCropSeed seed = (ItemStakeCropSeed) stack.getItem();
+			if (world.getBlock(x, y - 1, z).canSustainPlant(world, x, y - 1, z, ForgeDirection.UP, seed.getCrop())) {
+				world.setBlock(x, y, z, seed.getCrop(), 0, 3);
+				if (!player.capabilities.isCreativeMode) stack.stackSize--;
 				return true;
 			}
-		} else if (!stack.isEmpty() && stack.getItem() == Item.getItemFromBlock(ModBlocks.ROPE)) {
-			world.setBlockState(pos, ModBlocks.STAKE_TIED.getDefaultState(), 2);
-			world.scheduleUpdate(pos, ModBlocks.STAKE_TIED, 1);
-			if (!player.capabilities.isCreativeMode) {
-				player.getHeldItem(hand).shrink(1);
-			}
+		} else if (stack.getItem() == Item.getItemFromBlock(ModBlocks.ROPE)) {
+			world.setBlock(x, y, z, ModBlocks.STAKE_TIED, 0, 2);
+			world.scheduleBlockUpdate(x, y, z, ModBlocks.STAKE_TIED, 1);
+			if (!player.capabilities.isCreativeMode) stack.stackSize--;
 			return true;
 		}
-		
 		return false;
 	}
 
 	@Override
-	public boolean isOpaqueCube(IBlockState state) {
+	public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
+		return AxisAlignedBB.getBoundingBox(x + 0.4375, y, z + 0.4375, x + 0.5625, y + 1, z + 0.5625);
+	}
+
+	@Override
+	public boolean isOpaqueCube() {
 		return false;
 	}
 
 	@Override
-	public boolean isFullCube(IBlockState state) {
+	public boolean renderAsNormalBlock() {
 		return false;
 	}
 
-	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-		return STAKE_SELECTION_AABB;
+	@Override
+	public boolean isSideSolid(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+		return side.offsetY != 0;
 	}
-	
+
 	@Override
-	public AxisAlignedBB getCollisionBoundingBox(IBlockState blockState, IBlockAccess worldIn, BlockPos pos) {
-		return STAKE_AABB;
+	public boolean canSupportOnSide(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+		return side.offsetY != 0;
 	}
-	
+
 	@Override
-	public boolean isPassable(IBlockAccess worldIn, BlockPos pos) {
-        return false;
-    }
-	
-	@Override
-	public BlockFaceShape getBlockFaceShape(IBlockAccess world, IBlockState state, BlockPos pos, EnumFacing side) {
-        return side != EnumFacing.UP && side != EnumFacing.DOWN ? BlockFaceShape.MIDDLE_POLE : BlockFaceShape.CENTER;
-    }
-	
-	@Override
-    public boolean isSideSolid(IBlockState base_state, IBlockAccess world, BlockPos pos, EnumFacing side) {
-		return (side == EnumFacing.DOWN) || (side == EnumFacing.UP);
-	}
-	
-	@Override
-	public boolean canPlaceTorchOnTop(IBlockState state, IBlockAccess world, BlockPos pos) {
+	public boolean canPlaceTorchOnTop(World world, int x, int y, int z) {
 		return true;
+	}
+
+	@Override
+	public String getBlockStateName() {
+		return name;
+	}
+
+	@Override
+	public Map<String, String> getRenderProperties(IBlockAccess world, int x, int y, int z) {
+		return Collections.emptyMap();
+	}
+
+	@Override
+	public Map<String, String> getInventoryProperties(int meta) {
+		return Collections.emptyMap();
 	}
 
 }

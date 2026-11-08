@@ -2,137 +2,98 @@ package rustic.common.blocks.crops;
 
 import java.util.Random;
 
-import net.minecraft.block.Block;
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.BlockBush;
 import net.minecraft.block.IGrowable;
-import net.minecraft.block.SoundType;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyInteger;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.client.renderer.block.statemap.IStateMapper;
-import net.minecraft.client.renderer.block.statemap.StateMap;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.WorldGenerator;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.common.EnumPlantType;
+import rustic.client.json.JsonModelRegistry;
 import rustic.common.world.WorldGenAppleTree;
 import rustic.core.Rustic;
 
+/** Metadata 1 = second growth stage. */
 public class BlockSaplingApple extends BlockBush implements IGrowable {
-
-	public static final PropertyInteger STAGE = PropertyInteger.create("stage", 0, 1);
-
-	protected static final AxisAlignedBB SAPLING_AABB = new AxisAlignedBB(0.09999999403953552D, 0.0D,
-			0.09999999403953552D, 0.8999999761581421D, 0.800000011920929D, 0.8999999761581421D);
 
 	public BlockSaplingApple() {
 		super();
-		setRegistryName("sapling_apple");
-		setUnlocalizedName(Rustic.MODID + "." + "sapling_apple");
-		GameRegistry.findRegistry(Block.class).register(this);
-		GameRegistry.findRegistry(Item.class).register(new ItemBlock(this).setRegistryName(getRegistryName()));
+		float f = 0.4F;
+		setBlockBounds(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f * 2.0F, 0.5F + f);
+		setBlockName(Rustic.MODID + ".sapling_apple");
+		GameRegistry.registerBlock(this, "sapling_apple");
 		setCreativeTab(Rustic.farmingTab);
-		setDefaultState(this.blockState.getBaseState().withProperty(STAGE, Integer.valueOf(0)));
-		setSoundType(SoundType.PLANT);
+		setStepSound(soundTypeGrass);
 		setHardness(0.0F);
 	}
 
-	@SideOnly(Side.CLIENT)
-	public void initModel() {
-		IStateMapper custom_mapper = (new StateMap.Builder()).ignore(new IProperty[] { STAGE }).build();
-		ModelLoader.setCustomStateMapper(this, custom_mapper);
-		ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(this), 0,
-				new ModelResourceLocation(getRegistryName(), "inventory"));
-	}
-
-	public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY,
-			float hitZ, int meta, EntityLivingBase placer) {
-		return this.getStateFromMeta(meta).withProperty(STAGE, 0);
-	}
-
 	@Override
-	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-		return SAPLING_AABB;
-	}
-
-	@Override
-	public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
-		if (!worldIn.isRemote) {
-			super.updateTick(worldIn, pos, state, rand);
-
-			if (worldIn.getLightFromNeighbors(pos.up()) >= 9 && rand.nextInt(7) == 0) {
-				this.grow(worldIn, rand, pos, state);
+	public void updateTick(World world, int x, int y, int z, Random rand) {
+		if (!world.isRemote) {
+			super.updateTick(world, x, y, z, rand);
+			if (world.getBlockLightValue(x, y + 1, z) >= 9 && rand.nextInt(7) == 0) {
+				func_149853_b(world, rand, x, y, z);
 			}
 		}
 	}
 
-	public void generateTree(World worldIn, BlockPos pos, IBlockState state, Random rand) {
-		if (!net.minecraftforge.event.terraingen.TerrainGen.saplingGrowTree(worldIn, rand, pos)) {
-			return;
-		}
-		WorldGenerator worldgenerator = new WorldGenAppleTree(true);
-		int i = 0;
-		int j = 0;
-
-		IBlockState iblockstate2 = Blocks.AIR.getDefaultState();
-
-		worldIn.setBlockState(pos, iblockstate2, 4);
-
-		if (!worldgenerator.generate(worldIn, rand, pos.add(i, 0, j))) {
-			worldIn.setBlockState(pos, state, 4);
+	public void generateTree(World world, int x, int y, int z, Random rand) {
+		if (!net.minecraftforge.event.terraingen.TerrainGen.saplingGrowTree(world, rand, x, y, z)) return;
+		int meta = world.getBlockMetadata(x, y, z);
+		WorldGenerator generator = new WorldGenAppleTree(true);
+		world.setBlock(x, y, z, Blocks.air, 0, 4);
+		if (!generator.generate(world, rand, x, y, z)) {
+			world.setBlock(x, y, z, this, meta, 4);
 		}
 	}
 
-	public int damageDropped(IBlockState state) {
+	@Override
+	public int damageDropped(int meta) {
 		return 0;
 	}
 
+	// IGrowable: canGrow
 	@Override
-	public boolean canGrow(World worldIn, BlockPos pos, IBlockState state, boolean isClient) {
+	public boolean func_149851_a(World world, int x, int y, int z, boolean isClient) {
 		return true;
 	}
 
+	// IGrowable: canUseBonemeal
 	@Override
-	public boolean canUseBonemeal(World worldIn, Random rand, BlockPos pos, IBlockState state) {
-		return (double) worldIn.rand.nextFloat() < 0.45D;
+	public boolean func_149852_a(World world, Random rand, int x, int y, int z) {
+		return world.rand.nextFloat() < 0.45D;
 	}
 
+	// IGrowable: grow
 	@Override
-	public void grow(World worldIn, Random rand, BlockPos pos, IBlockState state) {
-		if (state.getValue(STAGE) == 0) {
-			worldIn.setBlockState(pos, state.cycleProperty(STAGE), 4);
+	public void func_149853_b(World world, Random rand, int x, int y, int z) {
+		if (world.getBlockMetadata(x, y, z) == 0) {
+			world.setBlockMetadataWithNotify(x, y, z, 1, 4);
 		} else {
-			this.generateTree(worldIn, pos, state, rand);
+			generateTree(world, x, y, z, rand);
 		}
 	}
 
 	@Override
-	public net.minecraftforge.common.EnumPlantType getPlantType(net.minecraft.world.IBlockAccess world, BlockPos pos) {
-		return net.minecraftforge.common.EnumPlantType.Plains;
+	public EnumPlantType getPlantType(IBlockAccess world, int x, int y, int z) {
+		return EnumPlantType.Plains;
 	}
 
-	public IBlockState getStateFromMeta(int meta) {
-		return this.getDefaultState().withProperty(STAGE, meta);
+	@Override
+	@SideOnly(Side.CLIENT)
+	public void registerBlockIcons(IIconRegister register) {
+		blockIcon = JsonModelRegistry.registerStateTexture("sapling_apple", java.util.Collections.singletonMap("stage", "0"), "cross", register);
 	}
 
-	public int getMetaFromState(IBlockState state) {
-		return state.getValue(STAGE);
-	}
-
-	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] { STAGE });
+	@Override
+	@SideOnly(Side.CLIENT)
+	public IIcon getIcon(int side, int meta) {
+		return blockIcon;
 	}
 
 }

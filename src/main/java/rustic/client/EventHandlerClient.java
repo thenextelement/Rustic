@@ -2,17 +2,17 @@ package rustic.client;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiIngame;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.block.model.IBakedModel;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import org.lwjgl.opengl.GL11;
+import net.minecraft.client.renderer.Tessellator;
+
+
+
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
@@ -23,16 +23,16 @@ import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemFood;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.EnumFacing;
+
 import net.minecraft.util.EnumFacing.Axis;
-import net.minecraft.util.EnumHand;
+
 import net.minecraft.util.MovementInput;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.AxisAlignedBB;
+
+import net.minecraft.util.MathHelper;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.client.GuiIngameForge;
 import net.minecraftforge.client.event.DrawBlockHighlightEvent;
 import net.minecraftforge.client.event.FOVUpdateEvent;
@@ -51,11 +51,11 @@ import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.ItemFluidContainer;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+
+import cpw.mods.fml.common.eventhandler.EventPriority;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import rustic.client.models.BookBakedModel;
 import rustic.client.models.LiquidBarrelItemModel;
 import rustic.client.models.TEISRModel;
@@ -148,12 +148,12 @@ public class EventHandlerClient {
 	public void onVaseMouseWheel(MouseEvent event) {
 		EntityPlayerSP player = Minecraft.getMinecraft().player;
 		if (player != null) {
-			if (player.isSneaking() && player.getHeldItemMainhand().getItem() == Item.getItemFromBlock(ModBlocks.VASE)
+			if (player.isSneaking() && player.getCurrentEquippedItem().getItem() == Item.getItemFromBlock(ModBlocks.VASE)
 					&& event.getDwheel() != 0) {
 
 				event.setCanceled(true);
 				
-				final int currentDamage = player.getHeldItemMainhand().getItemDamage();
+				final int currentDamage = player.getCurrentEquippedItem().getItemDamage();
 				final int offset = (event.getDwheel() / 120);
 				
 				
@@ -174,7 +174,7 @@ public class EventHandlerClient {
 					damage = ((((damage - BlockVase.MIN_VARIANT + offset) % diff) + diff) % diff) + BlockVase.MIN_VARIANT;
 				}
 				
-				player.getHeldItemMainhand().setItemDamage(damage);
+				player.getCurrentEquippedItem().setItemDamage(damage);
 				PacketHandler.INSTANCE.sendToServer(new MessageVaseMeta(damage));
 
 			}
@@ -188,7 +188,7 @@ public class EventHandlerClient {
 		if (!stack.isEmpty() && stack.getItem() instanceof ItemFood && stack.hasTagCompound()
 				&& stack.getTagCompound().hasKey("oiled")) {
 			event.getToolTip().add(
-					TextFormatting.DARK_GREEN + "" + TextFormatting.ITALIC + I18n.format("tooltip.rustic.olive_oil"));
+					EnumChatFormatting.DARK_GREEN + "" + EnumChatFormatting.ITALIC + I18n.format("tooltip.rustic.olive_oil"));
 		}
 	}
 	
@@ -201,7 +201,7 @@ public class EventHandlerClient {
 			//System.out.println("tooltip[0]: " + event.getToolTip().get(0));
 			ElixirUtils.addVantaOilTooltip(stack, effect, event.getToolTip());
 		}
-		//if (stack.hasTagCompound()) event.getToolTip().add(TextFormatting.DARK_GRAY + stack.getTagCompound().toString());
+		//if (stack.hasTagCompound()) event.getToolTip().add(EnumChatFormatting.DARK_GRAY + stack.getTagCompound().toString());
 	}
 
 	@SideOnly(Side.CLIENT)
@@ -228,7 +228,7 @@ public class EventHandlerClient {
 		EntityPlayer player = event.getEntity();
 		if (player.isPotionActive(PotionsRustic.FULLMETAL_POTION)) {
 			float f = 1.0F;
-			if (player.isHandActive() && player.getActiveItemStack().getItem() == Items.BOW) {
+			if (player.isHandActive() && player.getActiveItemStack().getItem() == Items.bow) {
 	            int i = player.getItemInUseMaxCount();
 	            float f1 = (float) i / 20.0F;
 	            if (f1 > 1.0F) {
@@ -547,7 +547,7 @@ public class EventHandlerClient {
 	@SubscribeEvent
 	public void onBlockHighlight(DrawBlockHighlightEvent event) {
 		EntityPlayer player = event.getPlayer();
-		ItemStack stack = ItemStack.EMPTY;
+		ItemStack stack = null;
 		if ((player.getHeldItem(EnumHand.MAIN_HAND).isEmpty()
 				|| !(player.getHeldItem(EnumHand.MAIN_HAND).getItem() instanceof ItemBlock))
 				&& !player.getHeldItem(EnumHand.OFF_HAND).isEmpty()) {
@@ -555,7 +555,7 @@ public class EventHandlerClient {
 		} else if (!player.getHeldItem(EnumHand.MAIN_HAND).isEmpty()) {
 			stack = player.getHeldItem(EnumHand.MAIN_HAND);
 		}
-		if (event.getTarget().typeOfHit == RayTraceResult.Type.BLOCK && event.getTarget().sideHit.getAxis() == Axis.Y
+		if (event.getTarget().typeOfHit == MovingObjectPosition.Type.BLOCK && event.getTarget().sideHit.getAxis() == Axis.Y
 				&& !stack.isEmpty() && Block.getBlockFromItem(stack.getItem()) instanceof IAdvancedRotationPlacement) {
 			GlStateManager.enableBlend();
 			GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA,
@@ -565,14 +565,14 @@ public class EventHandlerClient {
 			GlStateManager.disableTexture2D();
 			GlStateManager.depthMask(false);
 			BlockPos pos = event.getTarget().getBlockPos();
-			IBlockState iblockstate = player.getEntityWorld().getBlockState(pos);
-			AxisAlignedBB AABB = iblockstate.getBoundingBox(player.getEntityWorld(), pos);
+			IBlockState iblockstate = player.worldObj.getBlockState(pos);
+			AxisAlignedBB AABB = iblockstate.getBoundingBox(player.worldObj, pos);
 			boolean isAABBCenteredXZ = (((AABB.minX + ((AABB.maxX - AABB.minX) / 2D)) == 0.5D)
 					|| ((AABB.maxX - ((AABB.maxX - AABB.minX) / 2D)) == 0.5D))
 					&& (((AABB.minZ + ((AABB.maxZ - AABB.minZ) / 2D)) == 0.5D)
 							|| ((AABB.maxZ - ((AABB.maxZ - AABB.minZ) / 2D)) == 0.5D));
 
-			if (iblockstate.getMaterial() != Material.AIR && player.getEntityWorld().getWorldBorder().contains(pos)
+			if (iblockstate.getMaterial() != Material.air && player.worldObj.getWorldBorder().contains(pos)
 					&& isAABBCenteredXZ) {
 				double d0 = player.lastTickPosX
 						+ (player.posX - player.lastTickPosX) * (double) event.getPartialTicks();
@@ -584,7 +584,7 @@ public class EventHandlerClient {
 				BufferBuilder vertexbuffer = tessellator.getBuffer();
 				vertexbuffer.begin(3, DefaultVertexFormats.POSITION_COLOR);
 				vertexbuffer.setTranslation(-d0, -d1, -d2);
-				AABB = AABB.grow(0.0020000000949949026D);
+				AABB = AABB.stackSize += 0.0020000000949949026D;
 				drawRotablePlacementBlockHighlight(vertexbuffer, AABB, event.getTarget().sideHit, pos);
 				tessellator.draw();
 				vertexbuffer.setTranslation(0D, 0D, 0D);

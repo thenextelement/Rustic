@@ -9,12 +9,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
+import org.lwjgl.opengl.GL11;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.translation.I18n;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import rustic.client.gui.book.GuiBook;
 import rustic.common.book.BookEntry;
 import rustic.common.book.BookPage;
@@ -38,7 +38,7 @@ public class BookPageText extends BookPage {
 		
 		int maxY = gui.guiTop + GuiBook.HEIGHT - 19;
 		
-		gui.drawCenteredText(TextFormatting.UNDERLINE + "" + TextFormatting.BOLD + I18n.translateToLocal(entry.getName()), x, y, 0x000000);
+		gui.drawCenteredText(EnumChatFormatting.UNDERLINE + "" + EnumChatFormatting.BOLD + StatCollector.translateToLocal(entry.getName()), x, y, 0x000000);
 		y += gui.getFontRenderer().FONT_HEIGHT + 4;
 		x = gui.guiLeft + 16;
 		
@@ -46,7 +46,7 @@ public class BookPageText extends BookPage {
 		GlStateManager.pushMatrix();
 		GlStateManager.scale(textScale, textScale, textScale);
 		for (int i = 0; i < this.textKeys.size(); i++) {
-			String text = I18n.translateToLocal(this.textKeys.get(i));
+			String text = StatCollector.translateToLocal(this.textKeys.get(i));
 			int increment = (int) ((gui.getFontRenderer().FONT_HEIGHT + 2) * textScale);
 			List<String> lines = gui.getFontRenderer().listFormattedStringToWidth(text, (int) ((GuiBook.WIDTH - 32) / textScale));
 			for (String line : lines) {
@@ -61,7 +61,7 @@ public class BookPageText extends BookPage {
 		GlStateManager.popMatrix();
 		
 		if (relatedEntries.size() > 0) {
-			String text = TextFormatting.UNDERLINE + I18n.translateToLocal("book.rustic.label.related_entries");
+			String text = EnumChatFormatting.UNDERLINE + StatCollector.translateToLocal("book.rustic.label.related_entries");
 			int textWidth = gui.getFontRenderer().getStringWidth(text);
 			GlStateManager.color(1F, 1F, 1F, 1F);
 			gui.mc.getTextureManager().bindTexture(GuiBook.BOOK_BACKGROUND);
@@ -139,7 +139,7 @@ public class BookPageText extends BookPage {
 		@Override
 		public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
 			if (this.visible) {
-				String text = I18n.translateToLocal(this.displayString);
+				String text = StatCollector.translateToLocal(this.displayString);
 				int textWidth = this.fontRenderer.getStringWidth(text);
 				
 				boolean flag = mouseX >= this.x && mouseY >= this.y

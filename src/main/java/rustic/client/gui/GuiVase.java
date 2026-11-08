@@ -5,7 +5,7 @@ import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.Optional;
+import cpw.mods.fml.common.Optional;
 import rustic.common.tileentity.ContainerVase;
 import rustic.common.tileentity.TileEntityVase;
 import rustic.compat.Compat;

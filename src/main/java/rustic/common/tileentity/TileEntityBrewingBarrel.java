@@ -1,10 +1,9 @@
 package rustic.common.tileentity;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
 
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
+
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemBucket;
 import net.minecraft.item.ItemStack;
@@ -12,26 +11,26 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ITickable;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentTranslation;
+
+
+
+import net.minecraft.util.IChatComponent;
+import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeModContainer;
-import net.minecraftforge.common.capabilities.Capability;
+
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.UniversalBucket;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import net.minecraftforge.fluids.capability.ItemFluidContainer;
-import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.items.ItemStackHandler;
+
+
+
+
+
+
+
 import rustic.common.Config;
 import rustic.common.blocks.fluids.FluidBooze;
 import rustic.common.crafting.BrewingBarrelRecipe;
@@ -54,7 +53,7 @@ public class TileEntityBrewingBarrel extends TileEntity implements ITickable {
 		@Override
 		protected void onContentsChanged(int slot) {
 			IBlockState state = world.getBlockState(pos);
-			TileEntityBrewingBarrel.this.world.addBlockEvent(TileEntityBrewingBarrel.this.pos,
+			TileEntityBrewingBarrel.this.worldObj.addBlockEvent(TileEntityBrewingBarrel.this.pos,
 					TileEntityBrewingBarrel.this.getBlockType(), 1, 0);
 			getWorld().notifyBlockUpdate(pos, state, state, 3);
 			world.notifyNeighborsOfStateChange(TileEntityBrewingBarrel.this.pos,
@@ -74,16 +73,16 @@ public class TileEntityBrewingBarrel extends TileEntity implements ITickable {
 
 		private boolean isStackAllowedInSlot(int slot, ItemStack stack) {
 			if (slot == OUTPUT_IN_SLOT) {
-				return stack.getItem() == Items.GLASS_BOTTLE;
+				return stack.getItem() == Items.glass_bottle;
 			} else if (slot == AUX_IN_SLOT) {
 				if (FluidUtil.getFluidHandler(stack) != null) {
 					FluidStack fluid = FluidUtil.getFluidContained(stack);
 					if (fluid != null && fluid.getFluid() != null) return fluid.getFluid() instanceof FluidBooze;
 				}
-				return stack.getItem() == Items.GLASS_BOTTLE;
+				return stack.getItem() == Items.glass_bottle;
 			} else if (slot == INPUT_IN_SLOT) {
 				return FluidUtil.getFluidHandler(stack) != null || stack.getItem() instanceof UniversalBucket || stack.getItem() instanceof ItemFluidContainer
-						|| stack.getItem() == Items.GLASS_BOTTLE || stack.getItem() instanceof ItemBucket;
+						|| stack.getItem() == Items.glass_bottle || stack.getItem() instanceof ItemBucket;
 			}
 			return false;
 		}
@@ -153,7 +152,7 @@ public class TileEntityBrewingBarrel extends TileEntity implements ITickable {
 	public boolean receiveClientEvent(int id, int type) {
 		if (id == 1) {
 			getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos), 3);
-			this.world.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
+			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
 			this.markDirty();
 			return true;
 		} else {
@@ -161,8 +160,8 @@ public class TileEntityBrewingBarrel extends TileEntity implements ITickable {
 		}
 	}
 
-	public ITextComponent getDisplayName() {
-		return (ITextComponent) new TextComponentTranslation(this.getName(), new Object[0]);
+	public IChatComponent getDisplayName() {
+		return (IChatComponent) new ChatComponentTranslation(this.getName(), new Object[0]);
 	}
 
 	public String getName() {
@@ -261,7 +260,7 @@ public class TileEntityBrewingBarrel extends TileEntity implements ITickable {
 		ItemStack stack = itemInSlot(inSlot);
 		if (stack.isEmpty()) return false;
 		
-		ItemStack in = (stack.getItem() == Items.GLASS_BOTTLE)
+		ItemStack in = (stack.getItem() == Items.glass_bottle)
 						? new ItemStack(ModItems.FLUID_BOTTLE)
 						: ItemHandlerHelper.copyStackWithSize(stack, 1);
 		
@@ -283,11 +282,11 @@ public class TileEntityBrewingBarrel extends TileEntity implements ITickable {
 			FluidStack drained = fluidHandler.drain(fillAmount, true);
 			ItemStack out = fluidHandler.getContainer();
 			if (out.getItem() == ForgeModContainer.getInstance().universalBucket) {
-				//out = new ItemStack(Items.BUCKET);
+				//out = new ItemStack(Items.bucket);
 			}
 			if (!isFluidStackEmpty(drained) && internalStackHandler.insertItem(outSlot, out, true).isEmpty()) {
 				tank.fill(drained, true);
-				itemInSlot(inSlot).shrink(1);
+				itemInSlot(inSlot).stackSize -= 1;
 				internalStackHandler.insertItem(outSlot, out, false);
 				return true;
 			}
@@ -305,7 +304,7 @@ public class TileEntityBrewingBarrel extends TileEntity implements ITickable {
 			}
 			if ((amount > 0) && internalStackHandler.insertItem(outSlot, out, true).isEmpty()) {
 				tank.drain(amount, true);
-				itemInSlot(inSlot).shrink(1);
+				itemInSlot(inSlot).stackSize -= 1;
 				internalStackHandler.insertItem(outSlot, out, false);
 				return true;
 			}
@@ -328,7 +327,7 @@ public class TileEntityBrewingBarrel extends TileEntity implements ITickable {
 				recipe = null;
 			}
 			getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos), 3);
-			this.world.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
+			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
 			this.markDirty();
 		}
 		if (recipe == null && input.getFluidAmount() > 0) {
@@ -366,7 +365,7 @@ public class TileEntityBrewingBarrel extends TileEntity implements ITickable {
 			}
 		}
 		getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos), 3);
-		this.world.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
+		this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
 		this.markDirty();
 	}
 

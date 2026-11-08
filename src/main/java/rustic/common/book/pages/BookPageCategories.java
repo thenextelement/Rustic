@@ -4,11 +4,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.translation.I18n;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import org.lwjgl.opengl.GL11;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import rustic.client.gui.book.GuiBook;
 import rustic.common.book.BookCategory;
 import rustic.common.book.BookEntryCategory;
@@ -26,7 +26,7 @@ public class BookPageCategories extends BookPage {
 		int y = gui.guiTop + 12;
 		int x = gui.guiLeft + (GuiBook.WIDTH / 2);
 		
-		gui.drawCenteredText(TextFormatting.UNDERLINE + "" + TextFormatting.BOLD + I18n.translateToLocal(BookManager.categories_entry.getName()), x, y, 0x000000);
+		gui.drawCenteredText(EnumChatFormatting.UNDERLINE + "" + EnumChatFormatting.BOLD + StatCollector.translateToLocal(BookManager.categories_entry.getName()), x, y, 0x000000);
 	}
 	
 	@Override
@@ -81,7 +81,7 @@ public class BookPageCategories extends BookPage {
 	            	if (ticksHovered % 2 == 0 && frame < 7) {
 	            		frame++;
 	            	}
-	            	String text = I18n.translateToLocal(this.displayString);
+	            	String text = StatCollector.translateToLocal(this.displayString);
 	            	int stringWidth = fontRenderer.getStringWidth(text);
 	            	fontRenderer.drawString(text, x + (width / 2) - (stringWidth / 2), y + height, 0x000000);
 	            	GlStateManager.color(44 / 256F, 114 / 256F, 44 / 256F, 1F);

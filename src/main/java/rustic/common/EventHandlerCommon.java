@@ -5,7 +5,7 @@ import java.util.Random;
 import com.google.common.collect.Sets;
 
 import net.minecraft.block.ITileEntityProvider;
-import net.minecraft.block.state.IBlockState;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.ai.EntityAITasks.EntityAITaskEntry;
@@ -15,7 +15,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.init.PotionTypes;
-import net.minecraft.init.SoundEvents;
+
 import net.minecraft.inventory.ContainerPlayer;
 import net.minecraft.inventory.ContainerWorkbench;
 import net.minecraft.inventory.InventoryCraftResult;
@@ -33,12 +33,12 @@ import net.minecraft.stats.StatList;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EntityDamageSource;
 import net.minecraft.util.EntityDamageSourceIndirect;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumParticleTypes;
+
+
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.text.TextFormatting;
+
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
@@ -50,11 +50,11 @@ import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidBlock;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fml.common.eventhandler.Event.Result;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+
+
+import cpw.mods.fml.common.eventhandler.Event.Result;
+import cpw.mods.fml.common.eventhandler.EventPriority;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import rustic.common.blocks.ModBlocks;
 import rustic.common.crafting.RecipeOliveOil;
 import rustic.common.crafting.RecipeVantaOil;
@@ -72,7 +72,7 @@ public class EventHandlerCommon {
 	private Random particleRng = new Random();
 
 	@SubscribeEvent
-	public void onOilBottleCraftingEvent(net.minecraftforge.fml.common.gameevent.PlayerEvent.ItemCraftedEvent event) {
+	public void onOilBottleCraftingEvent(cpw.mods.fml.common.gameevent.PlayerEvent.ItemCraftedEvent event) {
 		if ((event.player == null) || event.crafting.isEmpty() || !(event.craftMatrix instanceof InventoryCrafting)) return;
 		InventoryCrafting inv = (InventoryCrafting) event.craftMatrix;
 		
@@ -89,12 +89,12 @@ public class EventHandlerCommon {
 		if (recipe == null) return;
 		
 		if (recipe instanceof RecipeOliveOil) {
-			RusticUtils.givePlayerItem(event.player, new ItemStack(Items.GLASS_BOTTLE));
+			RusticUtils.givePlayerItem(event.player, new ItemStack(Items.glass_bottle));
 		} else if (recipe instanceof RecipeVantaOil) {
 			int bottles = RecipeVantaOil.getReturnBottleCount(inv);
 			//System.out.println("Vanta crafting return bottles: " + bottles);
 			if (bottles > 0) {
-				RusticUtils.givePlayerItem(event.player, new ItemStack(Items.GLASS_BOTTLE, bottles));
+				RusticUtils.givePlayerItem(event.player, new ItemStack(Items.glass_bottle, bottles));
 			}
 		}
 		//for (int i = 0; i < inv.getSizeInventory(); i++) {
@@ -105,7 +105,7 @@ public class EventHandlerCommon {
 	@SubscribeEvent
 	public void onVantaWeaponAttackEvent(AttackEntityEvent event) {
 		EntityPlayer player = event.getEntityPlayer();
-		ItemStack stack = player.getHeldItemMainhand();
+		ItemStack stack = player.getCurrentEquippedItem();
 		
 		if (stack.isEmpty())
 			return;
@@ -158,7 +158,7 @@ public class EventHandlerCommon {
 		}
 		
 		if (effectDur > 0) {
-			if (!player.world.isRemote) {
+			if (!player.worldObj.isRemote) {
 				if (isInstant) {
 					potion.affectEntity(player, player, targetEntity, amplifier, 1.0);
 				} else {
@@ -171,7 +171,7 @@ public class EventHandlerCommon {
 					double d1 = (double)(color >> 8 & 255) / 255.0D;
 					double d2 = (double)(color >> 0 & 255) / 255.0D;
 					for (int i = 0; i < 20; i++) {
-						player.world.spawnParticle(EnumParticleTypes.SPELL_MOB,
+						player.worldObj.spawnParticle(EnumParticleTypes.SPELL_MOB,
 								targetEntity.posX + ((particleRng.nextDouble() - 0.5) * targetEntity.width),
 								targetEntity.posY + (particleRng.nextDouble() * targetEntity.height),
 								targetEntity.posZ + ((particleRng.nextDouble() - 0.5) * targetEntity.width),
@@ -190,8 +190,8 @@ public class EventHandlerCommon {
 			vantaOilTag.setInteger("Duration", totalDuration);
 		}
 		
-		if (stack.getCount() > 1) {
-			ItemStack remainingStack = stack.splitStack(stack.getCount() - 1);
+		if (stack.stackSize > 1) {
+			ItemStack remainingStack = stack.splitStack(stack.stackSize - 1);
 			ElixirUtils.setVantaOilTag(stack, vantaOilTag);
 			RusticUtils.givePlayerItem(player, remainingStack);
 		} else {
@@ -216,20 +216,20 @@ public class EventHandlerCommon {
 		EntityPlayer player = event.getEntityPlayer();
 		if (player != null) {
 			if (player.getUniqueID().equals(Rustic.ERIS_UUID)) {
-				event.setDisplayname(TextFormatting.DARK_RED + "Mommy Eris" + TextFormatting.RESET);
+				event.setDisplayname(EnumChatFormatting.DARK_RED + "Mommy Eris" + EnumChatFormatting.RESET);
 			}
 		}
 	}
  
 	@SubscribeEvent
 	public void onVineDropEvent(BlockEvent.HarvestDropsEvent event) {
-		if (event.getState().getBlock() == Blocks.VINE) {
+		if (event.getState().getBlock() == Blocks.vine) {
 			boolean tryDrop = false;
 			if (Config.ENABLE_SEED_DROPS) {
 				if (!Config.GRAPE_DROP_NEEDS_TOOL) {
 					tryDrop = true;
-				} else if (event.getHarvester() != null && !event.getHarvester().getHeldItemMainhand().isEmpty()) {
-					ItemStack stack = event.getHarvester().getHeldItemMainhand();
+				} else if (event.getHarvester() != null && !event.getHarvester().getCurrentEquippedItem().isEmpty()) {
+					ItemStack stack = event.getHarvester().getCurrentEquippedItem();
 					String itemName = stack.getItem().getRegistryName().toString();
 					if (Config.GRAPE_TOOL_WHITELIST.contains(itemName)) {
 						tryDrop = true;
@@ -274,12 +274,12 @@ public class EventHandlerCommon {
 
 	@SubscribeEvent
 	public void onPlayerUseGlassBottle(PlayerInteractEvent.RightClickBlock event) {
-		if (event.getItemStack().getItem().equals(Items.GLASS_BOTTLE)) {
+		if (event.getItemStack().getItem().equals(Items.glass_bottle)) {
 			EntityPlayer player = event.getEntityPlayer();
 			BlockPos pos = event.getPos();
 			ItemStack stack = event.getItemStack();
 			World world = event.getWorld();
-			RayTraceResult raytraceresult = RusticUtils.rayTrace(world, player, true);
+			MovingObjectPosition raytraceresult = RusticUtils.rayTrace(world, player, true);
 			if (raytraceresult == null || raytraceresult.getBlockPos() == null) return;
 			BlockPos pos2 = raytraceresult.getBlockPos();
 			
@@ -290,10 +290,10 @@ public class EventHandlerCommon {
 					IFluidBlock fluidblock = ((IFluidBlock) state.getBlock());
 					if (ItemFluidBottle.VALID_FLUIDS.contains(fluidblock.getFluid())
 							&& fluidblock.getFilledPercentage(world, pos2) == 1) {
-						world.setBlockState(pos2, Blocks.AIR.getDefaultState(), 11);
+						world.setBlockState(pos2, Blocks.air.getDefaultState(), 11);
 						player.addStat(StatList.getObjectUseStats(stack.getItem()));
 						player.playSound(SoundEvents.ITEM_BUCKET_FILL, 1.0F, 1.0F);
-						stack.shrink(1);
+						stack.stackSize -= 1;
 						ItemStack bottlestack = new ItemStack(ModItems.FLUID_BOTTLE, 1);
 						NBTTagCompound fluidTag = new FluidStack(fluidblock.getFluid(), 1000)
 								.writeToNBT(new NBTTagCompound());
@@ -318,7 +318,7 @@ public class EventHandlerCommon {
 							FluidStack fill = tank.drain(1000, true);
 							player.addStat(StatList.getObjectUseStats(stack.getItem()));
 							player.playSound(SoundEvents.ITEM_BUCKET_FILL, 1.0F, 1.0F);
-							stack.shrink(1);
+							stack.stackSize -= 1;
 							ItemStack bottlestack = new ItemStack(ModItems.FLUID_BOTTLE, 1);
 							NBTTagCompound fluidTag = fill.writeToNBT(new NBTTagCompound());
 							NBTTagCompound tag = new NBTTagCompound();
@@ -331,8 +331,8 @@ public class EventHandlerCommon {
 							tank.drain(1000, true);
 							player.addStat(StatList.getObjectUseStats(stack.getItem()));
 							player.playSound(SoundEvents.ITEM_BUCKET_FILL, 1.0F, 1.0F);
-							stack.shrink(1);
-							ItemStack bottlestack = PotionUtils.addPotionToItemStack(new ItemStack(Items.POTIONITEM),
+							stack.stackSize -= 1;
+							ItemStack bottlestack = PotionUtils.addPotionToItemStack(new ItemStack(Items.potionitem),
 									PotionTypes.WATER);
 							RusticUtils.givePlayerItem(player, bottlestack);
 							event.setCanceled(true);
@@ -358,7 +358,7 @@ public class EventHandlerCommon {
 				EntityPlayer player = event.getEntityPlayer();
 
 				if (!player.capabilities.isCreativeMode) {
-					equippedItem.shrink(1);
+					equippedItem.stackSize -= 1;
 				}
 
 				targetAnimal.setInLove(player);

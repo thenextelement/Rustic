@@ -15,9 +15,9 @@ import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.model.PositionTextureVertex;
 import net.minecraft.client.model.TexturedQuad;
-import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.GLAllocation;
-import net.minecraft.client.renderer.GlStateManager;
+import org.lwjgl.opengl.GL11;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.Render;
@@ -27,10 +27,10 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.Vec3d;
-import net.minecraftforge.fml.relauncher.ReflectionHelper;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.util.Vec3;
+import cpw.mods.fml.relauncher.ReflectionHelper;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import rustic.common.potions.PotionsRustic;
 import rustic.core.ClientProxy;
 
@@ -422,9 +422,9 @@ public class LayerIronSkin<T extends ModelBase> implements LayerRenderer<EntityL
 	     */
 	    @SideOnly(Side.CLIENT)
 	    public void draw(BufferBuilder renderer, float scale) {
-	        Vec3d vec3d = this.vertexPositions[1].vector3D.subtractReverse(this.vertexPositions[0].vector3D);
-	        Vec3d vec3d1 = this.vertexPositions[1].vector3D.subtractReverse(this.vertexPositions[2].vector3D);
-	        Vec3d vec3d2 = vec3d1.crossProduct(vec3d).normalize();
+	        Vec3 vec3d = this.vertexPositions[1].vector3D.subtractReverse(this.vertexPositions[0].vector3D);
+	        Vec3 vec3d1 = this.vertexPositions[1].vector3D.subtractReverse(this.vertexPositions[2].vector3D);
+	        Vec3 vec3d2 = vec3d1.crossProduct(vec3d).normalize();
 	        float f = (float)vec3d2.x;
 	        float f1 = (float)vec3d2.y;
 	        float f2 = (float)vec3d2.z;

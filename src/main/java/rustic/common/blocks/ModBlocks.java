@@ -5,19 +5,19 @@ import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
+
+
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
+
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import rustic.common.Config;
 import rustic.common.blocks.crops.BlockAppleSeeds;
 import rustic.common.blocks.crops.BlockBerryBush;
@@ -198,26 +198,26 @@ public class ModBlocks {
 		BEEHIVE = new BlockBeehive();
 		APIARY = new BlockApiary();
 		if (Config.ENABLE_SLATE) {
-			SLATE = (BlockBase) new BlockBase(Material.ROCK, "slate").setHardness(2.0F);
-			SLATE_ROOF = (BlockBase) new BlockBase(Material.ROCK, "slate_roof").setHardness(2.0F);
-			SLATE_TILE = (BlockBase) new BlockBase(Material.ROCK, "slate_tile").setHardness(2.0F);
-			SLATE_BRICK = (BlockBase) new BlockBase(Material.ROCK, "slate_brick").setHardness(2.0F);
-			SLATE_CHISELED = (BlockBase) new BlockBase(Material.ROCK, "slate_chiseled").setHardness(2.0F);
+			SLATE = (BlockBase) new BlockBase(Material.rock, "slate").setHardness(2.0F);
+			SLATE_ROOF = (BlockBase) new BlockBase(Material.rock, "slate_roof").setHardness(2.0F);
+			SLATE_TILE = (BlockBase) new BlockBase(Material.rock, "slate_tile").setHardness(2.0F);
+			SLATE_BRICK = (BlockBase) new BlockBase(Material.rock, "slate_brick").setHardness(2.0F);
+			SLATE_CHISELED = (BlockBase) new BlockBase(Material.rock, "slate_chiseled").setHardness(2.0F);
 			SLATE_ROOF_STAIRS = new BlockStairsBase(SLATE_ROOF.getDefaultState(), "stairs_slate_roof");
-			SLATE_ROOF_DOUBLESLAB = new BlockDoubleSlabBase(Material.ROCK, "slate_roof_doubleslab");
-			SLATE_ROOF_SLAB = new BlockSlabBase(Material.ROCK, "slate_roof_slab", SLATE_ROOF_DOUBLESLAB);
+			SLATE_ROOF_DOUBLESLAB = new BlockDoubleSlabBase(Material.rock, "slate_roof_doubleslab");
+			SLATE_ROOF_SLAB = new BlockSlabBase(Material.rock, "slate_roof_slab", SLATE_ROOF_DOUBLESLAB);
 			SLATE_ROOF_DOUBLESLAB.setSlab(SLATE_ROOF_SLAB);
 			SLATE_ROOF_SLAB_ITEM = new ItemBlockSlabBase(SLATE_ROOF_SLAB, SLATE_ROOF_DOUBLESLAB);
 			SLATE_BRICK_STAIRS = new BlockStairsBase(SLATE_BRICK.getDefaultState(), "stairs_slate_brick");
-			SLATE_BRICK_DOUBLESLAB = new BlockDoubleSlabBase(Material.ROCK, "slate_brick_doubleslab");
-			SLATE_BRICK_SLAB = new BlockSlabBase(Material.ROCK, "slate_brick_slab", SLATE_BRICK_DOUBLESLAB);
+			SLATE_BRICK_DOUBLESLAB = new BlockDoubleSlabBase(Material.rock, "slate_brick_doubleslab");
+			SLATE_BRICK_SLAB = new BlockSlabBase(Material.rock, "slate_brick_slab", SLATE_BRICK_DOUBLESLAB);
 			SLATE_BRICK_DOUBLESLAB.setSlab(SLATE_BRICK_SLAB);
 			SLATE_BRICK_SLAB_ITEM = new ItemBlockSlabBase(SLATE_BRICK_SLAB, SLATE_BRICK_DOUBLESLAB);
 		}
 		if (Config.ENABLE_CLAY_WALLS) {
-			CLAY_WALL = ((BlockBase) new BlockBase(Material.CLAY, "clay_wall").setHardness(1F))
+			CLAY_WALL = ((BlockBase) new BlockBase(Material.clay, "clay_wall").setHardness(1F))
 					.setBlockSoundType(SoundType.GROUND);
-			CLAY_WALL_CROSS = ((BlockBase) new BlockBase(Material.CLAY, "clay_wall_cross").setHardness(1F))
+			CLAY_WALL_CROSS = ((BlockBase) new BlockBase(Material.clay, "clay_wall_cross").setHardness(1F))
 					.setBlockSoundType(SoundType.GROUND);
 			CLAY_WALL_DIAG = (BlockClayWallDiag) new BlockClayWallDiag().setHardness(1F);
 		}
@@ -244,62 +244,62 @@ public class ModBlocks {
 		VASE = new BlockVase();
 		BARREL = new BlockBarrel();
 		if (Config.ENABLE_LATTICE) {
-			IRON_LATTICE = new BlockLattice(Material.IRON, "iron_lattice");
+			IRON_LATTICE = new BlockLattice(Material.iron, "iron_lattice");
 		}
-		IRON_LANTERN = new BlockLantern(Material.IRON, "iron_lantern");
-		GOLDEN_LANTERN = new BlockLantern(Material.IRON, "golden_lantern");
+		IRON_LANTERN = new BlockLantern(Material.iron, "iron_lantern");
+		GOLDEN_LANTERN = new BlockLantern(Material.iron, "golden_lantern");
 		if (Config.ENABLE_SILVER_DECOR) {
-			SILVER_LANTERN = new BlockLantern(Material.IRON, "silver_lantern");
+			SILVER_LANTERN = new BlockLantern(Material.iron, "silver_lantern");
 		}
 		if (Config.ENABLE_PAINTED_WOOD) {
-			PAINTED_WOOD_WHITE = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_white").setHardness(2.0F))
+			PAINTED_WOOD_WHITE = ((BlockBase) new BlockBase(Material.wood, "painted_wood_white").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_ORANGE = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_orange").setHardness(2.0F))
+			PAINTED_WOOD_ORANGE = ((BlockBase) new BlockBase(Material.wood, "painted_wood_orange").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_MAGENTA = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_magenta").setHardness(2.0F))
+			PAINTED_WOOD_MAGENTA = ((BlockBase) new BlockBase(Material.wood, "painted_wood_magenta").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_LIGHT_BLUE = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_light_blue")
+			PAINTED_WOOD_LIGHT_BLUE = ((BlockBase) new BlockBase(Material.wood, "painted_wood_light_blue")
 					.setHardness(2.0F)).setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_YELLOW = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_yellow").setHardness(2.0F))
+			PAINTED_WOOD_YELLOW = ((BlockBase) new BlockBase(Material.wood, "painted_wood_yellow").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_LIME = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_lime").setHardness(2.0F))
+			PAINTED_WOOD_LIME = ((BlockBase) new BlockBase(Material.wood, "painted_wood_lime").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_PINK = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_pink").setHardness(2.0F))
+			PAINTED_WOOD_PINK = ((BlockBase) new BlockBase(Material.wood, "painted_wood_pink").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_GRAY = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_gray").setHardness(2.0F))
+			PAINTED_WOOD_GRAY = ((BlockBase) new BlockBase(Material.wood, "painted_wood_gray").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_SILVER = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_silver").setHardness(2.0F))
+			PAINTED_WOOD_SILVER = ((BlockBase) new BlockBase(Material.wood, "painted_wood_silver").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_CYAN = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_cyan").setHardness(2.0F))
+			PAINTED_WOOD_CYAN = ((BlockBase) new BlockBase(Material.wood, "painted_wood_cyan").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_PURPLE = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_purple").setHardness(2.0F))
+			PAINTED_WOOD_PURPLE = ((BlockBase) new BlockBase(Material.wood, "painted_wood_purple").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_BLUE = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_blue").setHardness(2.0F))
+			PAINTED_WOOD_BLUE = ((BlockBase) new BlockBase(Material.wood, "painted_wood_blue").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_BROWN = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_brown").setHardness(2.0F))
+			PAINTED_WOOD_BROWN = ((BlockBase) new BlockBase(Material.wood, "painted_wood_brown").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_GREEN = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_green").setHardness(2.0F))
+			PAINTED_WOOD_GREEN = ((BlockBase) new BlockBase(Material.wood, "painted_wood_green").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_RED = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_red").setHardness(2.0F))
+			PAINTED_WOOD_RED = ((BlockBase) new BlockBase(Material.wood, "painted_wood_red").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			PAINTED_WOOD_BLACK = ((BlockBase) new BlockBase(Material.WOOD, "painted_wood_black").setHardness(2.0F))
+			PAINTED_WOOD_BLACK = ((BlockBase) new BlockBase(Material.wood, "painted_wood_black").setHardness(2.0F))
 					.setBlockSoundType(SoundType.WOOD);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_WHITE, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_ORANGE, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_MAGENTA, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_LIGHT_BLUE, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_YELLOW, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_LIME, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_PINK, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_GRAY, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_SILVER, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_CYAN, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_PURPLE, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_BLUE, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_BROWN, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_GREEN, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_RED, 5, 20);
-			Blocks.FIRE.setFireInfo(PAINTED_WOOD_BLACK, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_WHITE, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_ORANGE, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_MAGENTA, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_LIGHT_BLUE, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_YELLOW, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_LIME, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_PINK, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_GRAY, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_SILVER, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_CYAN, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_PURPLE, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_BLUE, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_BROWN, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_GREEN, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_RED, 5, 20);
+			Blocks.fire.setFireInfo(PAINTED_WOOD_BLACK, 5, 20);
 		}
 		GARGOYLE = new BlockGargoyle();
 		CABINET = new BlockCabinet();
@@ -323,26 +323,26 @@ public class ModBlocks {
 		IRONWOOD_FENCE_GATE = new BlockFenceGateRustic(
 				PLANKS.getDefaultState().withProperty(BlockPlanksRustic.VARIANT, BlockPlanksRustic.EnumType.IRONWOOD),
 				"fence_gate_ironwood");
-		OLIVE_DOUBLESLAB = new BlockDoubleSlabBase(Material.WOOD, "olive_doubleslab", SoundType.WOOD);
-		OLIVE_SLAB = new BlockSlabBase(Material.WOOD, "olive_slab", OLIVE_DOUBLESLAB, SoundType.WOOD);
+		OLIVE_DOUBLESLAB = new BlockDoubleSlabBase(Material.wood, "olive_doubleslab", SoundType.WOOD);
+		OLIVE_SLAB = new BlockSlabBase(Material.wood, "olive_slab", OLIVE_DOUBLESLAB, SoundType.WOOD);
 		OLIVE_DOUBLESLAB.setSlab(OLIVE_SLAB);
 		OLIVE_SLAB_ITEM = new ItemBlockSlabBase(OLIVE_SLAB, OLIVE_DOUBLESLAB);
-		Blocks.FIRE.setFireInfo(OLIVE_DOUBLESLAB, 5, 20);
-		Blocks.FIRE.setFireInfo(OLIVE_SLAB, 5, 20);
-		IRONWOOD_DOUBLESLAB = new BlockDoubleSlabBase(Material.WOOD, "ironwood_doubleslab", SoundType.WOOD);
-		IRONWOOD_SLAB = new BlockSlabBase(Material.WOOD, "ironwood_slab", IRONWOOD_DOUBLESLAB, SoundType.WOOD);
+		Blocks.fire.setFireInfo(OLIVE_DOUBLESLAB, 5, 20);
+		Blocks.fire.setFireInfo(OLIVE_SLAB, 5, 20);
+		IRONWOOD_DOUBLESLAB = new BlockDoubleSlabBase(Material.wood, "ironwood_doubleslab", SoundType.WOOD);
+		IRONWOOD_SLAB = new BlockSlabBase(Material.wood, "ironwood_slab", IRONWOOD_DOUBLESLAB, SoundType.WOOD);
 		IRONWOOD_DOUBLESLAB.setSlab(IRONWOOD_SLAB);
 		IRONWOOD_SLAB_ITEM = new ItemBlockSlabBase(IRONWOOD_SLAB, IRONWOOD_DOUBLESLAB);
-		Blocks.FIRE.setFireInfo(IRONWOOD_DOUBLESLAB, 5, 20);
-		Blocks.FIRE.setFireInfo(IRONWOOD_SLAB, 5, 20);
+		Blocks.fire.setFireInfo(IRONWOOD_DOUBLESLAB, 5, 20);
+		Blocks.fire.setFireInfo(IRONWOOD_SLAB, 5, 20);
 		OLIVE_STAIRS = new BlockStairsBase(
 				PLANKS.getDefaultState().withProperty(BlockPlanksRustic.VARIANT, BlockPlanksRustic.EnumType.OLIVE),
 				"stairs_olive");
-		Blocks.FIRE.setFireInfo(OLIVE_STAIRS, 5, 20);
+		Blocks.fire.setFireInfo(OLIVE_STAIRS, 5, 20);
 		IRONWOOD_STAIRS = new BlockStairsBase(
 				PLANKS.getDefaultState().withProperty(BlockPlanksRustic.VARIANT, BlockPlanksRustic.EnumType.IRONWOOD),
 				"stairs_ironwood");
-		Blocks.FIRE.setFireInfo(IRONWOOD_STAIRS, 5, 20);
+		Blocks.fire.setFireInfo(IRONWOOD_STAIRS, 5, 20);
 		CONDENSER = new BlockCondenser();
 		RETORT = new BlockRetort("retort");
 		CONDENSER_ADVANCED = new BlockCondenserAdvanced();
@@ -395,8 +395,8 @@ public class ModBlocks {
 		APPLE_SEEDS = new BlockAppleSeeds();
 		APPLE_SAPLING = new BlockSaplingApple();
 		APPLE_LEAVES = new BlockLeavesApple();
-		DOOR_OLIVE = new BlockDoorRustic(Material.WOOD, "olive_door");
-		DOOR_IRONWOOD = new BlockDoorRustic(Material.WOOD, "ironwood_door");
+		DOOR_OLIVE = new BlockDoorRustic(Material.wood, "olive_door");
+		DOOR_IRONWOOD = new BlockDoorRustic(Material.wood, "ironwood_door");
 		LANTERN_WOOD = new BlockWoodLantern();
 
 		Herbs.init();

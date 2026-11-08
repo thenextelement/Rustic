@@ -1,166 +1,118 @@
 package rustic.common.blocks.crops;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
-import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyBool;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.common.util.ForgeDirection;
 import rustic.common.blocks.BlockBase;
 import rustic.common.blocks.BlockRope;
+import rustic.common.blocks.BlockRopeBase;
+import rustic.common.blocks.IModelBlock;
+import rustic.common.blocks.ISupportShape;
 import rustic.common.blocks.ModBlocks;
 
-public class BlockStakeTied extends BlockBase {
-	
-	public static final PropertyBool NORTH = PropertyBool.create("north");
-	public static final PropertyBool WEST = PropertyBool.create("west");
-	public static final PropertyBool SOUTH = PropertyBool.create("south");
-	public static final PropertyBool EAST = PropertyBool.create("east");
-	
-	protected static final AxisAlignedBB KNOT_AABB = new AxisAlignedBB(0.3125F, 0.0F, 0.3125F, 0.6875F, 1.0F, 0.6875F);
-	protected static final AxisAlignedBB STAKE_AABB = new AxisAlignedBB(0.375F, 0.0F, 0.375F, 0.625F, 1.0F, 0.625F);
-	
+/** A crop stake with rope tied to it. Has no item form; breaking it leaves the stake and drops the rope. */
+public class BlockStakeTied extends BlockBase implements IModelBlock, ISupportShape {
+
 	public BlockStakeTied() {
-		super(Material.WOOD, "stake_tied", false);
-		setSoundType(SoundType.WOOD);
+		super(Material.wood, "stake_tied", false);
+		setStepSound(soundTypeWood);
 		setHardness(1F);
 		setResistance(5F);
-		setDefaultState(this.blockState.getBaseState().withProperty(NORTH,  false).withProperty(WEST, false).withProperty(SOUTH, false).withProperty(EAST,  false));
-		GameRegistry.findRegistry(Block.class).register(this);
-		
-		Blocks.FIRE.setFireInfo(this, 15, 40);
-	}
-	
-	@Override
-	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-		return KNOT_AABB;
+		setCreativeTab(null);
+		setBlockBounds(0.3125F, 0.0F, 0.3125F, 0.6875F, 1.0F, 0.6875F);
+		GameRegistry.registerBlock(this, null, name);
+		Blocks.fire.setFireInfo(this, 15, 40);
 	}
 
 	@Override
-	public AxisAlignedBB getCollisionBoundingBox(IBlockState blockState, IBlockAccess worldIn, BlockPos pos) {
-		return STAKE_AABB;
+	public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
+		return AxisAlignedBB.getBoundingBox(x + 0.375, y, z + 0.375, x + 0.625, y + 1, z + 0.625);
 	}
-	
+
 	@Override
-	public boolean isOpaqueCube(IBlockState state) {
+	public boolean isOpaqueCube() {
 		return false;
 	}
 
 	@Override
-	public boolean isFullCube(IBlockState state) {
+	public boolean renderAsNormalBlock() {
 		return false;
 	}
-	
+
 	@Override
-	public boolean isPassable(IBlockAccess worldIn, BlockPos pos) {
-        return false;
-    }
-	
-	@Override
-	public void breakBlock(World world, BlockPos pos, IBlockState state) {
-		super.breakBlock(world, pos, state);
-		world.setBlockState(pos, ModBlocks.CROP_STAKE.getDefaultState(), 3);
-		dropBlockAsItem(world, pos, state, 0);
-		world.scheduleUpdate(pos, ModBlocks.CROP_STAKE, 1);
+	public void breakBlock(World world, int x, int y, int z, Block block, int meta) {
+		super.breakBlock(world, x, y, z, block, meta);
+		if (!world.isRemote) {
+			world.setBlock(x, y, z, ModBlocks.CROP_STAKE, 0, 3);
+			world.scheduleBlockUpdate(x, y, z, ModBlocks.CROP_STAKE, 1);
+		}
 	}
-	
+
 	@Override
-	public List<ItemStack> getDrops(IBlockAccess world, BlockPos pos, IBlockState state, int fortune){
-		List<ItemStack> stacks = new ArrayList<ItemStack>();
+	public ArrayList<ItemStack> getDrops(World world, int x, int y, int z, int meta, int fortune) {
+		ArrayList<ItemStack> stacks = new ArrayList<>();
 		stacks.add(new ItemStack(ModBlocks.ROPE, 1));
 		return stacks;
 	}
-	
+
 	@Override
-	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] { NORTH, WEST, SOUTH, EAST });
+	@SideOnly(Side.CLIENT)
+	public Item getItem(World world, int x, int y, int z) {
+		return Item.getItemFromBlock(ModBlocks.ROPE);
 	}
-	
-	@Override
-	public IBlockState getStateFromMeta(int meta) {
-		return this.getDefaultState();
+
+	private boolean connects(IBlockAccess world, int x, int y, int z, int axis) {
+		Block block = world.getBlock(x, y, z);
+		if (block == this) return true;
+		if (block instanceof BlockRope || block == ModBlocks.GRAPE_LEAVES) {
+			return ((BlockRopeBase) block).getAxis(world, x, y, z) == axis;
+		}
+		return false;
 	}
 
 	@Override
-	public int getMetaFromState(IBlockState state) {
-		return 0;
+	public boolean isSideSolid(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+		return side.offsetY != 0;
 	}
-	
+
 	@Override
-	public IBlockState getActualState(IBlockState state, IBlockAccess world, BlockPos pos) {
-		boolean n = false;
-		boolean w = false;
-		boolean s = false;
-		boolean e = false;
-		
-		IBlockState state1 = world.getBlockState(pos.north());
-		if (state1.getBlock() instanceof BlockRope && state1.getValue(BlockRope.AXIS) == EnumFacing.Axis.Z) {
-			n = true;
-		}
-		if (state1.getBlock() == ModBlocks.GRAPE_LEAVES && state1.getValue(BlockGrapeLeaves.AXIS) == EnumFacing.Axis.Z) {
-			n = true;
-		}
-		if (state1.getBlock() == this) {
-			n = true;
-		}
-		state1 = world.getBlockState(pos.west());
-		if (state1.getBlock() instanceof BlockRope && state1.getValue(BlockRope.AXIS) == EnumFacing.Axis.X) {
-			w = true;
-		}
-		if (state1.getBlock() == ModBlocks.GRAPE_LEAVES && state1.getValue(BlockGrapeLeaves.AXIS) == EnumFacing.Axis.X) {
-			w = true;
-		}
-		if (state1.getBlock() == this) {
-			w = true;
-		}
-		state1 = world.getBlockState(pos.south());
-		if (state1.getBlock() instanceof BlockRope && state1.getValue(BlockRope.AXIS) == EnumFacing.Axis.Z) {
-			s = true;
-		}
-		if (state1.getBlock() == ModBlocks.GRAPE_LEAVES && state1.getValue(BlockGrapeLeaves.AXIS) == EnumFacing.Axis.Z) {
-			s = true;
-		}
-		if (state1.getBlock() == this) {
-			s = true;
-		}
-		state1 = world.getBlockState(pos.east());
-		if (state1.getBlock() instanceof BlockRope && state1.getValue(BlockRope.AXIS) == EnumFacing.Axis.X) {
-			e = true;
-		}
-		if (state1.getBlock() == ModBlocks.GRAPE_LEAVES && state1.getValue(BlockGrapeLeaves.AXIS) == EnumFacing.Axis.X) {
-			e = true;
-		}
-		if (state1.getBlock() == this) {
-			e = true;
-		}
-		
-		return this.getDefaultState().withProperty(NORTH, n).withProperty(WEST, w).withProperty(SOUTH, s).withProperty(EAST, e);
+	public boolean canSupportOnSide(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+		return side.offsetY != 0;
 	}
-	
+
 	@Override
-	public ItemStack getPickBlock(IBlockState state, RayTraceResult target, World world, BlockPos pos,
-			EntityPlayer player) {
-		return new ItemStack(ModBlocks.ROPE);
+	public String getBlockStateName() {
+		return name;
 	}
-	
+
 	@Override
-	public BlockFaceShape getBlockFaceShape(IBlockAccess world, IBlockState state, BlockPos pos, EnumFacing side) {
-        return side != EnumFacing.UP && side != EnumFacing.DOWN ? BlockFaceShape.MIDDLE_POLE : BlockFaceShape.CENTER;
-    }
-	
+	public Map<String, String> getRenderProperties(IBlockAccess world, int x, int y, int z) {
+		Map<String, String> props = new HashMap<>();
+		props.put("north", String.valueOf(connects(world, x, y, z - 1, BlockRopeBase.AXIS_Z)));
+		props.put("south", String.valueOf(connects(world, x, y, z + 1, BlockRopeBase.AXIS_Z)));
+		props.put("west", String.valueOf(connects(world, x - 1, y, z, BlockRopeBase.AXIS_X)));
+		props.put("east", String.valueOf(connects(world, x + 1, y, z, BlockRopeBase.AXIS_X)));
+		return props;
+	}
+
+	@Override
+	public Map<String, String> getInventoryProperties(int meta) {
+		Map<String, String> props = new HashMap<>();
+		for (String dir : new String[] { "north", "south", "west", "east" }) props.put(dir, "false");
+		return props;
+	}
+
 }

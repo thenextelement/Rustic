@@ -3,216 +3,159 @@ package rustic.common.blocks;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Nullable;
-
-import net.minecraft.block.ITileEntityProvider;
-import net.minecraft.block.SoundType;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyBool;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumBlockRenderType;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import rustic.client.renderer.CabinetRenderer;
+import net.minecraftforge.common.util.ForgeDirection;
 import rustic.common.tileentity.TileEntityCabinet;
+import rustic.common.util.Facing;
 import rustic.core.Rustic;
 
-public class BlockCabinet extends BlockRotatable implements ITileEntityProvider {
+/**
+ * Metadata: 8 = top half of a double cabinet, 4 = mirrored (hinge on the other side), low 2 bits = 5 - facing ordinal.
+ * Rendered by a tile entity special renderer.
+ */
+public class BlockCabinet extends BlockTileBase implements ISupportShape {
 
-	public static final PropertyBool MIRROR = PropertyBool.create("mirror");
-	public static final PropertyBool TOP = PropertyBool.create("top");
-	public static final PropertyBool BOTTOM = PropertyBool.create("bottom");
 	public static final int GUI_ID = 3;
 
-	public BlockCabinet() {
-		super(Material.WOOD, "cabinet");
-		setHardness(2.5F);
-		setSoundType(SoundType.WOOD);
-		this.setDefaultState(this.getDefaultState().withProperty(MIRROR, false).withProperty(TOP, false).withProperty(BOTTOM, false));
-	}
-	
-	@Override
-	@SideOnly(Side.CLIENT)
-	public void addInformation(ItemStack stack, @Nullable World player, List<String> tooltip, ITooltipFlag advanced) {
-		super.addInformation(stack, player, tooltip, advanced);
-		
-		if (stack.hasTagCompound()) {
-			NBTTagCompound nbttagcompound = stack.getTagCompound();
-            if (nbttagcompound.hasKey("material", Constants.NBT.TAG_COMPOUND)) {
-            	ItemStack material = new ItemStack(nbttagcompound.getCompoundTag("material"));
-                if (!material.isEmpty()) tooltip.add(material.getDisplayName());
-            }    
-        }
-	}
+	/** Hit position from {@link #onBlockPlaced}, used in {@link #onBlockPlacedBy} which knows the placer. */
+	private static final ThreadLocal<float[]> LAST_HIT = new ThreadLocal<>();
 
-	@Override
-	public boolean eventReceived(IBlockState state, World worldIn, BlockPos pos, int id, int param) {
-		super.eventReceived(state, worldIn, pos, id, param);
-		TileEntity tileentity = worldIn.getTileEntity(pos);
-		return tileentity == null ? false : tileentity.receiveClientEvent(id, param);
-	}
-
-	public EnumBlockRenderType getRenderType(IBlockState state) {
-		return EnumBlockRenderType.ENTITYBLOCK_ANIMATED;
-	}
-
-	@Override
-	@SideOnly(Side.CLIENT)
-	public boolean shouldSideBeRendered(IBlockState blockState, IBlockAccess worldIn, BlockPos pos, EnumFacing side) {
-		return false;
-	}
-
-	public boolean isOpaqueCube(IBlockState state) {
-		return false;
-	}
-
-	@Override
-	public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
-		if (world.isRemote) {
-			return true;
-		}
-		TileEntity te = world.getTileEntity(pos);
-		if (!(te instanceof TileEntityCabinet)) {
-			return false;
-		}
-		if (facing == state.getValue(FACING)) {
-			player.openGui(Rustic.instance, GUI_ID, world, pos.getX(), pos.getY(), pos.getZ());
-			return true;
-		}
-		return false;
-	}
-
-	@Override
-	public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
-		TileEntity tileentity = worldIn.getTileEntity(pos);
-		if (tileentity instanceof TileEntityCabinet) {
-			((TileEntityCabinet) tileentity).breakBlock(worldIn, pos, state);
-		}
-		worldIn.removeTileEntity(pos);
-
-		if (worldIn.getBlockState(pos.up()).getBlock() instanceof BlockCabinet && worldIn.getBlockState(pos.up()).getValue(TOP)) {
-			worldIn.setBlockState(pos.up(), worldIn.getBlockState(pos.up()).withProperty(TOP, false));
+	public static class ItemBlockCabinet extends ItemBlock {
+		public ItemBlockCabinet(Block block) {
+			super(block);
 		}
 
-		super.breakBlock(worldIn, pos, state);
-	}
-	
-	@Override
-	public List<ItemStack> getDrops(IBlockAccess world, BlockPos pos, IBlockState state, int fortune){
-		ArrayList<ItemStack> items = new ArrayList<ItemStack>();
-		return items;
-	}
-
-	@Override
-	public TileEntity createNewTileEntity(World worldIn, int meta) {
-		return new TileEntityCabinet();
-	}
-
-	public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
-		EnumFacing f = placer.getHorizontalFacing().getOpposite();
-		boolean m = false;
-		boolean t = false;
-
-		if (f.equals(EnumFacing.NORTH)) {
-			m = hitX >= 0.5;
-		} else if (f.equals(EnumFacing.SOUTH)) {
-			m = hitX < 0.5;
-		} else if (f.equals(EnumFacing.EAST)) {
-			m = hitZ >= 0.5;
-		} else {
-			m = hitZ < 0.5;
-		}
-
-		t = worldIn.getBlockState(pos.down()).getBlock() instanceof BlockCabinet && !worldIn.getBlockState(pos.down()).getValue(TOP) && worldIn.getBlockState(pos.down()).getValue(MIRROR) == m && worldIn.getBlockState(pos.down()).getValue(FACING).equals(f);
-
-		if (t && worldIn.getTileEntity(pos.down()) instanceof TileEntityCabinet) {
-			((TileEntityCabinet) worldIn.getTileEntity(pos.down())).doubleCabinetHandler = null;
-		}
-
-		return this.getDefaultState().withProperty(FACING, f).withProperty(MIRROR, m).withProperty(TOP, t);
-	}
-
-	@Override
-	public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
-		if (stack.hasTagCompound()) {
-			TileEntity tileentity = worldIn.getTileEntity(pos);
-
-			if (tileentity instanceof TileEntityCabinet) {
-				TileEntityCabinet te = (TileEntityCabinet) tileentity;
-				
-				if (stack.hasDisplayName()) te.setCustomName(stack.getDisplayName());
-				
-				NBTTagCompound tag = stack.getTagCompound();
-				if (tag.hasKey("material")) {
-					ItemStack material = new ItemStack(tag.getCompoundTag("material"));
-					te.material = material;
-				}
-				
-				te.markDirty();
+		@Override
+		@SideOnly(Side.CLIENT)
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		public void addInformation(ItemStack stack, EntityPlayer player, List tooltip, boolean advanced) {
+			if (stack.hasTagCompound() && stack.getTagCompound().hasKey("material", Constants.NBT.TAG_COMPOUND)) {
+				ItemStack material = ItemStack.loadItemStackFromNBT(stack.getTagCompound().getCompoundTag("material"));
+				if (material != null) tooltip.add(material.getDisplayName());
 			}
 		}
 	}
-	
-	
 
-	public IBlockState getStateFromMeta(int meta) {
-		IBlockState state = this.getDefaultState().withProperty(MIRROR, (meta & 4) > 0);
-		state = state.withProperty(TOP, (meta & 8) > 0);
-		return state.withProperty(FACING, EnumFacing.getFront(5 - (meta & 3)));
+	public BlockCabinet() {
+		super(Material.wood, "cabinet", false);
+		setHardness(2.5F);
+		setStepSound(soundTypeWood);
+		register(ItemBlockCabinet.class);
 	}
 
-	public int getMetaFromState(IBlockState state) {
-		int meta = 0;
+	public static ForgeDirection getFacing(int meta) {
+		return BlockRetort.getFacing(meta);
+	}
 
-		if (state.getValue(TOP)) {
-			meta |= 8;
-		}
-		if (state.getValue(MIRROR)) {
-			meta |= 4;
-		}
-		meta |= 5 - ((EnumFacing) state.getValue(FACING)).getIndex();
+	public static boolean isMirrored(int meta) {
+		return (meta & 4) != 0;
+	}
 
+	public static boolean isTop(int meta) {
+		return (meta & 8) != 0;
+	}
+
+	/** Whether this is the lower half of a double cabinet. */
+	public static boolean isBottom(IBlockAccess world, int x, int y, int z) {
+		return !isTop(world.getBlockMetadata(x, y, z)) && world.getBlock(x, y + 1, z) instanceof BlockCabinet
+				&& isTop(world.getBlockMetadata(x, y + 1, z));
+	}
+
+	@Override
+	public int getRenderType() {
+		return -1;
+	}
+
+	@Override
+	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+			float hitY, float hitZ) {
+		if (world.isRemote) return true;
+		if (!(world.getTileEntity(x, y, z) instanceof TileEntityCabinet)) return false;
+		if (side == getFacing(world.getBlockMetadata(x, y, z)).ordinal()) {
+			player.openGui(Rustic.instance, GUI_ID, world, x, y, z);
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public void breakBlock(World world, int x, int y, int z, Block block, int meta) {
+		super.breakBlock(world, x, y, z, block, meta);
+		if (world.getBlock(x, y + 1, z) instanceof BlockCabinet && isTop(world.getBlockMetadata(x, y + 1, z))) {
+			world.setBlockMetadataWithNotify(x, y + 1, z, world.getBlockMetadata(x, y + 1, z) & ~8, 3);
+		}
+	}
+
+	@Override
+	public ArrayList<ItemStack> getDrops(World world, int x, int y, int z, int meta, int fortune) {
+		return new ArrayList<>(); // dropped with its material by the tile entity
+	}
+
+	@Override
+	public TileEntity createNewTileEntity(World world, int meta) {
+		return new TileEntityCabinet();
+	}
+
+	@Override
+	public int onBlockPlaced(World world, int x, int y, int z, int side, float hitX, float hitY, float hitZ, int meta) {
+		LAST_HIT.set(new float[] { hitX, hitY, hitZ });
 		return meta;
 	}
 
-	public IBlockState getActualState(IBlockState state, IBlockAccess worldIn, BlockPos pos) {
-		state = state.withProperty(BOTTOM, !state.getValue(TOP) && worldIn.getBlockState(pos.up()).getBlock() instanceof BlockCabinet && worldIn.getBlockState(pos.up()).getValue(TOP));
-		return state;
-	}
-
-	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] { FACING, MIRROR, TOP, BOTTOM });
-	}
-
-	@SideOnly(Side.CLIENT)
-	public void initModel() {
-		ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(this), 0, new ModelResourceLocation(getRegistryName(), "inventory"));
-		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityCabinet.class, new CabinetRenderer());
-		Item.getItemFromBlock(this).setTileEntityItemStackRenderer(new CabinetRenderer.CabinetTEISR());
-	}
-	
 	@Override
-	public BlockFaceShape getBlockFaceShape(IBlockAccess world, IBlockState state, BlockPos pos, EnumFacing side) {
-		return (side == state.getValue(FACING)) ? BlockFaceShape.UNDEFINED : BlockFaceShape.SOLID;
-    }
+	public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase placer, ItemStack stack) {
+		float[] hit = LAST_HIT.get();
+		LAST_HIT.remove();
+		float hitX = hit == null ? 0.5F : hit[0], hitZ = hit == null ? 0.5F : hit[2];
+		ForgeDirection f = Facing.horizontalFacing(placer).getOpposite();
+		boolean m;
+		if (f == ForgeDirection.NORTH) m = hitX >= 0.5;
+		else if (f == ForgeDirection.SOUTH) m = hitX < 0.5;
+		else if (f == ForgeDirection.EAST) m = hitZ >= 0.5;
+		else m = hitZ < 0.5;
+
+		boolean t = false;
+		if (world.getBlock(x, y - 1, z) instanceof BlockCabinet) {
+			int below = world.getBlockMetadata(x, y - 1, z);
+			t = !isTop(below) && isMirrored(below) == m && getFacing(below) == f;
+		}
+		if (t && world.getTileEntity(x, y - 1, z) instanceof TileEntityCabinet) {
+			((TileEntityCabinet) world.getTileEntity(x, y - 1, z)).updateContainingBlockInfo();
+		}
+		world.setBlockMetadataWithNotify(x, y, z, (t ? 8 : 0) | (m ? 4 : 0) | BlockRetort.metaForFacing(f), 3);
+
+		TileEntity tile = world.getTileEntity(x, y, z);
+		if (tile instanceof TileEntityCabinet) {
+			TileEntityCabinet te = (TileEntityCabinet) tile;
+			if (stack.hasDisplayName()) te.setCustomName(stack.getDisplayName());
+			NBTTagCompound tag = stack.getTagCompound();
+			if (tag != null && tag.hasKey("material")) {
+				te.material = ItemStack.loadItemStackFromNBT(tag.getCompoundTag("material"));
+			}
+			te.markDirty();
+		}
+	}
+
+	@Override
+	public boolean isSideSolid(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+		return side != getFacing(world.getBlockMetadata(x, y, z));
+	}
+
+	@Override
+	public boolean canSupportOnSide(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+		return isSideSolid(world, x, y, z, side);
+	}
 
 }

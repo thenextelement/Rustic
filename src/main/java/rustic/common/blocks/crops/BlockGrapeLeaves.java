@@ -1,108 +1,93 @@
 package rustic.common.blocks.crops;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
-import javax.annotation.Nullable;
-
-import com.google.common.base.Predicate;
-
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.block.IGrowable;
-import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyBool;
-import net.minecraft.block.properties.PropertyEnum;
-import net.minecraft.block.properties.PropertyInteger;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.color.IBlockColor;
-import net.minecraft.client.renderer.color.IItemColor;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemBlock;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.Rotation;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.ColorizerFoliage;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeColorHelper;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.common.util.ForgeDirection;
 import rustic.common.blocks.BlockLattice;
 import rustic.common.blocks.BlockRope;
 import rustic.common.blocks.BlockRopeBase;
-import rustic.common.blocks.IColoredBlock;
 import rustic.common.blocks.ModBlocks;
 import rustic.common.items.ModItems;
-import rustic.core.ClientProxy;
 import rustic.core.Rustic;
 
-public class BlockGrapeLeaves extends BlockRopeBase implements IGrowable, IColoredBlock {
-
-	public static final PropertyBool GRAPES = PropertyBool.create("grapes");
-	public static final PropertyInteger DIST = PropertyInteger.create("distance", 0, 1);
-	
-	public static final PropertyEnum<EnumFacing.Axis> AXIS = PropertyEnum.<EnumFacing.Axis>create("axis",
-			EnumFacing.Axis.class, new Predicate<EnumFacing.Axis>() {
-				public boolean apply(@Nullable EnumFacing.Axis p_apply_1_) {
-					return p_apply_1_ != EnumFacing.Axis.Y;
-				}
-			});
-
-	public static final AxisAlignedBB BRANCH_Z_AABB = new AxisAlignedBB(0.1875F, 0.1875F, 0.0F, 0.8125F, 0.8125F, 1.0F);
-	public static final AxisAlignedBB BRANCH_X_AABB = new AxisAlignedBB(0.0F, 0.1875F, 0.1875F, 1.0F, 0.8125F, 0.8125F);
+/**
+ * Grape vines growing along a horizontal rope. Metadata: 1 = along z (else x), 2 = distance 1 (a spread vine), 8 =
+ * has grapes.
+ */
+public class BlockGrapeLeaves extends BlockRopeBase implements IGrowable {
 
 	public BlockGrapeLeaves() {
-		super(Material.LEAVES, "grape_leaves", false);
-		GameRegistry.findRegistry(Block.class).register(this);
+		super(Material.leaves, "grape_leaves", false);
+		GameRegistry.registerBlock(this, null, name);
 		this.setTickRandomly(true);
 		setCreativeTab(Rustic.farmingTab);
-		setSoundType(SoundType.PLANT);
-		this.setDefaultState(this.blockState.getBaseState().withProperty(AXIS, EnumFacing.Axis.X).withProperty(GRAPES, false).withProperty(DIST, 0));
-		
-		Blocks.FIRE.setFireInfo(this, 30, 60);
+		setStepSound(soundTypeGrass);
+		Blocks.fire.setFireInfo(this, 30, 60);
 	}
 
 	@Override
-	public List<ItemStack> getDrops(IBlockAccess world, BlockPos pos, IBlockState state, int fortune) {
-		List<ItemStack> stacks = new ArrayList<ItemStack>();
-		if (state.getValue(GRAPES)) {
-			stacks.add(new ItemStack(ModItems.GRAPES));
-		}
+	public int getAxis(int meta) {
+		return (meta & 1) != 0 ? AXIS_Z : AXIS_X;
+	}
+
+	@Override
+	public int metaForAxis(int axis) {
+		return axis == AXIS_Z ? 1 : 0;
+	}
+
+	public static int getDist(int meta) {
+		return (meta & 2) != 0 ? 1 : 0;
+	}
+
+	public static boolean hasGrapes(int meta) {
+		return (meta & 8) != 0;
+	}
+
+	@Override
+	public ArrayList<ItemStack> getDrops(World world, int x, int y, int z, int meta, int fortune) {
+		ArrayList<ItemStack> stacks = new ArrayList<>();
+		if (hasGrapes(meta)) stacks.add(new ItemStack(ModItems.GRAPES));
 		return stacks;
 	}
 
 	@Override
-	public void breakBlock(World world, BlockPos pos, IBlockState state) {
-		EnumFacing.Axis axis = state.getValue(AXIS);
-		super.breakBlock(world, pos, state);
-		world.setBlockState(pos, ModBlocks.ROPE.getDefaultState().withProperty(BlockRope.AXIS, axis), 3);
+	public void breakBlock(World world, int x, int y, int z, Block block, int meta) {
+		super.breakBlock(world, x, y, z, block, meta);
+		if (!world.isRemote) {
+			world.setBlock(x, y, z, ModBlocks.ROPE, ModBlocks.ROPE.metaForAxis(getAxis(meta)), 3);
+		}
 	}
 
 	@Override
-	public int damageDropped(IBlockState state) {
-		return 0;
-	}
-
-	@Override
-	public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand,
-			EnumFacing side, float hitX, float hitY, float hitZ) {
-		if (state.getValue(GRAPES)) {
-			world.setBlockState(pos, state.withProperty(GRAPES, false), 3);
-			ItemStack stack = new ItemStack(ModItems.GRAPES, world.rand.nextInt(2) + 1);
-			if (!player.addItemStackToInventory(stack)) {
-			    Block.spawnAsEntity(world, pos.offset(side), stack);
+	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+			float hitY, float hitZ) {
+		int meta = world.getBlockMetadata(x, y, z);
+		if (hasGrapes(meta)) {
+			world.setBlockMetadataWithNotify(x, y, z, meta & ~8, 3);
+			if (!world.isRemote) {
+				ItemStack stack = new ItemStack(ModItems.GRAPES, world.rand.nextInt(2) + 1);
+				if (!player.inventory.addItemStackToInventory(stack)) {
+					ForgeDirection dir = ForgeDirection.getOrientation(side);
+					world.spawnEntityInWorld(new EntityItem(world, x + 0.5 + dir.offsetX, y + 0.5 + dir.offsetY, z + 0.5 + dir.offsetZ, stack));
+				}
 			}
 			return true;
 		}
@@ -110,344 +95,175 @@ public class BlockGrapeLeaves extends BlockRopeBase implements IGrowable, IColor
 	}
 
 	@Override
-	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-		if (state.getValue(DIST) < 1) {
-			return Block.FULL_BLOCK_AABB;
-		}
-		if (state.getValue(AXIS) == EnumFacing.Axis.Z) {
-			return BRANCH_Z_AABB;
+	public void setBlockBoundsBasedOnState(IBlockAccess world, int x, int y, int z) {
+		int meta = world.getBlockMetadata(x, y, z);
+		if (getDist(meta) < 1) {
+			setBlockBounds(0, 0, 0, 1, 1, 1);
+		} else if (getAxis(meta) == AXIS_Z) {
+			setBlockBounds(0.1875F, 0.1875F, 0.0F, 0.8125F, 0.8125F, 1.0F);
 		} else {
-			return BRANCH_X_AABB;
+			setBlockBounds(0.0F, 0.1875F, 0.1875F, 1.0F, 0.8125F, 0.8125F);
 		}
 	}
 
 	@Override
-	public boolean causesSuffocation(IBlockState state) {
-		return false;
-	}
-	
-	@Override
-	public boolean isLadder(IBlockState state, IBlockAccess world, BlockPos pos, EntityLivingBase entity) {
+	public boolean isLadder(IBlockAccess world, int x, int y, int z, EntityLivingBase entity) {
 		return false;
 	}
 
 	@Override
-	public boolean isLeaves(IBlockState state, IBlockAccess world, BlockPos pos) {
+	public boolean isLeaves(IBlockAccess world, int x, int y, int z) {
 		return true;
 	}
 
 	@Override
-	public boolean isOpaqueCube(IBlockState state) {
-		return false;
+	@SideOnly(Side.CLIENT)
+	public Item getItem(World world, int x, int y, int z) {
+		return ModItems.GRAPES;
 	}
 
 	@Override
-	public boolean isFullCube(IBlockState state) {
-		return false;
+	public void onNeighborBlockChange(World world, int x, int y, int z, Block neighbor) {
+		if (!world.isRemote && !isBlockSupported(world, x, y, z)) {
+			dropBlock(world, x, y, z);
+		}
 	}
 
 	@Override
-	public ItemStack getPickBlock(IBlockState state, RayTraceResult target, World world, BlockPos pos,
-			EntityPlayer player) {
-		return new ItemStack(ModItems.GRAPES);
-	}
-	
-	@Override
-	public void neighborChanged(IBlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos) {
-		EnumFacing dir = null;
-		if (fromPos.getX() != pos.getX()) {
-			dir = (fromPos.getX() - pos.getX()) < 0 ? EnumFacing.WEST : EnumFacing.EAST;
-		} else if (fromPos.getY() != pos.getY()) {
-			dir = (fromPos.getY() - pos.getY()) < 0 ? EnumFacing.DOWN : EnumFacing.UP;
-		} else if (fromPos.getZ() != pos.getZ()) {
-			dir = (fromPos.getZ() - pos.getZ()) < 0 ? EnumFacing.NORTH : EnumFacing.SOUTH;
-		}
-		if (dir != null) {
-			if ((state.getValue(AXIS) == dir.getAxis())
-					&& worldIn.isAirBlock(fromPos)) {
-				if (dir == EnumFacing.DOWN) {
-					this.dropBlock(worldIn, pos, state);
-				} else if (!this.isBlockSupported(worldIn, pos, state)) {
-					this.dropBlock(worldIn, pos, state);
-				}
-			}
-		}
-	}
-	
-	@Override
-	public boolean isSideSupported(World world, BlockPos pos, IBlockState state, EnumFacing facing) {
-		IBlockState testState = world.getBlockState(pos.offset(facing));
-		
-		boolean isSame = testState.getBlock() == state.getBlock() && (testState.getValue(AXIS) == state.getValue(AXIS));
-		boolean isRope = testState.getBlock() == ModBlocks.ROPE && state.getValue(AXIS) == testState.getValue(BlockRope.AXIS);
-		boolean isSideSolid = world.isSideSolid(pos.offset(facing), facing.getOpposite(), false);
-		boolean isTiedStake = testState.getBlock() == ModBlocks.STAKE_TIED;
-		boolean isLattice = testState.getBlock() instanceof BlockLattice;
-		
+	public boolean isSideSupported(World world, int x, int y, int z, ForgeDirection facing) {
+		int ox = x + facing.offsetX, oy = y + facing.offsetY, oz = z + facing.offsetZ;
+		Block other = world.getBlock(ox, oy, oz);
+		int axis = getAxis(world, x, y, z);
+		boolean isSame = other == this && getAxis(world, ox, oy, oz) == axis;
+		boolean isRope = other == ModBlocks.ROPE && ModBlocks.ROPE.getAxis(world, ox, oy, oz) == axis;
+		boolean isSideSolid = world.isSideSolid(ox, oy, oz, facing.getOpposite(), false);
+		boolean isTiedStake = other == ModBlocks.STAKE_TIED;
+		boolean isLattice = other instanceof BlockLattice;
 		return isSame || isRope || isSideSolid || isTiedStake || isLattice;
 	}
-	
+
 	@Override
-	public boolean isBlockSupported(World world, BlockPos pos, IBlockState state) {
-		if (state.getValue(AXIS) == EnumFacing.Axis.X) {
-			return this.isSideSupported(world, pos, state, EnumFacing.WEST) && this.isSideSupported(world, pos, state, EnumFacing.EAST);
-		} else if (state.getValue(AXIS) == EnumFacing.Axis.Z) {
-			return this.isSideSupported(world, pos, state, EnumFacing.NORTH) && this.isSideSupported(world, pos, state, EnumFacing.SOUTH);
+	public boolean isBlockSupported(World world, int x, int y, int z) {
+		if (getAxis(world, x, y, z) == AXIS_X) {
+			return isSideSupported(world, x, y, z, ForgeDirection.WEST) && isSideSupported(world, x, y, z, ForgeDirection.EAST);
 		}
-		return false;
+		return isSideSupported(world, x, y, z, ForgeDirection.NORTH) && isSideSupported(world, x, y, z, ForgeDirection.SOUTH);
 	}
 
 	@Override
-	public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
-		super.updateTick(worldIn, pos, state, rand);
-		if (!this.isBlockSupported(worldIn, pos, state)) {
-			this.dropBlock(worldIn, pos, state);
+	public void updateTick(World world, int x, int y, int z, Random rand) {
+		super.updateTick(world, x, y, z, rand);
+		if (!isBlockSupported(world, x, y, z)) {
+			dropBlock(world, x, y, z);
+			return;
 		}
-
-		if (worldIn.getLightFromNeighbors(pos.up()) >= 9) {
-			int i = state.getValue(DIST);
-
-			if (i > 0 && !state.getValue(GRAPES) && worldIn.isAirBlock(pos.down())) {
-				float f = getGrowthChance(this, worldIn, pos);
-
-				if (net.minecraftforge.common.ForgeHooks.onCropsGrowPre(worldIn, pos, state,
-						rand.nextInt((int) (35.0F / f) + 1) == 0)) {
-					worldIn.setBlockState(pos, state.withProperty(GRAPES, true), 3);
-					net.minecraftforge.common.ForgeHooks.onCropsGrowPost(worldIn, pos, state,
-							worldIn.getBlockState(pos));
+		if (world.getBlockLightValue(x, y + 1, z) >= 9) {
+			int meta = world.getBlockMetadata(x, y, z);
+			int dist = getDist(meta);
+			if (dist > 0 && !hasGrapes(meta) && world.isAirBlock(x, y - 1, z)) {
+				if (rand.nextInt(36) == 0) {
+					world.setBlockMetadataWithNotify(x, y, z, meta | 8, 3);
 				}
-			} else if (i < 1 && canSpread(worldIn, pos, state)) {
-				float f = getGrowthChance(this, worldIn, pos);
-
-				if (net.minecraftforge.common.ForgeHooks.onCropsGrowPre(worldIn, pos, state,
-						rand.nextInt((int) (30.0F / f) + 1) == 0)) {
-					spread(worldIn, pos, state);
-					net.minecraftforge.common.ForgeHooks.onCropsGrowPost(worldIn, pos, state,
-							worldIn.getBlockState(pos));
+			} else if (dist < 1 && canSpread(world, x, y, z)) {
+				if (rand.nextInt(31) == 0) {
+					spread(world, x, y, z);
 				}
 			}
 		}
 	}
 
-	protected static float getGrowthChance(Block blockIn, World worldIn, BlockPos pos) {
-		return 1F;
+	// IGrowable: canGrow
+	@Override
+	public boolean func_149851_a(World world, int x, int y, int z, boolean isClient) {
+		int meta = world.getBlockMetadata(x, y, z);
+		if (getDist(meta) > 0) return !hasGrapes(meta) && world.isAirBlock(x, y - 1, z);
+		return canSpread(world, x, y, z);
 	}
 
+	// IGrowable: canUseBonemeal
 	@Override
-	public boolean canGrow(World worldIn, BlockPos pos, IBlockState state, boolean isClient) {
-		if (state.getValue(DIST) > 0) {
-			return !state.getValue(GRAPES) && worldIn.isAirBlock(pos.down());
-		}
-		return canSpread(worldIn, pos, state);
-	}
-
-	@Override
-	public boolean canUseBonemeal(World worldIn, Random rand, BlockPos pos, IBlockState state) {
+	public boolean func_149852_a(World world, Random rand, int x, int y, int z) {
 		return true;
 	}
 
+	// IGrowable: grow
 	@Override
-	public void grow(World worldIn, Random rand, BlockPos pos, IBlockState state) {
-		if (state.getValue(DIST) > 0) {
-			worldIn.setBlockState(pos, state.withProperty(GRAPES, true), 3);
+	public void func_149853_b(World world, Random rand, int x, int y, int z) {
+		int meta = world.getBlockMetadata(x, y, z);
+		if (getDist(meta) > 0) {
+			world.setBlockMetadataWithNotify(x, y, z, meta | 8, 3);
 		} else {
-			spread(worldIn, pos, state);
+			spread(world, x, y, z);
 		}
 	}
 
-	@SuppressWarnings("incomplete-switch")
-	public boolean canSpread(World world, BlockPos pos, IBlockState state) {
-		if (state.getValue(DIST) == 0) {
-			switch (state.getValue(AXIS)) {
-			case X:
-				return (world.getBlockState(pos.west()).getBlock() == ModBlocks.ROPE
-						&& world.getBlockState(pos.west()).getValue(BlockRope.AXIS) == state.getValue(AXIS))
-						|| (world.getBlockState(pos.east()).getBlock() == ModBlocks.ROPE
-								&& world.getBlockState(pos.east()).getValue(BlockRope.AXIS) == state.getValue(AXIS));
-			case Z:
-				return (world.getBlockState(pos.north()).getBlock() == ModBlocks.ROPE
-						&& world.getBlockState(pos.north()).getValue(BlockRope.AXIS) == state.getValue(AXIS))
-						|| (world.getBlockState(pos.south()).getBlock() == ModBlocks.ROPE
-								&& world.getBlockState(pos.south()).getValue(BlockRope.AXIS) == state.getValue(AXIS));
-			}
-		}
-		return false;
+	private boolean isRopeAlong(World world, int x, int y, int z, int axis) {
+		return world.getBlock(x, y, z) == ModBlocks.ROPE && ModBlocks.ROPE.getAxis(world, x, y, z) == axis;
 	}
 
-	@SuppressWarnings("incomplete-switch")
-	public void spread(World world, BlockPos pos, IBlockState state) {
-		if (state.getValue(DIST) < 1) {
-			switch (state.getValue(AXIS)) {
-			case X:
-				boolean westRope = world.getBlockState(pos.west()).getBlock() == ModBlocks.ROPE
-						&& world.getBlockState(pos.west()).getValue(BlockRope.AXIS) == state.getValue(AXIS);
-				boolean eastRope = world.getBlockState(pos.east()).getBlock() == ModBlocks.ROPE
-						&& world.getBlockState(pos.east()).getValue(BlockRope.AXIS) == state.getValue(AXIS);
-				if (westRope && eastRope) {
-					spreadToValidRope(world, pos, (world.rand.nextFloat() < 0.5) ? pos.west() : pos.east(), state);
-				} else if (westRope) {
-					spreadToValidRope(world, pos, pos.west(), state);
-				} else if (eastRope) {
-					spreadToValidRope(world, pos, pos.east(), state);
-				}
-				break;
-			case Z:
-				boolean northRope = world.getBlockState(pos.north()).getBlock() == ModBlocks.ROPE
-						&& world.getBlockState(pos.north()).getValue(BlockRope.AXIS) == state.getValue(AXIS);
-				boolean southRope = world.getBlockState(pos.south()).getBlock() == ModBlocks.ROPE
-						&& world.getBlockState(pos.south()).getValue(BlockRope.AXIS) == state.getValue(AXIS);
-				if (northRope && southRope) {
-					spreadToValidRope(world, pos, (world.rand.nextFloat() < 0.5) ? pos.north() : pos.south(), state);
-				} else if (northRope) {
-					spreadToValidRope(world, pos, pos.north(), state);
-				} else if (southRope) {
-					spreadToValidRope(world, pos, pos.south(), state);
-				}
-				break;
-			}
-		}
+	public boolean canSpread(World world, int x, int y, int z) {
+		int meta = world.getBlockMetadata(x, y, z);
+		if (getDist(meta) != 0) return false;
+		int axis = getAxis(meta);
+		if (axis == AXIS_X) return isRopeAlong(world, x - 1, y, z, axis) || isRopeAlong(world, x + 1, y, z, axis);
+		return isRopeAlong(world, x, y, z - 1, axis) || isRopeAlong(world, x, y, z + 1, axis);
 	}
 
-	private void spreadToValidRope(World world, BlockPos origPos, BlockPos newPos, IBlockState state) {
-		EnumFacing.Axis axis = world.getBlockState(newPos).getValue(BlockRope.AXIS);
-		world.setBlockState(newPos,
-				getDefaultState().withProperty(AXIS, axis).withProperty(DIST, 1), 3);
+	public void spread(World world, int x, int y, int z) {
+		int meta = world.getBlockMetadata(x, y, z);
+		if (getDist(meta) >= 1) return;
+		int axis = getAxis(meta);
+		int dx = axis == AXIS_X ? 1 : 0, dz = axis == AXIS_Z ? 1 : 0;
+		boolean neg = isRopeAlong(world, x - dx, y, z - dz, axis);
+		boolean pos = isRopeAlong(world, x + dx, y, z + dz, axis);
+		int sign;
+		if (neg && pos) sign = world.rand.nextFloat() < 0.5 ? -1 : 1;
+		else if (neg) sign = -1;
+		else if (pos) sign = 1;
+		else return;
+		int nx = x + sign * dx, nz = z + sign * dz;
+		int ropeAxis = ModBlocks.ROPE.getAxis(world, nx, y, nz);
+		world.setBlock(nx, y, nz, this, metaForAxis(ropeAxis) | 2, 3);
 	}
 
 	@Override
-	@SideOnly(Side.CLIENT)
-	public BlockRenderLayer getBlockLayer() {
-		return BlockRenderLayer.CUTOUT;
-	}
-	
-	@Override
-	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] { AXIS, DANGLE, DIST, GRAPES });
-	}
-	
-	@Override
-	public IBlockState getActualState(IBlockState state, IBlockAccess world, BlockPos pos) {
-		if (world.getBlockState(pos.down()).getBlock() instanceof BlockRope
-				&& world.getBlockState(pos.down()).getValue(BlockRope.AXIS) == EnumFacing.Axis.Y) {
-			return state.withProperty(DANGLE, true);
-		}
-		return state.withProperty(DANGLE, false);
-	}
-	
-	@Override
-	public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY,
-			float hitZ, int meta, EntityLivingBase placer) {
-		return this.getDefaultState();
-	}
-	
-	@Override
-	public boolean canPlaceBlockOnSide(World world, BlockPos pos, EnumFacing side) {
+	public boolean canPlaceBlockOnSide(World world, int x, int y, int z, int side) {
 		return false;
 	}
 
 	@Override
-	public IBlockState getStateFromMeta(int meta) {
-		EnumFacing.Axis enumfacing$axis = EnumFacing.Axis.X;
-		//boolean supported = false;
-		int dist = 0;
-		boolean grapes = false;
-		int i = meta & 1;
-
-		if (i == 0) {
-			enumfacing$axis = EnumFacing.Axis.X;
-		} else if (i == 1) {
-			enumfacing$axis = EnumFacing.Axis.Z;
-		}
-
-		i = meta & 2;
-
-		if (i > 0) {
-			dist = 1;
-		}
-
-		i = meta & 8;
-
-		if (i > 0) {
-			grapes = true;
-		}
-
-		return this.getDefaultState().withProperty(AXIS, enumfacing$axis).withProperty(DIST, dist).withProperty(GRAPES, grapes);
+	public boolean isDangling(IBlockAccess world, int x, int y, int z) {
+		Block below = world.getBlock(x, y - 1, z);
+		return below instanceof BlockRope && ((BlockRope) below).getAxis(world, x, y - 1, z) == AXIS_Y;
 	}
 
-	@Override
-	public int getMetaFromState(IBlockState state) {
-		int i = 0;
-		EnumFacing.Axis enumfacing$axis = (EnumFacing.Axis) state.getValue(AXIS);
-
-		if (enumfacing$axis == EnumFacing.Axis.X) {
-			i = 0;
-		} else if (enumfacing$axis == EnumFacing.Axis.Z) {
-			i = 1;
-		}
-
-		if (state.getValue(DIST) == 1) {
-			i |= 2;
-		}
-
-		if (state.getValue(GRAPES)) {
-			i |= 8;
-		}
-
-		return i;
-	}
-
-	@Override
-	public IBlockState withRotation(IBlockState state, Rotation rot) {
-		switch (rot) {
-		case COUNTERCLOCKWISE_90:
-		case CLOCKWISE_90:
-
-			switch ((EnumFacing.Axis) state.getValue(AXIS)) {
-			case X:
-				return state.withProperty(AXIS, EnumFacing.Axis.Z);
-			case Z:
-				return state.withProperty(AXIS, EnumFacing.Axis.X);
-			default:
-				return state;
-			}
-
-		default:
-			return state;
-		}
-	}
-
-	@SideOnly(Side.CLIENT)
-	@Override
-	public IBlockColor getBlockColor() {
-		return new IBlockColor() {
-			@Override
-			public int colorMultiplier(IBlockState state, IBlockAccess worldIn, BlockPos pos, int tintIndex) {
-				if (worldIn != null && pos != null) {
-					return BiomeColorHelper.getFoliageColorAtPos(worldIn, pos);
-				}
-				return ColorizerFoliage.getFoliageColorBasic();
-			}
-		};
-	}
-
-	@SideOnly(Side.CLIENT)
-	@Override
-	public IItemColor getItemColor() {
-		return new IItemColor() {
-			@Override
-			public int colorMultiplier(ItemStack stack, int tintIndex) {
-				if (!(stack.getItem() instanceof ItemBlock)) return 0xFFFFFF;
-				IBlockState state = ((ItemBlock) stack.getItem()).getBlock().getStateFromMeta(stack.getMetadata());
-				IBlockColor blockColor = ((IColoredBlock) state.getBlock()).getBlockColor();
-				return blockColor == null ? 0xFFFFFF : blockColor.colorMultiplier(state, null, null, tintIndex);
-			}
-		};
-	}
-	
 	@Override
 	@SideOnly(Side.CLIENT)
-	public void initModel() {
-		ClientProxy.addColoredBlock(this);
+	public int colorMultiplier(IBlockAccess world, int x, int y, int z) {
+		return world.getBiomeGenForCoords(x, z).getBiomeFoliageColor(x, y, z);
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public int getRenderColor(int meta) {
+		return ColorizerFoliage.getFoliageColorBasic();
+	}
+
+	@Override
+	public Map<String, String> getRenderProperties(IBlockAccess world, int x, int y, int z) {
+		Map<String, String> props = getInventoryProperties(world.getBlockMetadata(x, y, z));
+		props.put("dangle", String.valueOf(isDangling(world, x, y, z)));
+		return props;
+	}
+
+	@Override
+	public Map<String, String> getInventoryProperties(int meta) {
+		Map<String, String> props = new HashMap<>();
+		props.put("axis", AXIS_NAMES[getAxis(meta)]);
+		props.put("distance", String.valueOf(getDist(meta)));
+		props.put("grapes", String.valueOf(hasGrapes(meta)));
+		props.put("dangle", "false");
+		return props;
 	}
 
 }

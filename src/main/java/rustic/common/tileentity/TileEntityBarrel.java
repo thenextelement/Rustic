@@ -1,9 +1,8 @@
 package rustic.common.tileentity;
 
-import javax.annotation.Nullable;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -12,14 +11,14 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntityLockableLoot;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.NonNullList;
+
+
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
+
 import net.minecraft.world.World;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.fml.common.Optional;
-import net.minecraftforge.items.CapabilityItemHandler;
+
+import cpw.mods.fml.common.Optional;
+
 import rustic.common.util.ItemStackHandlerRustic;
 import rustic.compat.Compat;
 import vazkii.quark.api.IDropoffManager;
@@ -101,7 +100,7 @@ public class TileEntityBarrel extends TileEntityLockableLoot implements IDropoff
 	@Override
 	public boolean isEmpty() {
 		for (int i = 0; i < itemStackHandler.getSlots(); i++) {
-			if (itemStackHandler.getStackInSlot(i) != ItemStack.EMPTY) {
+			if (itemStackHandler.getStackInSlot(i) != null) {
 				return false;
 			}
 		}
@@ -124,7 +123,7 @@ public class TileEntityBarrel extends TileEntityLockableLoot implements IDropoff
 	public ItemStack removeStackFromSlot(int index) {
 		this.fillWithLoot((EntityPlayer)null);
 		ItemStack stack = itemStackHandler.getStackInSlot(index);
-		itemStackHandler.setStackInSlot(index, ItemStack.EMPTY);
+		itemStackHandler.setStackInSlot(index, null);
 		return stack;
 	}
 
@@ -167,7 +166,7 @@ public class TileEntityBarrel extends TileEntityLockableLoot implements IDropoff
 	public void clear() {
 		this.fillWithLoot((EntityPlayer)null);
 		for (int i = 0; i < itemStackHandler.getSlots(); i++) {
-			itemStackHandler.setStackInSlot(i, ItemStack.EMPTY);
+			itemStackHandler.setStackInSlot(i, null);
 		}
 	}
 

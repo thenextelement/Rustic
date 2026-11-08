@@ -3,14 +3,13 @@ package rustic.common.items;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
 
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.client.renderer.ItemMeshDefinition;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.client.renderer.color.IItemColor;
-import net.minecraft.client.util.ITooltipFlag;
+
+
+
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -22,26 +21,26 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.stats.StatList;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.translation.I18n;
+
+
+
+
+
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
+
+
+
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.ItemFluidContainer;
-import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+
+
+
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import rustic.client.models.FluidBottleModel;
 import rustic.client.util.ClientUtils;
 import rustic.common.blocks.fluids.FluidBooze;
@@ -70,7 +69,7 @@ public class ItemFluidBottle extends ItemFluidContainer implements IColoredItem 
 		setUnlocalizedName(Rustic.MODID + "." + "fluid_bottle");
 		setCreativeTab(Rustic.farmingTab);
 		GameRegistry.findRegistry(Item.class).register(this);
-		empty = new ItemStack(Items.GLASS_BOTTLE);
+		empty = new ItemStack(Items.glass_bottle);
 	}
 
 	@SideOnly(Side.CLIENT)
@@ -154,13 +153,13 @@ public class ItemFluidBottle extends ItemFluidContainer implements IColoredItem 
 		}
 
 		if ((entityplayer == null) || !entityplayer.capabilities.isCreativeMode) {
-			stack.shrink(1);
+			stack.stackSize -= 1;
 			
 			if (stack.isEmpty()) {
-				return new ItemStack(Items.GLASS_BOTTLE);
+				return new ItemStack(Items.glass_bottle);
 			} else if (entityplayer != null) {
-				RusticUtils.givePlayerItem(entityplayer, new ItemStack(Items.GLASS_BOTTLE));
-				//entityplayer.inventory.addItemStackToInventory(new ItemStack(Items.GLASS_BOTTLE));
+				RusticUtils.givePlayerItem(entityplayer, new ItemStack(Items.glass_bottle));
+				//entityplayer.inventory.addItemStackToInventory(new ItemStack(Items.glass_bottle));
 			}
 		}
 
@@ -227,7 +226,7 @@ public class ItemFluidBottle extends ItemFluidContainer implements IColoredItem 
 
 		String unloc = this.getUnlocalizedName(stack);
 
-		return I18n.translateToLocalFormatted(unloc + ".name", fluidStack.getLocalizedName());
+		return StatCollector.translateToLocalFormatted(unloc + ".name", fluidStack.getLocalizedName());
 	}
 	
 	@Override
@@ -235,7 +234,7 @@ public class ItemFluidBottle extends ItemFluidContainer implements IColoredItem 
 	public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
 		FluidStack fluidStack = getFluid(stack);
 		if ((fluidStack != null) && (fluidStack.getFluid() != null) && (fluidStack.getFluid() instanceof FluidDrinkable)) {
-			tooltip.add(TextFormatting.DARK_GRAY + "" + TextFormatting.ITALIC + I18n.translateToLocalFormatted("tooltip.rustic.drinkable"));
+			tooltip.add(EnumChatFormatting.DARK_GRAY + "" + EnumChatFormatting.ITALIC + StatCollector.translateToLocalFormatted("tooltip.rustic.drinkable"));
 		}
 	}
 	

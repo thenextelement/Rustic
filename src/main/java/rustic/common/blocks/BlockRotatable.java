@@ -1,48 +1,70 @@
 package rustic.common.blocks;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyDirection;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.Mirror;
-import net.minecraft.util.Rotation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import java.util.HashMap;
+import java.util.Map;
 
-public class BlockRotatable extends BlockBase {
-	
-	public static final PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
+import net.minecraft.block.material.Material;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.item.ItemStack;
+import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.World;
+import net.minecraftforge.common.util.ForgeDirection;
+import rustic.common.util.Facing;
+
+/** A model block facing one of the four horizontal directions, stored in the low two bits of metadata. */
+public class BlockRotatable extends BlockBase implements IModelBlock {
 
 	public BlockRotatable(Material mat, String name) {
 		super(mat, name);
 	}
-	
-	public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY,
-			float hitZ, int meta, EntityLivingBase placer) {
-		return this.getDefaultState().withProperty(FACING, placer.getHorizontalFacing().getOpposite());
+
+	public static ForgeDirection getFacing(int meta) {
+		return Facing.fromHorizontalIndex(meta & 3);
 	}
 
-	public IBlockState getStateFromMeta(int meta) {
-		return this.getDefaultState().withProperty(FACING, EnumFacing.getHorizontal(meta));
+	public ForgeDirection getFacing(IBlockAccess world, int x, int y, int z) {
+		return getFacing(world.getBlockMetadata(x, y, z));
 	}
 
-	public int getMetaFromState(IBlockState state) {
-		return ((EnumFacing) state.getValue(FACING)).getHorizontalIndex();
+	@Override
+	public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase placer, ItemStack stack) {
+		ForgeDirection facing = Facing.horizontalFacing(placer).getOpposite();
+		world.setBlockMetadataWithNotify(x, y, z, (world.getBlockMetadata(x, y, z) & ~3) | Facing.horizontalIndex(facing), 2);
 	}
 
-	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] { FACING });
+	@Override
+	public boolean rotateBlock(World world, int x, int y, int z, ForgeDirection axis) {
+		int meta = world.getBlockMetadata(x, y, z);
+		ForgeDirection next = Facing.rotateY(getFacing(meta));
+		world.setBlockMetadataWithNotify(x, y, z, (meta & ~3) | Facing.horizontalIndex(next), 3);
+		return true;
 	}
 
-	public IBlockState withRotation(IBlockState state, Rotation rot) {
-		return state.withProperty(FACING, rot.rotate((EnumFacing) state.getValue(FACING)));
+	@Override
+	public boolean isOpaqueCube() {
+		return false;
 	}
 
-	public IBlockState withMirror(IBlockState state, Mirror mirrorIn) {
-		return state.withRotation(mirrorIn.toRotation((EnumFacing) state.getValue(FACING)));
+	@Override
+	public boolean renderAsNormalBlock() {
+		return false;
+	}
+
+	@Override
+	public String getBlockStateName() {
+		return name;
+	}
+
+	@Override
+	public Map<String, String> getRenderProperties(IBlockAccess world, int x, int y, int z) {
+		return getInventoryProperties(world.getBlockMetadata(x, y, z));
+	}
+
+	@Override
+	public Map<String, String> getInventoryProperties(int meta) {
+		Map<String, String> props = new HashMap<>();
+		props.put("facing", Facing.name(getFacing(meta)));
+		return props;
 	}
 
 }

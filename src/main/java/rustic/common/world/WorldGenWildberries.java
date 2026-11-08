@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Random;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.util.math.BlockPos;
+
+
 import net.minecraft.world.World;
-import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.gen.feature.WorldGenerator;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.common.BiomeDictionary.Type;
@@ -34,7 +34,7 @@ public class WorldGenWildberries extends WorldGenerator {
 	
 	@Override
 	public boolean generate(World world, Random rand, BlockPos pos) {
-		Biome biome = world.getBiome(pos);
+		BiomeGenBase biome = world.getBiome(pos);
 		
 		for (Type type : biomeBlacklist) {
 			if (BiomeDictionary.hasType(biome, type)) {

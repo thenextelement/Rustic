@@ -7,12 +7,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
+import org.lwjgl.opengl.GL11;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.translation.I18n;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import rustic.client.gui.book.GuiBook;
 import rustic.common.book.BookCategory;
 import rustic.common.book.BookEntry;
@@ -35,7 +35,7 @@ public class BookPageCategory extends BookPage {
 		int y = gui.guiTop + 12;
 		int x = gui.guiLeft + (GuiBook.WIDTH / 2);
 		
-		gui.drawCenteredText(TextFormatting.UNDERLINE + "" + TextFormatting.BOLD + I18n.translateToLocal(category.getName()), x, y, 0x000000);
+		gui.drawCenteredText(EnumChatFormatting.UNDERLINE + "" + EnumChatFormatting.BOLD + StatCollector.translateToLocal(category.getName()), x, y, 0x000000);
 	}
 	
 	@Override
@@ -95,7 +95,7 @@ public class BookPageCategory extends BookPage {
 				} else {
 					this.ticksHovered = 0;
 				}
-				this.fontRenderer.drawString(I18n.translateToLocal(this.displayString), x + fontRenderer.FONT_HEIGHT + 2 + 1, y + 2, 0x000000);
+				this.fontRenderer.drawString(StatCollector.translateToLocal(this.displayString), x + fontRenderer.FONT_HEIGHT + 2 + 1, y + 2, 0x000000);
 				if (this.entry != null && !this.entry.getIcon().isEmpty()) {
 					float scale = (fontRenderer.FONT_HEIGHT + 2) / 16F;
 					

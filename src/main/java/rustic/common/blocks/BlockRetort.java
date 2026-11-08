@@ -1,90 +1,86 @@
 package rustic.common.blocks;
 
-import net.minecraft.block.SoundType;
+import java.util.HashMap;
+import java.util.Map;
+
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyDirection;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.item.ItemStack;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.ForgeDirection;
+import rustic.common.util.Facing;
 import rustic.core.Rustic;
 
-public class BlockRetort extends BlockBase {
-	
-	public static final PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
-	
-	protected static final AxisAlignedBB RETORT_AABB = new AxisAlignedBB(0.25D, 0.0D, 0.25D, 0.75D, 1.0D, 0.75D);
-	
+/** Metadata = 5 - facing ordinal (east 0, west 1, south 2, north 3), as in 1.12. */
+public class BlockRetort extends BlockBase implements IModelBlock, ISupportShape {
+
 	public BlockRetort(String name) {
-		super(Material.ROCK, name);
+		super(Material.rock, name);
 		setHardness(2F);
 		this.setLightOpacity(0);
 		setCreativeTab(Rustic.alchemyTab);
-		setSoundType(SoundType.STONE);
-		setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
+		setStepSound(soundTypeStone);
+		setBlockBounds(0.25F, 0.0F, 0.25F, 0.75F, 1.0F, 0.75F);
 	}
-	
-	@Override
-	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-		return RETORT_AABB;
+
+	public static ForgeDirection getFacing(int meta) {
+		return ForgeDirection.getOrientation(5 - (meta & 3));
 	}
-	
+
+	public static int metaForFacing(ForgeDirection facing) {
+		return 5 - facing.ordinal();
+	}
+
 	@Override
-	public boolean isFullCube(IBlockState state) {
+	public boolean isOpaqueCube() {
 		return false;
 	}
 
 	@Override
-	public boolean isOpaqueCube(IBlockState state) {
+	public boolean renderAsNormalBlock() {
 		return false;
 	}
-	
+
 	@Override
-	public IBlockState getStateForPlacement(World world, BlockPos pos, EnumFacing facing, float hitX, float hitY,
-			float hitZ, int meta, EntityLivingBase placer) {
-		return this.getDefaultState().withProperty(FACING, placer.getHorizontalFacing().getOpposite());
-	}
-	
-	@Override
-	public IBlockState getStateFromMeta(int meta) {
-		return this.getDefaultState().withProperty(FACING, EnumFacing.getFront(5 - (meta & 3)));
+	public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase placer, ItemStack stack) {
+		world.setBlockMetadataWithNotify(x, y, z, metaForFacing(Facing.horizontalFacing(placer).getOpposite()), 2);
 	}
 
 	@Override
-	public int getMetaFromState(IBlockState state) {
-		int meta = 0;
-
-		meta |= 5 - ((EnumFacing) state.getValue(FACING)).getIndex();
-
-		return meta;
-	}
-
-	@Override
-	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] { FACING });
-	}
-	
-	@Override
-	public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand,
-			EnumFacing side, float hitX, float hitY, float hitZ) {
-		IBlockState state2 = world.getBlockState(pos.offset(state.getValue(FACING).getOpposite()));
-		if (state2.getBlock() == ModBlocks.CONDENSER || state2.getBlock() == ModBlocks.CONDENSER_ADVANCED) {
-			return state2.getBlock().onBlockActivated(world, pos.offset(state.getValue(FACING).getOpposite()), state2, player, hand, side, hitX, hitY, hitZ);
+	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+			float hitY, float hitZ) {
+		ForgeDirection back = getFacing(world.getBlockMetadata(x, y, z)).getOpposite();
+		int cx = x + back.offsetX, cz = z + back.offsetZ;
+		Block other = world.getBlock(cx, y, cz);
+		if (other == ModBlocks.CONDENSER || other == ModBlocks.CONDENSER_ADVANCED) {
+			return other.onBlockActivated(world, cx, y, cz, player, side, hitX, hitY, hitZ);
 		}
 		return false;
 	}
-	
+
 	@Override
-	public BlockFaceShape getBlockFaceShape(IBlockAccess world, IBlockState state, BlockPos pos, EnumFacing side) {
-		return (side == EnumFacing.UP || side == EnumFacing.DOWN) ? BlockFaceShape.CENTER_BIG : BlockFaceShape.UNDEFINED;
+	public boolean canSupportOnSide(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+		return side.offsetY != 0;
+	}
+
+	@Override
+	public String getBlockStateName() {
+		return name;
+	}
+
+	@Override
+	public Map<String, String> getRenderProperties(IBlockAccess world, int x, int y, int z) {
+		return getInventoryProperties(world.getBlockMetadata(x, y, z));
+	}
+
+	@Override
+	public Map<String, String> getInventoryProperties(int meta) {
+		Map<String, String> props = new HashMap<>();
+		props.put("facing", Facing.name(getFacing(meta)));
+		return props;
 	}
 
 }

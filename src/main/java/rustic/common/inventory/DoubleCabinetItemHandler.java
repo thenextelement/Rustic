@@ -2,17 +2,16 @@ package rustic.common.inventory;
 
 import java.lang.ref.WeakReference;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
 
 import com.google.common.base.Objects;
 
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
+
 import net.minecraft.world.World;
-import net.minecraftforge.items.IItemHandlerModifiable;
+
 import rustic.common.blocks.BlockCabinet;
 import rustic.common.tileentity.TileEntityCabinet;
 
@@ -97,7 +96,7 @@ public class DoubleCabinetItemHandler extends WeakReference<TileEntityCabinet> i
 		boolean accessingUpperCabinet = slot < 27;
 		int targetSlot = accessingUpperCabinet ? slot : slot - 27;
 		TileEntityCabinet cabinet = getCabinet(accessingUpperCabinet);
-		return cabinet != null ? cabinet.getStackInSlot(targetSlot) : ItemStack.EMPTY;
+		return cabinet != null ? cabinet.getStackInSlot(targetSlot) : null;
 	}
 
 	@Override
@@ -125,7 +124,7 @@ public class DoubleCabinetItemHandler extends WeakReference<TileEntityCabinet> i
 		boolean accessingUpperCabinet = slot < 27;
 		int targetSlot = accessingUpperCabinet ? slot : slot - 27;
 		TileEntityCabinet cabinet = getCabinet(accessingUpperCabinet);
-		return cabinet != null ? cabinet.getSingleCabinetHandler().extractItem(targetSlot, amount, simulate) : ItemStack.EMPTY;
+		return cabinet != null ? cabinet.getSingleCabinetHandler().extractItem(targetSlot, amount, simulate) : null;
 	}
 
 	@Override

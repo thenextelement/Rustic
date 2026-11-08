@@ -1,0 +1,153 @@
+{
+	"multipart": [
+		{
+			"when": {
+				"inventory": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_iron_inventory"
+			}
+		},
+		{
+			"when": {
+				"inventory": "false"
+			},
+			"apply": {
+				"model": "rustic:lattice_iron_base"
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"leaves": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_leaves_base"
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"down": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_iron_bar",
+				"x": 90
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"leaves": "true",
+				"down": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_leaves_bar",
+				"x": 90
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"up": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_iron_bar",
+				"x": 270
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"leaves": "true",
+				"up": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_leaves_bar",
+				"x": 270
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"north": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_iron_bar"
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"leaves": "true",
+				"north": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_leaves_bar"
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"south": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_iron_bar",
+				"y": 180
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"leaves": "true",
+				"south": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_leaves_bar",
+				"y": 180
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"west": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_iron_bar",
+				"y": 270
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"leaves": "true",
+				"west": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_leaves_bar",
+				"y": 270
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"east": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_iron_bar",
+				"y": 90
+			}
+		},
+		{
+			"when": {
+				"inventory": "false",
+				"leaves": "true",
+				"east": "true"
+			},
+			"apply": {
+				"model": "rustic:lattice_leaves_bar",
+				"y": 90
+			}
+		}
+	]
+}

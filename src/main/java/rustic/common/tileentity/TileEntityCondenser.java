@@ -1,18 +1,17 @@
 package rustic.common.tileentity;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
-import net.minecraft.block.state.IBlockState;
+
+
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
+
 import net.minecraft.util.EnumFacing.Axis;
-import net.minecraftforge.common.capabilities.Capability;
+
 import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.wrapper.RangedWrapper;
+
+
+
+
 import rustic.common.blocks.BlockCondenser;
 import rustic.common.blocks.ModBlocks;
 import rustic.common.crafting.ICondenserRecipe;
@@ -91,7 +90,7 @@ public class TileEntityCondenser extends TileEntityCondenserBase {
 		}
 
 //		if (internalStackHandler.getStackInSlot(SLOT_BOTTLE).isEmpty()
-//				|| internalStackHandler.getStackInSlot(SLOT_BOTTLE).getCount() < 1) {
+//				|| internalStackHandler.getStackInSlot(SLOT_BOTTLE).stackSize < 1) {
 //			return false;
 //		}
 
@@ -110,7 +109,7 @@ public class TileEntityCondenser extends TileEntityCondenserBase {
 			Fluid fluid = this.getFluid();
 			ItemStack bottle = internalStackHandler.getStackInSlot(SLOT_BOTTLE);
 			ItemStack[] inputs = new ItemStack[]{ this.internalStackHandler.getStackInSlot(SLOT_INGREDIENTS_START), this.internalStackHandler.getStackInSlot(SLOT_INGREDIENTS_START + 1) };
-			if (this.currentRecipe != null && this.currentRecipe.matches(fluid, ItemStack.EMPTY, bottle, inputs)) {
+			if (this.currentRecipe != null && this.currentRecipe.matches(fluid, null, bottle, inputs)) {
 				return;
 			}
 			this.brewTime = 0;
@@ -119,7 +118,7 @@ public class TileEntityCondenser extends TileEntityCondenserBase {
 				if (!recipe.isBasic()) {
 					continue;
 				}
-				if (recipe.matches(fluid, ItemStack.EMPTY, bottle, inputs)) {
+				if (recipe.matches(fluid, null, bottle, inputs)) {
 					this.currentRecipe = recipe;
 					this.totalBrewTime = recipe.getTime();
 					return;
@@ -151,7 +150,7 @@ public class TileEntityCondenser extends TileEntityCondenserBase {
 			ItemStack[] inputs = new ItemStack[]{ this.internalStackHandler.getStackInSlot(SLOT_INGREDIENTS_START), this.internalStackHandler.getStackInSlot(SLOT_INGREDIENTS_START + 1) };
 			ItemStack bottle = internalStackHandler.getStackInSlot(SLOT_BOTTLE);
 			ICondenserRecipe recipe = this.currentRecipe;
-			if (recipe.matches(this.getFluid(), ItemStack.EMPTY, bottle, inputs) && this.getAmount() >= recipe.getFluid().amount) {
+			if (recipe.matches(this.getFluid(), null, bottle, inputs) && this.getAmount() >= recipe.getFluid().amount) {
 				internalStackHandler.insertItem(SLOT_RESULT, recipe.getResult(), false);
 				int[] consume = recipe.getInputConsumption(inputs);
 				internalStackHandler.extractItem(SLOT_INGREDIENTS_START, consume[0], false);

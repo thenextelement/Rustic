@@ -1,29 +1,24 @@
 package rustic.common.blocks;
 
-import net.minecraft.block.properties.PropertyDirection;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing.Axis;
+import net.minecraftforge.common.util.ForgeDirection;
 
 public interface IAdvancedRotationPlacement {
-	
-	public default IBlockState getStateForAdvancedRotationPlacement(IBlockState defaultState, PropertyDirection facingProperty, EnumFacing facing, float hitX, float hitY, float hitZ) {
-		IBlockState state = defaultState;
-		
-		if (facing.getAxis() == Axis.Y) {
+
+	/**
+	 * Picks a horizontal facing from the clicked side and hit position: clicking a wall faces away from it, clicking a
+	 * floor/ceiling faces towards the nearest edge.
+	 */
+	default ForgeDirection getFacingForAdvancedRotationPlacement(int side, float hitX, float hitY, float hitZ) {
+		ForgeDirection facing = ForgeDirection.getOrientation(side);
+		if (facing.offsetY != 0) {
 			float hitXFromCenter = hitX - 0.5F;
 			float hitZFromCenter = hitZ - 0.5F;
-			
-			if (Math.max(Math.abs(hitXFromCenter), Math.abs(hitZFromCenter)) == Math.abs(hitXFromCenter)) {
-				state = state.withProperty(facingProperty, (hitXFromCenter > 0) ? EnumFacing.EAST : EnumFacing.WEST);
-			} else {
-				state = state.withProperty(facingProperty, (hitZFromCenter > 0) ? EnumFacing.SOUTH : EnumFacing.NORTH);
+			if (Math.abs(hitXFromCenter) >= Math.abs(hitZFromCenter)) {
+				return (hitXFromCenter > 0) ? ForgeDirection.EAST : ForgeDirection.WEST;
 			}
-		} else {
-			state = state.withProperty(facingProperty, facing.getOpposite());
+			return (hitZFromCenter > 0) ? ForgeDirection.SOUTH : ForgeDirection.NORTH;
 		}
-		
-		return state;
+		return facing.getOpposite();
 	}
-	
+
 }

@@ -1,285 +1,184 @@
 package rustic.common.blocks;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
-import javax.annotation.Nullable;
-
-import com.google.common.base.Predicate;
-
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
-import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyDirection;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumParticleTypes;
-import net.minecraft.util.Mirror;
-import net.minecraft.util.Rotation;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.common.util.ForgeDirection;
+import rustic.common.util.Facing;
 
-public class BlockCandle extends BlockBase {
+/** Metadata (like torches): 1 = east, 2 = west, 3 = south, 4 = north, 5 = standing. */
+public class BlockCandle extends BlockBase implements IModelBlock, ISupportShape {
 
-	public static final PropertyDirection FACING = PropertyDirection.create("facing", new Predicate<EnumFacing>() {
-		public boolean apply(@Nullable EnumFacing p_apply_1_) {
-			return p_apply_1_ != EnumFacing.DOWN;
-		}
-	});
-	protected static final AxisAlignedBB STANDING_AABB = new AxisAlignedBB(0.4, 0.0, 0.4, 0.6, 0.9375, 0.6);
-	protected static final AxisAlignedBB CANDLE_NORTH_AABB = new AxisAlignedBB(0.35, 0.0, 0.7, 0.65, 0.8, 1.0);
-	protected static final AxisAlignedBB CANDLE_SOUTH_AABB = new AxisAlignedBB(0.35, 0.0, 0.0, 0.65, 0.8, 0.3);
-	protected static final AxisAlignedBB CANDLE_WEST_AABB = new AxisAlignedBB(0.7, 0.0, 0.35, 1.0, 0.8, 0.65);
-	protected static final AxisAlignedBB CANDLE_EAST_AABB = new AxisAlignedBB(0.0D, 0.0, 0.35, 0.3, 0.8, 0.65);
+	protected static final ForgeDirection[] PLACEMENTS = { ForgeDirection.UP, ForgeDirection.NORTH,
+			ForgeDirection.SOUTH, ForgeDirection.WEST, ForgeDirection.EAST };
 
 	public BlockCandle() {
 		this("candle");
 	}
-	
+
 	public BlockCandle(String name) {
-		this(Material.CIRCUITS, name, true);
+		this(Material.circuits, name, true);
 	}
-	
+
 	public BlockCandle(Material mat, String name, boolean register) {
 		super(mat, name, register);
 		this.setHardness(1F);
 		this.setLightLevel(1.0F);
-		this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.UP));
-		setSoundType(SoundType.METAL);
+		setStepSound(soundTypeMetal);
+	}
+
+	public static ForgeDirection getFacing(int meta) {
+		switch (meta & 7) {
+			case 1: return ForgeDirection.EAST;
+			case 2: return ForgeDirection.WEST;
+			case 3: return ForgeDirection.SOUTH;
+			case 4: return ForgeDirection.NORTH;
+			default: return ForgeDirection.UP;
+		}
+	}
+
+	/** Facing for the given metadata; overridden by blocks with a different metadata layout. */
+	public ForgeDirection facingOf(int meta) {
+		return getFacing(meta);
+	}
+
+	public static int metaForFacing(ForgeDirection dir) {
+		switch (dir) {
+			case EAST: return 1;
+			case WEST: return 2;
+			case SOUTH: return 3;
+			case NORTH: return 4;
+			default: return 5;
+		}
 	}
 
 	@Override
-	public boolean isOpaqueCube(IBlockState state) {
+	public boolean isOpaqueCube() {
 		return false;
 	}
 
 	@Override
-	public boolean isFullCube(IBlockState state) {
-		return false;
-	}
-	
-	@Override
-	public boolean isPassable(IBlockAccess worldIn, BlockPos pos) {
+	public boolean renderAsNormalBlock() {
 		return false;
 	}
 
-	protected boolean canPlaceOn(World worldIn, BlockPos pos) {
-		IBlockState state = worldIn.getBlockState(pos);
-		BlockFaceShape faceShape = state.getBlockFaceShape(worldIn, pos, EnumFacing.UP);
-		
-		if (
-			faceShape == BlockFaceShape.SOLID ||
-			faceShape == BlockFaceShape.CENTER ||
-			faceShape == BlockFaceShape.CENTER_BIG ||
-			faceShape == BlockFaceShape.CENTER_SMALL
-		) {
-			return true;
-		} else {
-			return state.getBlock().canPlaceTorchOnTop(state, worldIn, pos);
-		}
+	@Override
+	public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
+		setBlockBoundsBasedOnState(world, x, y, z);
+		return super.getCollisionBoundingBoxFromPool(world, x, y, z);
+	}
+
+	protected boolean canPlaceOn(World world, int x, int y, int z) {
+		if (ISupportShape.canSupport(world, x, y, z, ForgeDirection.UP)) return true;
+		Block block = world.getBlock(x, y, z);
+		return block.canPlaceTorchOnTop(world, x, y, z);
 	}
 
 	@Override
-	public boolean canPlaceBlockAt(World worldIn, BlockPos pos) {
-		for (EnumFacing enumfacing : FACING.getAllowedValues()) {
-			if (this.canPlaceAt(worldIn, pos, enumfacing)) {
-				return true;
-			}
+	public boolean canPlaceBlockAt(World world, int x, int y, int z) {
+		for (ForgeDirection dir : PLACEMENTS) {
+			if (canPlaceAt(world, x, y, z, dir)) return true;
 		}
-
 		return false;
 	}
 
-	protected boolean canPlaceAt(World worldIn, BlockPos pos, EnumFacing facing) {
-		BlockPos blockpos = pos.offset(facing.getOpposite());
-		boolean flag = facing.getAxis().isHorizontal();
-		return flag && worldIn.isSideSolid(blockpos, facing, true)
-				|| facing.equals(EnumFacing.UP) && this.canPlaceOn(worldIn, blockpos);
+	protected boolean canPlaceAt(World world, int x, int y, int z, ForgeDirection facing) {
+		ForgeDirection back = facing.getOpposite();
+		int bx = x + back.offsetX, by = y + back.offsetY, bz = z + back.offsetZ;
+		if (facing.offsetY == 0) return world.isSideSolid(bx, by, bz, facing, true);
+		return facing == ForgeDirection.UP && canPlaceOn(world, bx, by, bz);
 	}
 
 	@Override
-	public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY,
-			float hitZ, int meta, EntityLivingBase placer) {
-		if (this.canPlaceAt(worldIn, pos, facing)) {
-			return this.getDefaultState().withProperty(FACING, facing);
-		} else {
-			for (EnumFacing enumfacing : EnumFacing.Plane.HORIZONTAL) {
-				if (worldIn.isSideSolid(pos.offset(enumfacing.getOpposite()), enumfacing, true)) {
-					return this.getDefaultState().withProperty(FACING, enumfacing);
-				}
-			}
+	public int onBlockPlaced(World world, int x, int y, int z, int side, float hitX, float hitY, float hitZ, int meta) {
+		ForgeDirection facing = ForgeDirection.getOrientation(side);
+		if (canPlaceAt(world, x, y, z, facing)) return metaForFacing(facing);
+		for (ForgeDirection dir : Facing.HORIZONTALS) {
+			if (world.isSideSolid(x - dir.offsetX, y, z - dir.offsetZ, dir, true)) return metaForFacing(dir);
+		}
+		return metaForFacing(ForgeDirection.UP);
+	}
 
-			return this.getDefaultState();
+	@Override
+	public void onBlockAdded(World world, int x, int y, int z) {
+		checkForDrop(world, x, y, z);
+	}
+
+	@Override
+	public void onNeighborBlockChange(World world, int x, int y, int z, Block neighbor) {
+		checkForDrop(world, x, y, z);
+	}
+
+	protected boolean checkForDrop(World world, int x, int y, int z) {
+		if (world.getBlock(x, y, z) != this) return false;
+		int meta = world.getBlockMetadata(x, y, z);
+		if (canPlaceAt(world, x, y, z, facingOf(meta))) return true;
+		dropBlockAsItem(world, x, y, z, meta, 0);
+		world.setBlockToAir(x, y, z);
+		return false;
+	}
+
+	@Override
+	public void setBlockBoundsBasedOnState(IBlockAccess world, int x, int y, int z) {
+		switch (facingOf(world.getBlockMetadata(x, y, z))) {
+			case EAST: setBlockBounds(0.0F, 0.0F, 0.35F, 0.3F, 0.8F, 0.65F); break;
+			case WEST: setBlockBounds(0.7F, 0.0F, 0.35F, 1.0F, 0.8F, 0.65F); break;
+			case SOUTH: setBlockBounds(0.35F, 0.0F, 0.0F, 0.65F, 0.8F, 0.3F); break;
+			case NORTH: setBlockBounds(0.35F, 0.0F, 0.7F, 0.65F, 0.8F, 1.0F); break;
+			default: setBlockBounds(0.4F, 0.0F, 0.4F, 0.6F, 0.9375F, 0.6F);
 		}
 	}
 
 	@Override
-	public void onBlockAdded(World worldIn, BlockPos pos, IBlockState state) {
-		this.checkForDrop(worldIn, pos, state);
-	}
-
-	@Override
-	public void neighborChanged(IBlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos) {
-		this.onNeighborChangeInternal(worldIn, pos, state);
-	}
-
-	protected boolean onNeighborChangeInternal(World worldIn, BlockPos pos, IBlockState state) {
-		if (!this.checkForDrop(worldIn, pos, state)) {
-			return true;
-		} else {
-			EnumFacing enumfacing = (EnumFacing) state.getValue(FACING);
-			EnumFacing.Axis enumfacing$axis = enumfacing.getAxis();
-			EnumFacing enumfacing1 = enumfacing.getOpposite();
-			boolean flag = false;
-
-			if (enumfacing$axis.isHorizontal() && !worldIn.isSideSolid(pos.offset(enumfacing1), enumfacing, true)) {
-				flag = true;
-			} else if (enumfacing$axis.isVertical() && !this.canPlaceOn(worldIn, pos.offset(enumfacing1))) {
-				flag = true;
-			}
-
-			if (flag) {
-				this.dropBlockAsItem(worldIn, pos, state, 0);
-				worldIn.setBlockToAir(pos);
-				return true;
-			} else {
-				return false;
-			}
-		}
-	}
-
-	protected boolean checkForDrop(World worldIn, BlockPos pos, IBlockState state) {
-		if (state.getBlock() == this && this.canPlaceAt(worldIn, pos, (EnumFacing) state.getValue(FACING))) {
-			return true;
-		} else {
-			if (worldIn.getBlockState(pos).getBlock() == this) {
-				this.dropBlockAsItem(worldIn, pos, state, 0);
-				worldIn.setBlockToAir(pos);
-			}
-
-			return false;
-		}
-	}
-
-	@Override
-	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-		switch ((EnumFacing) state.getValue(FACING)) {
-		case EAST:
-			return CANDLE_EAST_AABB;
-		case WEST:
-			return CANDLE_WEST_AABB;
-		case SOUTH:
-			return CANDLE_SOUTH_AABB;
-		case NORTH:
-			return CANDLE_NORTH_AABB;
-		default:
-			return STANDING_AABB;
-		}
+	public void setBlockBoundsForItemRender() {
+		setBlockBounds(0.4F, 0.0F, 0.4F, 0.6F, 0.9375F, 0.6F);
 	}
 
 	@Override
 	@SideOnly(Side.CLIENT)
-	public void randomDisplayTick(IBlockState stateIn, World worldIn, BlockPos pos, Random rand) {
-		EnumFacing enumfacing = (EnumFacing) stateIn.getValue(FACING);
-		double d0 = (double) pos.getX() + 0.5D;
-		double d1 = (double) pos.getY() + 0.7D;
-		double d2 = (double) pos.getZ() + 0.5D;
-		//double d3 = 0.22D;
-		//double d4 = 0.27D;
-
-		if (enumfacing.getAxis().isHorizontal()) {
-			EnumFacing enumfacing1 = enumfacing.getOpposite();
-			worldIn.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, d0 + 0.27D * (double) enumfacing1.getFrontOffsetX(),
-					d1 + 0.25D, d2 + 0.27D * (double) enumfacing1.getFrontOffsetZ(), 0.0D, 0.0D, 0.0D, new int[0]);
-			worldIn.spawnParticle(EnumParticleTypes.FLAME, d0 + 0.27D * (double) enumfacing1.getFrontOffsetX(),
-					d1 + 0.25D, d2 + 0.27D * (double) enumfacing1.getFrontOffsetZ(), 0.0D, 0.0D, 0.0D, new int[0]);
+	public void randomDisplayTick(World world, int x, int y, int z, Random rand) {
+		ForgeDirection facing = facingOf(world.getBlockMetadata(x, y, z));
+		double d0 = x + 0.5D;
+		double d1 = y + 0.7D;
+		double d2 = z + 0.5D;
+		if (facing.offsetY == 0) {
+			ForgeDirection back = facing.getOpposite();
+			world.spawnParticle("smoke", d0 + 0.27D * back.offsetX, d1 + 0.25D, d2 + 0.27D * back.offsetZ, 0, 0, 0);
+			world.spawnParticle("flame", d0 + 0.27D * back.offsetX, d1 + 0.25D, d2 + 0.27D * back.offsetZ, 0, 0, 0);
 		} else {
-			worldIn.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, d0, d1 + 0.33D, d2, 0.0D, 0.0D, 0.0D, new int[0]);
-			worldIn.spawnParticle(EnumParticleTypes.FLAME, d0, d1 + 0.33D, d2, 0.0D, 0.0D, 0.0D, new int[0]);
+			world.spawnParticle("smoke", d0, d1 + 0.33D, d2, 0, 0, 0);
+			world.spawnParticle("flame", d0, d1 + 0.33D, d2, 0, 0, 0);
 		}
 	}
 
 	@Override
-	public IBlockState getStateFromMeta(int meta) {
-		IBlockState iblockstate = this.getDefaultState();
-
-		switch (meta) {
-		case 1:
-			iblockstate = iblockstate.withProperty(FACING, EnumFacing.EAST);
-			break;
-		case 2:
-			iblockstate = iblockstate.withProperty(FACING, EnumFacing.WEST);
-			break;
-		case 3:
-			iblockstate = iblockstate.withProperty(FACING, EnumFacing.SOUTH);
-			break;
-		case 4:
-			iblockstate = iblockstate.withProperty(FACING, EnumFacing.NORTH);
-			break;
-		case 5:
-		default:
-			iblockstate = iblockstate.withProperty(FACING, EnumFacing.UP);
-		}
-
-		return iblockstate;
-	}
-
-	@SideOnly(Side.CLIENT)
-	public BlockRenderLayer getBlockLayer() {
-		return BlockRenderLayer.CUTOUT;
-	}
-
-	public int getMetaFromState(IBlockState state) {
-		int i = 0;
-
-		switch ((EnumFacing) state.getValue(FACING)) {
-		case EAST:
-			i = i | 1;
-			break;
-		case WEST:
-			i = i | 2;
-			break;
-		case SOUTH:
-			i = i | 3;
-			break;
-		case NORTH:
-			i = i | 4;
-			break;
-		case DOWN:
-		case UP:
-		default:
-			i = i | 5;
-		}
-
-		return i;
+	public boolean canSupportOnSide(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+		return side == ForgeDirection.DOWN;
 	}
 
 	@Override
-	public IBlockState withRotation(IBlockState state, Rotation rot) {
-		return state.withProperty(FACING, rot.rotate((EnumFacing) state.getValue(FACING)));
+	public String getBlockStateName() {
+		return name;
 	}
 
 	@Override
-	public IBlockState withMirror(IBlockState state, Mirror mirrorIn) {
-		return state.withRotation(mirrorIn.toRotation((EnumFacing) state.getValue(FACING)));
+	public Map<String, String> getRenderProperties(IBlockAccess world, int x, int y, int z) {
+		return getInventoryProperties(world.getBlockMetadata(x, y, z));
 	}
 
 	@Override
-	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] { FACING });
-	}
-
-	@Override
-	public BlockFaceShape getBlockFaceShape(IBlockAccess world, IBlockState state, BlockPos pos, EnumFacing side) {
-		return side == EnumFacing.DOWN ? BlockFaceShape.CENTER_SMALL : BlockFaceShape.UNDEFINED;
+	public Map<String, String> getInventoryProperties(int meta) {
+		Map<String, String> props = new HashMap<>();
+		props.put("facing", Facing.name(facingOf(meta)));
+		return props;
 	}
 
 }

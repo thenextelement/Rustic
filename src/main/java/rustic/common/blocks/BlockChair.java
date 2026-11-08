@@ -2,143 +2,95 @@ package rustic.common.blocks;
 
 import java.util.List;
 
-import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyDirection;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3i;
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.common.util.ForgeDirection;
 import rustic.common.network.MessageDismountChair;
 import rustic.common.network.PacketHandler;
+import rustic.common.util.Facing;
 
-public class BlockChair extends BlockBase {
-	
-	public static final PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
-	protected static final AxisAlignedBB CHAIR_AABB = new AxisAlignedBB(0.125D, 0.0D, 0.125D, 0.875D, 1.125D, 0.875D);
-	
+public class BlockChair extends BlockRotatable {
+
 	public BlockChair(String type) {
-		super(Material.WOOD, "chair_" + type);
+		super(Material.wood, "chair_" + type);
 		setHardness(1F);
-		this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
-		setSoundType(SoundType.WOOD);
-		
-		Blocks.FIRE.setFireInfo(this, 5, 20);
-	}
-	
-	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-		return CHAIR_AABB;
-	}
-	
-	@SideOnly(Side.CLIENT)
-	public BlockRenderLayer getBlockLayer() {
-		return BlockRenderLayer.CUTOUT;
-	}
-
-	public boolean isFullCube(IBlockState state) {
-		return false;
+		setStepSound(soundTypeWood);
+		setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 1.125F, 0.875F);
+		Blocks.fire.setFireInfo(this, 5, 20);
 	}
 
 	@Override
-	public boolean isOpaqueCube(IBlockState blockState) {
-		return false;
-	}
-
-	public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY,
-			float hitZ, int meta, EntityLivingBase placer) {
-		return this.getDefaultState().withProperty(FACING, placer.getHorizontalFacing().getOpposite());
-	}
-
-	public IBlockState getStateFromMeta(int meta) {
-		return this.getDefaultState().withProperty(FACING, EnumFacing.getHorizontal(meta));
-	}
-
-	public int getMetaFromState(IBlockState state) {
-		return ((EnumFacing) state.getValue(FACING)).getHorizontalIndex();
-	}
-
-	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] { FACING });
-	}
-	
-	@Override
-	public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand,
-			EnumFacing facing, float hitX, float hitY, float hitZ) {
-		if (player.getDistanceSqToCenter(pos) >= 5 || player.isSneaking() || player.isRiding()) return true;
+	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+			float hitY, float hitZ) {
+		if (player.getDistanceSq(x + 0.5, y + 0.5, z + 0.5) >= 5 || player.isSneaking() || player.isRiding()) return true;
 		if (!world.isRemote) {
-			List<EntityChair> chairs = world.getEntitiesWithinAABB(EntityChair.class, new AxisAlignedBB(pos, pos.add(1, 1, 1)));
+			List<?> chairs = world.getEntitiesWithinAABB(EntityChair.class, AxisAlignedBB.getBoundingBox(x, y, z, x + 1, y + 1, z + 1));
 			if (chairs.isEmpty()) {
-				EntityChair chair = new EntityChair(world, pos, state.getValue(FACING));
-				world.spawnEntity(chair);
-				if (player.startRiding(chair)) {
-					//player.rotationYaw = chair.rotationYaw % 360.0F;
-			        //player.rotationPitch = chair.rotationPitch % 360.0F;
-					player.setPositionAndUpdate(chair.posX, chair.posY, chair.posZ);
-				}
+				EntityChair chair = new EntityChair(world, x, y, z, getFacing(world, x, y, z));
+				world.spawnEntityInWorld(chair);
+				player.mountEntity(chair);
 			}
 		}
 		return true;
 	}
-	
+
 	public static class EntityChair extends Entity {
+
+
 		public EntityChair(World world) {
-			super(world);			
-			setSize(0F, 0F);
-		}
-		public EntityChair(World world, BlockPos pos, EnumFacing facing) {
 			super(world);
-			if (facing != null) this.rotationYaw = facing.getHorizontalAngle();
-			Vec3i facingVec = facing.getDirectionVec();
-			double xOffset = facingVec.getX() * -0.125;
-			double zOffset = facingVec.getZ() * -0.125;
-			setPosition(pos.getX() + 0.5 + xOffset, pos.getY() + 0.4, pos.getZ() + 0.5 + zOffset);
 			setSize(0F, 0F);
+			noClip = true;
 		}
-		
+
+		public EntityChair(World world, int x, int y, int z, ForgeDirection facing) {
+			this(world);
+			this.rotationYaw = Facing.horizontalAngle(facing);
+			double xOffset = facing.offsetX * -0.125;
+			double zOffset = facing.offsetZ * -0.125;
+			setPosition(x + 0.5 + xOffset, y + 0.4, z + 0.5 + zOffset);
+		}
+
 		@Override
 		public void onUpdate() {
 			super.onUpdate();
-			
-			BlockPos pos = getPosition();
-			if (pos != null && !(world.getBlockState(pos).getBlock() instanceof BlockChair)) {
+			int x = MathHelper.floor_double(posX), y = MathHelper.floor_double(posY), z = MathHelper.floor_double(posZ);
+			if (!(worldObj.getBlock(x, y, z) instanceof BlockChair)) {
 				setDead();
 				return;
 			}
-			List<Entity> passengers = getPassengers();
-			if (passengers.isEmpty()) {
-				setDead();
+			if (riddenByEntity == null) {
+				if (!worldObj.isRemote) setDead();
+				return;
 			}
-			if (!world.isRemote) {
-				for (int i = 0; i < passengers.size(); i++) {
-					Entity passenger = passengers.get(i);
-					if (passenger.isSneaking() || passenger.getDistanceSq(this.posX, this.posY, this.posZ) >= 1) {
-						setDead();
-					}
+			if (!worldObj.isRemote) {
+				if (riddenByEntity.isSneaking() || riddenByEntity.getDistanceSq(posX, posY, posZ) >= 2) {
+					riddenByEntity.mountEntity(null);
+					setDead();
 				}
 			}
 		}
-		
+
 		@Override
-		public boolean canBeAttackedWithItem() {
-	        return false;
-	    }
+		public double getMountedYOffset() {
+			return 0.0D;
+		}
+
+		@Override
+		public boolean canBeCollidedWith() {
+			return false;
+		}
+
+		@Override
+		public boolean canAttackWithItem() {
+			return false;
+		}
 
 		@Override
 		protected void entityInit() {}
@@ -146,32 +98,16 @@ public class BlockChair extends BlockBase {
 		@Override
 		public void setDead() {
 			super.setDead();
-			if (world.isRemote) {
+			if (worldObj.isRemote) {
 				PacketHandler.INSTANCE.sendToServer(new MessageDismountChair());
 			}
 		}
-		
-		@Override
-		@SideOnly(Side.CLIENT)
-	    public void applyOrientationToEntity(Entity entityToUpdate) {
-			entityToUpdate.setRenderYawOffset(this.rotationYaw);
-	        float f = MathHelper.wrapDegrees(entityToUpdate.rotationYaw - this.rotationYaw);
-	        float f1 = MathHelper.clamp(f, -105.0F, 105.0F);
-	        entityToUpdate.prevRotationYaw += f1 - f;
-	        entityToUpdate.rotationYaw += f1 - f;
-	        entityToUpdate.setRotationYawHead(entityToUpdate.rotationYaw);
-	    }
-		
+
 		@Override
 		protected void readEntityFromNBT(NBTTagCompound compound) {}
 
 		@Override
 		protected void writeEntityToNBT(NBTTagCompound compound) {}
-	}
-	
-	@Override
-	public BlockFaceShape getBlockFaceShape(IBlockAccess world, IBlockState state, BlockPos pos, EnumFacing side) {
-		return BlockFaceShape.UNDEFINED;
 	}
 
 }

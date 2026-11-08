@@ -2,9 +2,9 @@ package rustic.client;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
+
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.network.IGuiHandler;
+import cpw.mods.fml.common.network.IGuiHandler;
 import rustic.client.gui.GuiApiary;
 import rustic.client.gui.GuiBarrel;
 import rustic.client.gui.GuiBrewingBarrel;

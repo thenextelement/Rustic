@@ -1,50 +1,21 @@
 package rustic.common.blocks;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.common.util.ForgeDirection;
 
-public class BlockGargoyle extends BlockRotatable {
-	
-	protected static final AxisAlignedBB DEFAULT_AABB = new AxisAlignedBB(0.125D, 0.0D, 0.125D, 0.875D, 0.875D, 0.875D);
+public class BlockGargoyle extends BlockRotatable implements ISupportShape {
 
 	public BlockGargoyle() {
-		super(Material.ROCK, "gargoyle");
+		super(Material.rock, "gargoyle");
 		setHardness(1.0F);
-		this.setLightOpacity(0);
-	}
-	
-	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-		return DEFAULT_AABB;
-	}
-	
-	@SideOnly(Side.CLIENT)
-	public BlockRenderLayer getBlockLayer() {
-		return BlockRenderLayer.CUTOUT;
-	}
-
-	public boolean isFullCube(IBlockState state) {
-		return false;
+		setLightOpacity(0);
+		setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 0.875F, 0.875F);
 	}
 
 	@Override
-	public boolean isOpaqueCube(IBlockState blockState) {
-		return false;
+	public boolean canSupportOnSide(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+		return side == ForgeDirection.DOWN;
 	}
 
-	@Override
-	public BlockFaceShape getBlockFaceShape(IBlockAccess world, IBlockState state, BlockPos pos, EnumFacing side) {
-		if (side == EnumFacing.DOWN) {
-			return BlockFaceShape.SOLID;
-		}
-		return BlockFaceShape.UNDEFINED;
-	}
-	
 }

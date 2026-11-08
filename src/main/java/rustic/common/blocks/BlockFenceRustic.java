@@ -1,33 +1,34 @@
 package rustic.common.blocks;
 
+import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFence;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.block.BlockFenceGate;
+import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraft.world.IBlockAccess;
 import rustic.core.Rustic;
 
 public class BlockFenceRustic extends BlockFence {
 
-	public BlockFenceRustic(IBlockState state, String name) {
-		super(state.getMaterial(), state.getMaterial().getMaterialMapColor());
-		setRegistryName(name);
-		setUnlocalizedName(Rustic.MODID + "." + name);
-		GameRegistry.findRegistry(Block.class).register(this);
-		GameRegistry.findRegistry(Item.class).register(new ItemBlock(this).setRegistryName(getRegistryName()));
+	/** @param planksTexture icon name of the planks texture, e.g. "rustic:planks_olive" */
+	public BlockFenceRustic(String planksTexture, String name) {
+		super(planksTexture, Material.wood);
+		setBlockName(Rustic.MODID + "." + name);
 		setHardness(2F);
+		setResistance(5F);
+		setStepSound(soundTypeWood);
 		setCreativeTab(Rustic.decorTab);
-		setSoundType(state.getBlock().getSoundType());
-		
-		Blocks.FIRE.setFireInfo(this, 5, 20);
+		GameRegistry.registerBlock(this, name);
+		Blocks.fire.setFireInfo(this, 5, 20);
 	}
-	
-	public void initModel() {
-		ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(this), 0, new ModelResourceLocation(getRegistryName().toString(),"inventory"));
+
+	@Override
+	public boolean canConnectFenceTo(IBlockAccess world, int x, int y, int z) {
+		Block block = world.getBlock(x, y, z);
+		if (block instanceof BlockFence && block.getMaterial() == this.getMaterial()) return true;
+		if (block instanceof BlockFenceGate) return true;
+		return super.canConnectFenceTo(world, x, y, z);
 	}
 
 }

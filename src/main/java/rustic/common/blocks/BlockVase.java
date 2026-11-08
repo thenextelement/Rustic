@@ -1,33 +1,26 @@
 package rustic.common.blocks;
 
-import net.minecraft.block.ITileEntityProvider;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyInteger;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.common.util.ForgeDirection;
 import rustic.common.tileentity.TileEntityVase;
 import rustic.core.Rustic;
 
-public class BlockVase extends BlockBase implements ITileEntityProvider {
+/** Metadata = vase variant (0..12). */
+public class BlockVase extends BlockTileBase implements IModelBlock, ISupportShape {
 
 	public static final int GUI_ID = 1;
 	public static final int MIN_VARIANT = 0, MAX_VARIANT = 12;
@@ -46,123 +39,78 @@ public class BlockVase extends BlockBase implements ITileEntityProvider {
 		12, // alt model medium gray ceramic
 		11, // alt model dark gray ceramic
 	};
-	public static final PropertyInteger VARIANT = PropertyInteger.create("variant", MIN_VARIANT, MAX_VARIANT);
-	protected static final AxisAlignedBB VASE_AABB = new AxisAlignedBB(0.125D, 0.0D, 0.125D, 0.875D, 1D, 0.875D);
+
+	public static class ItemBlockVase extends ItemBlock {
+		public ItemBlockVase(net.minecraft.block.Block block) {
+			super(block);
+			setHasSubtypes(true);
+			setMaxDamage(0);
+		}
+
+		@Override
+		public int getMetadata(int damage) {
+			return damage;
+		}
+	}
 
 	public BlockVase() {
-		super(Material.ROCK, "vase", false);
+		super(Material.rock, "vase", false);
 		setHardness(0.5F);
-
-		ItemBlock item = new ItemBlock(this) {
-			@Override
-			public int getMetadata(int damage) {
-				return damage;
-			}
-		};
-		item.setMaxDamage(0);
-		item.setRegistryName(this.getRegistryName());
-		register(item);
+		setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 1F, 0.875F);
+		register(ItemBlockVase.class);
 	}
 
 	@Override
-	public boolean eventReceived(IBlockState state, World worldIn, BlockPos pos, int id, int param) {
-		super.eventReceived(state, worldIn, pos, id, param);
-		TileEntity tileentity = worldIn.getTileEntity(pos);
-		return tileentity == null ? false : tileentity.receiveClientEvent(id, param);
-	}
-
-	@Override
-	public TileEntity createNewTileEntity(World worldIn, int meta) {
+	public TileEntity createNewTileEntity(World world, int meta) {
 		return new TileEntityVase();
 	}
 
-	public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
-		TileEntity tileentity = worldIn.getTileEntity(pos);
-		if(tileentity instanceof TileEntityVase) {
-			((TileEntityVase) tileentity).breakBlock(worldIn, pos, state);
-		}
-		worldIn.removeTileEntity(pos);
-		super.breakBlock(worldIn, pos, state);
-	}
-
 	@Override
-	public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand,
-			EnumFacing facing, float hitX, float hitY, float hitZ) {
-		if (world.isRemote) {
-			return true;
-		}
-		TileEntity te = world.getTileEntity(pos);
-		if (!(te instanceof TileEntityVase)) {
-			return false;
-		}
-		player.openGui(Rustic.instance, GUI_ID, world, pos.getX(), pos.getY(), pos.getZ());
+	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+			float hitY, float hitZ) {
+		if (world.isRemote) return true;
+		if (!(world.getTileEntity(x, y, z) instanceof TileEntityVase)) return false;
+		player.openGui(Rustic.instance, GUI_ID, world, x, y, z);
 		return true;
 	}
 
-	public boolean isOpaqueCube(IBlockState state) {
-		return false;
-	}
-
-	public boolean isFullCube(IBlockState state) {
-		return false;
-	}
-
-	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-		return VASE_AABB;
-	}
-
-	public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY,
-			float hitZ, int meta, EntityLivingBase placer) {
-		// Random rand = new Random();
-		// return this.getDefaultState().withProperty(VARIANT, rand.nextInt(6));
-		return this.getDefaultState().withProperty(VARIANT, meta);
-	}
-
-	public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer,
-			ItemStack stack) {
-		if (stack.hasDisplayName()) {
-			TileEntity tileentity = worldIn.getTileEntity(pos);
-
-			if (tileentity instanceof TileEntityVase) {
-				((TileEntityVase) tileentity).setCustomName(stack.getDisplayName());
-				((TileEntityVase) tileentity).markDirty();
-			}
-		}
-	}
-
-	public int getMetaFromState(IBlockState state) {
-		return state.getValue(VARIANT);
+	@Override
+	public int onBlockPlaced(World world, int x, int y, int z, int side, float hitX, float hitY, float hitZ, int meta) {
+		return meta;
 	}
 
 	@Override
-	public int damageDropped(IBlockState state) {
-		return this.getMetaFromState(state.withProperty(VARIANT, 0));
+	public int damageDropped(int meta) {
+		return meta;
 	}
 
+	@Override
 	@SideOnly(Side.CLIENT)
-	public BlockRenderLayer getBlockLayer() {
-		return BlockRenderLayer.CUTOUT;
-	}
-
-	public IBlockState getStateFromMeta(int meta) {
-		return this.getDefaultState().withProperty(VARIANT, meta);
-	}
-
-	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] { VARIANT });
-	}
-
-	@Override
-	public BlockFaceShape getBlockFaceShape(IBlockAccess world, IBlockState state, BlockPos pos, EnumFacing side) {
-		return (side == EnumFacing.DOWN) ? BlockFaceShape.CENTER_BIG : BlockFaceShape.UNDEFINED;
-	}
-
-	@Override
-	public void initModel() {
-		for (int i = MIN_VARIANT; i <= MAX_VARIANT; i++) {
-			ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(this), i,
-					new ModelResourceLocation(getRegistryName().toString() + "_" + i, "inventory"));
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void getSubBlocks(Item item, CreativeTabs tab, List list) {
+		for (int variant : ITEM_ORDER) {
+			list.add(new ItemStack(item, 1, variant));
 		}
+	}
+
+	@Override
+	public boolean canSupportOnSide(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+		return side == ForgeDirection.DOWN;
+	}
+
+	@Override
+	public String getBlockStateName() {
+		return name;
+	}
+
+	@Override
+	public Map<String, String> getRenderProperties(IBlockAccess world, int x, int y, int z) {
+		return getInventoryProperties(world.getBlockMetadata(x, y, z));
+	}
+
+	@Override
+	public Map<String, String> getInventoryProperties(int meta) {
+		return Collections.singletonMap("variant", String.valueOf(Math.min(Math.max(meta, MIN_VARIANT), MAX_VARIANT)));
 	}
 
 }

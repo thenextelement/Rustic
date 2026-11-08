@@ -3,25 +3,24 @@ package rustic.common.tileentity;
 import java.util.Random;
 import java.lang.Math;
 
-import javax.annotation.Nonnull;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.IGrowable;
-import net.minecraft.block.state.IBlockState;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ITickable;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentTranslation;
+
+
+
+import net.minecraft.util.IChatComponent;
+import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.common.IPlantable;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
+
+
+
 import rustic.common.Config;
 import rustic.common.items.ModItems;
 
@@ -61,8 +60,8 @@ public class TileEntityApiary extends TileEntity implements ITickable {
 	private int productionTimer = 0;
 	private Random random = new Random();
 	
-	public ITextComponent getDisplayName() {
-        return (ITextComponent)new TextComponentTranslation(this.getName(), new Object[0]);
+	public IChatComponent getDisplayName() {
+        return (IChatComponent)new ChatComponentTranslation(this.getName(), new Object[0]);
     }
 	
 	public String getName() {
@@ -141,11 +140,11 @@ public class TileEntityApiary extends TileEntity implements ITickable {
 
 		int numBees = 0;
 		if (beeItemStackHandler.getStackInSlot(0).getItem().equals(ModItems.BEE)) {
-			numBees = beeItemStackHandler.getStackInSlot(0).getCount();
+			numBees = beeItemStackHandler.getStackInSlot(0).stackSize;
 		}
 		int numHoneycomb = 0;
 		if (honeyCombItemStackHandler.getStackInSlot(0).getItem().equals(ModItems.HONEYCOMB)) {
-			numHoneycomb = honeyCombItemStackHandler.getStackInSlot(0).getCount();
+			numHoneycomb = honeyCombItemStackHandler.getStackInSlot(0).stackSize;
 		}
 
 		if (numBees > 0 && !this.getWorld().isRemote) {
@@ -157,7 +156,7 @@ public class TileEntityApiary extends TileEntity implements ITickable {
 			if (reproductionTimer >= reproductionTime) {
 				reproductionTimer = 0;
 				if (numBees < 64) {
-					beeItemStackHandler.getStackInSlot(0).grow(1);
+					beeItemStackHandler.getStackInSlot(0).stackSize += 1;
 				}
 			}
 			if (productionTimer >= productionTime) {
@@ -165,7 +164,7 @@ public class TileEntityApiary extends TileEntity implements ITickable {
 				if (numHoneycomb == 0) {
 					honeyCombItemStackHandler.setStackInSlot(0, new ItemStack(ModItems.HONEYCOMB, 1));
 				} else if (numHoneycomb < 64) {
-					honeyCombItemStackHandler.getStackInSlot(0).grow(1);
+					honeyCombItemStackHandler.getStackInSlot(0).stackSize += 1;
 				}
 			}
 

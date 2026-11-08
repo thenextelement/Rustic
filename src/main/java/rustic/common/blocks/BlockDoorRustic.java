@@ -2,77 +2,77 @@ package rustic.common.blocks;
 
 import java.util.Random;
 
-import net.minecraft.block.Block;
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.BlockDoor;
-import net.minecraft.block.SoundType;
-import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.client.renderer.block.statemap.StateMap;
-import net.minecraft.init.Items;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemDoor;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 import rustic.core.Rustic;
 
 public class BlockDoorRustic extends BlockDoor {
 
 	protected Item item;
 
-	protected BlockDoorRustic(Material materialIn, String name) {
-		super(materialIn);
-		setRegistryName(name);
-		setUnlocalizedName(Rustic.MODID + "." + name);
-		setCreativeTab(Rustic.decorTab);
-		Item item = new ItemDoor(this) {
+	/**
+	 * @param name registry name, e.g. "olive_door"; textures are "rustic:door_olive_upper/lower" for the block and
+	 *            "rustic:door_olive" for the item
+	 */
+	protected BlockDoorRustic(Material material, String name) {
+		super(material);
+		String wood = name.substring(0, name.indexOf('_'));
+		setBlockName(Rustic.MODID + "." + name);
+		setBlockTextureName(Rustic.MODID + ":door_" + wood);
+		setHardness(3F);
+		setStepSound(soundTypeWood);
+		disableStats();
+		GameRegistry.registerBlock(this, null, name);
 
-		}.setCreativeTab(Rustic.decorTab);
-		item.setRegistryName(this.getRegistryName());
-		item.setUnlocalizedName(this.getUnlocalizedName());
-		GameRegistry.findRegistry(Block.class).register(this);
-		GameRegistry.findRegistry(Item.class).register(item);
-		this.item = item;
-		this.setHardness(3F);
-		this.setSoundType(SoundType.WOOD);
-		this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH)
-				.withProperty(OPEN, Boolean.valueOf(false)).withProperty(HINGE, BlockDoor.EnumHingePosition.LEFT)
-				.withProperty(POWERED, Boolean.valueOf(false)).withProperty(HALF, BlockDoor.EnumDoorHalf.LOWER));
+		item = new ItemDoorRustic(material, this);
+		item.setUnlocalizedName(Rustic.MODID + "." + name);
+		item.setTextureName(Rustic.MODID + ":door_" + wood);
+		item.setCreativeTab(Rustic.decorTab);
+		GameRegistry.registerItem(item, name);
 	}
 
 	@Override
-	public MapColor getMapColor(IBlockState state, IBlockAccess worldIn, BlockPos pos) {
-		return state.getMaterial().getMaterialMapColor();
+	public Item getItemDropped(int meta, Random random, int fortune) {
+		return (meta & 8) != 0 ? null : item;
 	}
 
 	@Override
-	public Item getItemDropped(IBlockState state, Random rand, int fortune) {
-		return state.getValue(HALF) == BlockDoor.EnumDoorHalf.UPPER ? Items.AIR : this.getItem();
-	}
-
-	@Override
-	public ItemStack getItem(World worldIn, BlockPos pos, IBlockState state) {
-		return new ItemStack(this.getItem());
-	}
-
-	private Item getItem() {
-		return this.item;
-	}
-
 	@SideOnly(Side.CLIENT)
-	public void initModel() {
-		ModelLoader.setCustomStateMapper(this, new StateMap.Builder().ignore(BlockDoor.POWERED).build());
+	public Item getItem(World world, int x, int y, int z) {
+		return item;
+	}
 
-		ModelLoader.setCustomModelResourceLocation(this.getItem(), 0,
-				new ModelResourceLocation(getRegistryName(), "inventory"));
+	public static class ItemDoorRustic extends ItemDoor {
+		private final BlockDoor door;
+
+		public ItemDoorRustic(Material material, BlockDoor door) {
+			super(material);
+			this.door = door;
+		}
+
+		@Override
+		public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side,
+				float hitX, float hitY, float hitZ) {
+			if (side != 1) return false;
+			++y;
+			if (player.canPlayerEdit(x, y, z, side, stack) && player.canPlayerEdit(x, y + 1, z, side, stack)) {
+				if (!door.canPlaceBlockAt(world, x, y, z)) return false;
+				int facing = MathHelper.floor_double((player.rotationYaw + 180.0F) * 4.0F / 360.0F - 0.5D) & 3;
+				placeDoorBlock(world, x, y, z, facing, door);
+				--stack.stackSize;
+				return true;
+			}
+			return false;
+		}
 	}
 
 }

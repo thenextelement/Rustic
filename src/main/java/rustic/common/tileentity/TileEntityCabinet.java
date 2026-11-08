@@ -1,12 +1,11 @@
 package rustic.common.tileentity;
 
-import javax.annotation.Nullable;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.init.SoundEvents;
+
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -14,20 +13,20 @@ import net.minecraft.nbt.NBTTagInt;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntityLockableLoot;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ITickable;
-import net.minecraft.util.NonNullList;
+
+
+
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
+
+import net.minecraft.util.AxisAlignedBB;
+
 import net.minecraft.world.World;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.fml.common.Optional;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.IItemHandler;
+
+import cpw.mods.fml.common.Optional;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+
+
 import rustic.common.blocks.BlockCabinet;
 import rustic.common.blocks.ModBlocks;
 import rustic.common.inventory.DoubleCabinetItemHandler;
@@ -42,7 +41,7 @@ public class TileEntityCabinet extends TileEntityLockableLoot implements ITickab
 	public float prevLidAngle = 0;
 	public int numPlayersUsing = 0;
 	private int ticksSinceSync = 0;
-	public ItemStack material = ItemStack.EMPTY;
+	public ItemStack material = null;
 
 	private ItemStackHandlerRustic itemStackHandler = new ItemStackHandlerRustic (27) {
 		@Override
@@ -71,13 +70,13 @@ public class TileEntityCabinet extends TileEntityLockableLoot implements ITickab
 		int k = this.pos.getZ();
 		++this.ticksSinceSync;
 
-		if (!this.world.isRemote && this.numPlayersUsing != 0 && (this.ticksSinceSync + i + j + k) % 200 == 0) {
+		if (!this.worldObj.isRemote && this.numPlayersUsing != 0 && (this.ticksSinceSync + i + j + k) % 200 == 0) {
 			
 			int recordedUsers = numPlayersUsing;
 			this.numPlayersUsing = 0;
 			//float f = 5.0F;
 
-			for (EntityPlayer entityplayer : this.world.getEntitiesWithinAABB(EntityPlayer.class,
+			for (EntityPlayer entityplayer : this.worldObj.getEntitiesWithinAABB(EntityPlayer.class,
 					new AxisAlignedBB((double) ((float) i - 5.0F), (double) ((float) j - 5.0F),
 							(double) ((float) k - 5.0F), (double) ((float) (i + 1) + 5.0F),
 							(double) ((float) (j + 1) + 5.0F), (double) ((float) (k + 1) + 5.0F)))) {
@@ -106,8 +105,8 @@ public class TileEntityCabinet extends TileEntityLockableLoot implements ITickab
 		//float f1 = 0.1F;
 
 		if (this.numPlayersUsing > 0 && this.lidAngle == 0.0F) {
-			this.world.playSound((EntityPlayer) null, i + 0.5D, j + 0.5D, k + 0.5D, SoundEvents.BLOCK_CHEST_OPEN,
-					SoundCategory.BLOCKS, 0.5F, this.world.rand.nextFloat() * 0.1F + 0.9F);
+			this.worldObj.playSound((EntityPlayer) null, i + 0.5D, j + 0.5D, k + 0.5D, SoundEvents.BLOCK_CHEST_OPEN,
+					SoundCategory.BLOCKS, 0.5F, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
 		}
 
 		if (this.numPlayersUsing == 0 && this.lidAngle > 0.0F || this.numPlayersUsing > 0 && this.lidAngle < 1.0F) {
@@ -126,8 +125,8 @@ public class TileEntityCabinet extends TileEntityLockableLoot implements ITickab
 			//float f3 = 0.5F;
 
 			if (this.lidAngle < 0.5F && f2 >= 0.5F) {
-				this.world.playSound((EntityPlayer) null, i + 0.5D, j + 0.5D, k + 0.5D, SoundEvents.BLOCK_CHEST_CLOSE,
-						SoundCategory.BLOCKS, 0.5F, this.world.rand.nextFloat() * 0.1F + 0.9F);
+				this.worldObj.playSound((EntityPlayer) null, i + 0.5D, j + 0.5D, k + 0.5D, SoundEvents.BLOCK_CHEST_CLOSE,
+						SoundCategory.BLOCKS, 0.5F, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
 			}
 
 			if (this.lidAngle < 0.0F) {
@@ -154,8 +153,8 @@ public class TileEntityCabinet extends TileEntityLockableLoot implements ITickab
 			}
 
 			++this.numPlayersUsing;
-			this.world.addBlockEvent(this.pos, this.getBlockType(), 1, this.numPlayersUsing);
-			this.world.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), false);
+			this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, this.numPlayersUsing);
+			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), false);
 			markDirty();
 		}
 	}
@@ -163,8 +162,8 @@ public class TileEntityCabinet extends TileEntityLockableLoot implements ITickab
 	public void closeInventory(EntityPlayer player) {
 		if (!player.isSpectator() && this.getBlockType() instanceof BlockCabinet) {
 			--this.numPlayersUsing;
-			this.world.addBlockEvent(this.pos, this.getBlockType(), 1, this.numPlayersUsing);
-			this.world.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), false);
+			this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, this.numPlayersUsing);
+			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), false);
 			markDirty();
 		}
 	}
@@ -283,7 +282,7 @@ public class TileEntityCabinet extends TileEntityLockableLoot implements ITickab
 	@Override
 	public boolean isEmpty() {
 		for (int i = 0; i < itemStackHandler.getSlots(); i++) {
-			if (itemStackHandler.getStackInSlot(i) != ItemStack.EMPTY) {
+			if (itemStackHandler.getStackInSlot(i) != null) {
 				return false;
 			}
 		}
@@ -306,7 +305,7 @@ public class TileEntityCabinet extends TileEntityLockableLoot implements ITickab
 	public ItemStack removeStackFromSlot(int index) {
 		this.fillWithLoot((EntityPlayer)null);
 		ItemStack stack = itemStackHandler.getStackInSlot(index);
-		itemStackHandler.setStackInSlot(index, ItemStack.EMPTY);
+		itemStackHandler.setStackInSlot(index, null);
 		return stack;
 	}
 
@@ -349,7 +348,7 @@ public class TileEntityCabinet extends TileEntityLockableLoot implements ITickab
 	public void clear() {
 		this.fillWithLoot((EntityPlayer)null);
 		for (int i = 0; i < itemStackHandler.getSlots(); i++) {
-			itemStackHandler.setStackInSlot(i, ItemStack.EMPTY);
+			itemStackHandler.setStackInSlot(i, null);
 		}
 	}
 

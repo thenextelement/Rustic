@@ -4,9 +4,9 @@ import java.util.Random;
 
 import net.minecraft.block.BlockOldLog;
 import net.minecraft.block.BlockPlanks;
-import net.minecraft.block.state.IBlockState;
+
 import net.minecraft.init.Blocks;
-import net.minecraft.util.math.BlockPos;
+
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.WorldGenAbstractTree;
 import rustic.common.blocks.ModBlocks;
@@ -14,7 +14,7 @@ import rustic.common.blocks.crops.BlockLeavesApple;
 
 public class WorldGenAppleTree extends WorldGenAbstractTree {
 	
-	private static final IBlockState LOG = Blocks.LOG.getDefaultState().withProperty(BlockOldLog.VARIANT, BlockPlanks.EnumType.OAK);
+	private static final IBlockState LOG = Blocks.log.getDefaultState().withProperty(BlockOldLog.VARIANT, BlockPlanks.EnumType.OAK);
 	private static final IBlockState LEAF = ModBlocks.APPLE_LEAVES.getDefaultState().withProperty(BlockLeavesApple.AGE, 0).withProperty(BlockLeavesApple.CHECK_DECAY, false);
 
 	public WorldGenAppleTree(boolean notify) {
@@ -59,7 +59,7 @@ public class WorldGenAppleTree extends WorldGenAbstractTree {
 			} else {
 				BlockPos down = position.down();
 				IBlockState state = worldIn.getBlockState(down);
-				boolean isSoil = state.getBlock().canSustainPlant(state, worldIn, down, net.minecraft.util.EnumFacing.UP, (net.minecraft.block.BlockSapling) Blocks.SAPLING);
+				boolean isSoil = state.getBlock().canSustainPlant(state, worldIn, down, net.minecraft.util.EnumFacing.UP, (net.minecraft.block.BlockSapling) Blocks.sapling);
 
 				if (isSoil && position.getY() < worldIn.getHeight() - i - 1) {
 					state.getBlock().onPlantGrow(state, worldIn, down, position);

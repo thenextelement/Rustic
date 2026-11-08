@@ -1,18 +1,17 @@
 package rustic.common.tileentity;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
-import net.minecraft.block.state.IBlockState;
+
+
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
+
 import net.minecraft.util.EnumFacing.Axis;
-import net.minecraftforge.common.capabilities.Capability;
+
 import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.wrapper.RangedWrapper;
+
+
+
+
 import rustic.common.blocks.BlockCondenser;
 import rustic.common.blocks.BlockCondenserAdvanced;
 import rustic.common.blocks.ModBlocks;
@@ -98,7 +97,7 @@ public class TileEntityCondenserAdvancedBottom extends TileEntityCondenserBase {
 		}
 		
 //		if (internalStackHandler.getStackInSlot(SLOT_BOTTLE).isEmpty()
-//				|| internalStackHandler.getStackInSlot(SLOT_BOTTLE).getCount() < 1) {
+//				|| internalStackHandler.getStackInSlot(SLOT_BOTTLE).stackSize < 1) {
 //			return false;
 //		}
 

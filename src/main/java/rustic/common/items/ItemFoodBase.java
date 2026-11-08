@@ -1,10 +1,10 @@
 package rustic.common.items;
 
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemFood;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fml.common.registry.GameRegistry;
+
+import cpw.mods.fml.common.registry.GameRegistry;
 import rustic.core.Rustic;
 
 public class ItemFoodBase extends ItemFood {

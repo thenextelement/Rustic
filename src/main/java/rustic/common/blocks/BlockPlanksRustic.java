@@ -1,139 +1,96 @@
 package rustic.common.blocks;
 
-import net.minecraft.block.SoundType;
+import java.util.List;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyEnum;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.IStringSerializable;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.util.IIcon;
+import rustic.core.Rustic;
 
-public class BlockPlanksRustic extends BlockBase {
-
-	public static final PropertyEnum<BlockPlanksRustic.EnumType> VARIANT = PropertyEnum.<BlockPlanksRustic.EnumType>create("variant", BlockPlanksRustic.EnumType.class);
-
-	public BlockPlanksRustic() {
-		super(Material.WOOD, "planks", false);
-		setHardness(2F);
-		setResistance(5F);
-		setSoundType(SoundType.WOOD);
-
-		ItemBlock item = new ItemBlock(this) {
-			@Override
-			public String getUnlocalizedName(ItemStack stack) {
-				IBlockState state = BlockPlanksRustic.this.getStateFromMeta(stack.getMetadata());
-				return getUnlocalizedName() + "_" + state.getValue(BlockPlanksRustic.VARIANT);
-			}
-
-			@Override
-			public int getMetadata(int damage) {
-				return damage;
-			}
-		};
-		item.setHasSubtypes(true);
-		item.setMaxDamage(0);
-		item.setRegistryName(this.getRegistryName());
-		register(item);
-
-		Blocks.FIRE.setFireInfo(this, 5, 20);
-	}
-
-	@Override
-	public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int i, EntityLivingBase player, EnumHand hand) {
-		return getStateFromMeta(i);
-	}
+public class BlockPlanksRustic extends BlockBase implements ItemBlockMeta.INamedVariants {
 
 	@SideOnly(Side.CLIENT)
-	public void initModel() {
-		for (int i = 0; i < EnumType.values().length; i++) {
-			ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(this), i, new ModelResourceLocation(getRegistryName() + "_" + EnumType.byMetadata(i).getName(), "inventory"));
-		}
-	}
+	private IIcon[] icons;
 
-	public int damageDropped(IBlockState state) {
-		return ((BlockPlanksRustic.EnumType) state.getValue(VARIANT)).getMetadata();
+	public BlockPlanksRustic() {
+		super(Material.wood, "planks", false);
+		setHardness(2F);
+		setResistance(5F);
+		setStepSound(soundTypeWood);
+		register(ItemBlockMeta.class);
+		Blocks.fire.setFireInfo(this, 5, 20);
 	}
 
 	@Override
-	public void getSubBlocks(CreativeTabs tab, NonNullList<ItemStack> list) {
-		for (BlockPlanksRustic.EnumType blockplanks$enumtype : BlockPlanksRustic.EnumType.values()) {
-			list.add(new ItemStack(Item.getItemFromBlock(this), 1, blockplanks$enumtype.getMetadata()));
+	public String[] getVariantNames() {
+		return EnumType.NAMES;
+	}
+
+	@Override
+	public int damageDropped(int meta) {
+		return EnumType.byMetadata(meta).getMetadata();
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void getSubBlocks(Item item, CreativeTabs tab, List list) {
+		for (EnumType type : EnumType.values()) {
+			list.add(new ItemStack(item, 1, type.getMetadata()));
 		}
 	}
 
-	public IBlockState getStateFromMeta(int meta) {
-		return this.getDefaultState().withProperty(VARIANT, BlockPlanksRustic.EnumType.byMetadata(meta));
+	@Override
+	@SideOnly(Side.CLIENT)
+	public void registerBlockIcons(IIconRegister register) {
+		icons = new IIcon[EnumType.values().length];
+		for (EnumType type : EnumType.values()) {
+			icons[type.getMetadata()] = register.registerIcon(Rustic.MODID + ":planks_" + type.getName());
+		}
+		blockIcon = icons[0];
 	}
 
-	public int getMetaFromState(IBlockState state) {
-		return ((BlockPlanksRustic.EnumType) state.getValue(VARIANT)).getMetadata();
+	@Override
+	@SideOnly(Side.CLIENT)
+	public IIcon getIcon(int side, int meta) {
+		return icons[EnumType.byMetadata(meta).getMetadata()];
 	}
 
-	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] { VARIANT });
-	}
-
-	public static enum EnumType implements IStringSerializable {
+	public static enum EnumType {
 		OLIVE(0, "olive"), IRONWOOD(1, "ironwood");
 
-		private static final BlockPlanksRustic.EnumType[] META_LOOKUP = new BlockPlanksRustic.EnumType[values().length];
+		public static final String[] NAMES = { "olive", "ironwood" };
 		private final int meta;
 		private final String name;
-		private final String unlocalizedName;
 
-		private EnumType(int metaIn, String nameIn) {
-			this(metaIn, nameIn, nameIn);
-		}
-
-		private EnumType(int metaIn, String nameIn, String unlocalizedNameIn) {
-			this.meta = metaIn;
-			this.name = nameIn;
-			this.unlocalizedName = unlocalizedNameIn;
+		private EnumType(int meta, String name) {
+			this.meta = meta;
+			this.name = name;
 		}
 
 		public int getMetadata() {
 			return this.meta;
 		}
 
-		public String toString() {
-			return this.name;
-		}
-
-		public static BlockPlanksRustic.EnumType byMetadata(int meta) {
-			if (meta < 0 || meta >= META_LOOKUP.length) {
-				meta = 0;
-			}
-
-			return META_LOOKUP[meta];
-		}
-
 		public String getName() {
 			return this.name;
 		}
 
-		public String getUnlocalizedName() {
-			return this.unlocalizedName;
+		@Override
+		public String toString() {
+			return this.name;
 		}
 
-		static {
-			for (BlockPlanksRustic.EnumType blockplanks$enumtype : values()) {
-				META_LOOKUP[blockplanks$enumtype.getMetadata()] = blockplanks$enumtype;
-			}
+		public static EnumType byMetadata(int meta) {
+			meta &= 7;
+			if (meta < 0 || meta >= values().length) meta = 0;
+			return values()[meta];
 		}
 	}
 

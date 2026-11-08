@@ -1,153 +1,140 @@
 package rustic.common.blocks.crops;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Random;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.IGrowable;
-import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyInteger;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.EnumPlantType;
 import net.minecraftforge.common.IPlantable;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.common.util.ForgeDirection;
 import rustic.common.blocks.BlockBase;
+import rustic.common.blocks.IModelBlock;
 import rustic.common.blocks.ModBlocks;
 import rustic.core.Rustic;
 
-public class BlockAppleSeeds extends BlockBase implements IGrowable, IPlantable {
-
-	public static final PropertyInteger AGE = PropertyInteger.create("age", 0, 1);
-
-	private static final AxisAlignedBB[] CROPS_AABB = new AxisAlignedBB[] {
-			new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.125D, 1.0D),
-			new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.5D, 1.0D) };
+/** Metadata = age (0..1); grows into an apple sapling. */
+public class BlockAppleSeeds extends BlockBase implements IGrowable, IPlantable, IModelBlock {
 
 	public BlockAppleSeeds() {
-		super(Material.PLANTS, "apple_seeds");
-		setSoundType(SoundType.PLANT);
+		super(Material.plants, "apple_seeds");
+		setStepSound(soundTypeGrass);
 		setHardness(0F);
 		setTickRandomly(true);
 		setCreativeTab(Rustic.farmingTab);
-		setDefaultState(this.blockState.getBaseState().withProperty(AGE, 0));
 	}
 
 	public int getMaxAge() {
 		return 1;
 	}
 
-	public boolean isOpaqueCube(IBlockState state) {
+	@Override
+	public boolean isOpaqueCube() {
 		return false;
-	}
-
-	public boolean isFullCube(IBlockState state) {
-		return false;
-	}
-
-	@SideOnly(Side.CLIENT)
-	public BlockRenderLayer getBlockLayer() {
-		return BlockRenderLayer.CUTOUT;
 	}
 
 	@Override
-	public EnumPlantType getPlantType(IBlockAccess world, BlockPos pos) {
+	public boolean renderAsNormalBlock() {
+		return false;
+	}
+
+	@Override
+	public EnumPlantType getPlantType(IBlockAccess world, int x, int y, int z) {
 		return EnumPlantType.Plains;
 	}
 
 	@Override
-	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-		return CROPS_AABB[((Integer) state.getValue(AGE)).intValue()];
+	public Block getPlant(IBlockAccess world, int x, int y, int z) {
+		return this;
 	}
 
-	public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand) {
-		super.updateTick(worldIn, pos, state, rand);
+	@Override
+	public int getPlantMetadata(IBlockAccess world, int x, int y, int z) {
+		return world.getBlockMetadata(x, y, z);
+	}
 
-		if (worldIn.getLightFromNeighbors(pos.up()) >= 9) {
-			int i = state.getValue(AGE);
-			float f = getGrowthChance(this, worldIn, pos);
+	@Override
+	public void setBlockBoundsBasedOnState(IBlockAccess world, int x, int y, int z) {
+		setBlockBounds(0, 0, 0, 1, world.getBlockMetadata(x, y, z) >= 1 ? 0.5F : 0.125F, 1);
+	}
 
-			if (net.minecraftforge.common.ForgeHooks.onCropsGrowPre(worldIn, pos, state,
-					rand.nextInt((int) (25.0F / f) + 1) == 0)) {
-				if (i < this.getMaxAge()) {
-					worldIn.setBlockState(pos, state.withProperty(AGE, (i + 1)), 2);
-				} else {
-					worldIn.setBlockState(pos, ModBlocks.APPLE_SAPLING.getDefaultState(), 3);
-				}
-				net.minecraftforge.common.ForgeHooks.onCropsGrowPost(worldIn, pos, state, worldIn.getBlockState(pos));
-			}
+	@Override
+	public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
+		return null;
+	}
+
+	@Override
+	public void updateTick(World world, int x, int y, int z, Random rand) {
+		super.updateTick(world, x, y, z, rand);
+		if (world.getBlockLightValue(x, y + 1, z) >= 9 && rand.nextInt((int) (25.0F / 7F) + 1) == 0) {
+			func_149853_b(world, rand, x, y, z);
 		}
 	}
 
-	protected static float getGrowthChance(Block blockIn, World worldIn, BlockPos pos) {
-		return 7F;
-	}
-
+	// IGrowable: canGrow
 	@Override
-	public boolean canGrow(World worldIn, BlockPos pos, IBlockState state, boolean isClient) {
+	public boolean func_149851_a(World world, int x, int y, int z, boolean isClient) {
 		return true;
 	}
 
+	// IGrowable: canUseBonemeal
 	@Override
-	public boolean canUseBonemeal(World worldIn, Random rand, BlockPos pos, IBlockState state) {
+	public boolean func_149852_a(World world, Random rand, int x, int y, int z) {
 		return true;
 	}
 
+	// IGrowable: grow
 	@Override
-	public void grow(World worldIn, Random rand, BlockPos pos, IBlockState state) {
-		if (state.getValue(AGE) < getMaxAge()) {
-			worldIn.setBlockState(pos, state.withProperty(AGE, getMaxAge()), 2);
+	public void func_149853_b(World world, Random rand, int x, int y, int z) {
+		if (world.getBlockMetadata(x, y, z) < getMaxAge()) {
+			world.setBlockMetadataWithNotify(x, y, z, getMaxAge(), 2);
 		} else {
-			worldIn.setBlockState(pos, ModBlocks.APPLE_SAPLING.getDefaultState(), 3);
+			world.setBlock(x, y, z, ModBlocks.APPLE_SAPLING, 0, 3);
 		}
 	}
-	
+
 	@Override
-	public boolean canPlaceBlockAt(World worldIn, BlockPos pos) {
-		IBlockState soil = worldIn.getBlockState(pos.down());
-		return super.canPlaceBlockAt(worldIn, pos)
-				&& soil.getBlock().canSustainPlant(soil, worldIn, pos.down(), net.minecraft.util.EnumFacing.UP, this);
+	public boolean canPlaceBlockAt(World world, int x, int y, int z) {
+		return super.canPlaceBlockAt(world, x, y, z)
+				&& world.getBlock(x, y - 1, z).canSustainPlant(world, x, y - 1, z, ForgeDirection.UP, this);
 	}
 
 	@Override
-	public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY,
-			float hitZ, int meta, EntityLivingBase placer) {
-		return getDefaultState();
+	public boolean canBlockStay(World world, int x, int y, int z) {
+		return world.getBlock(x, y - 1, z).canSustainPlant(world, x, y - 1, z, ForgeDirection.UP, this);
 	}
 
 	@Override
-	public IBlockState getStateFromMeta(int meta) {
-		return getDefaultState().withProperty(AGE, meta);
+	public void onNeighborBlockChange(World world, int x, int y, int z, Block neighbor) {
+		if (!canBlockStay(world, x, y, z)) {
+			dropBlockAsItem(world, x, y, z, world.getBlockMetadata(x, y, z), 0);
+			world.setBlockToAir(x, y, z);
+		}
 	}
 
 	@Override
-	public int getMetaFromState(IBlockState state) {
-		return state.getValue(AGE);
+	public int damageDropped(int meta) {
+		return 0;
 	}
 
 	@Override
-	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] { AGE });
+	public String getBlockStateName() {
+		return name;
 	}
 
 	@Override
-	public IBlockState getPlant(IBlockAccess world, BlockPos pos) {
-		return getDefaultState();
+	public Map<String, String> getRenderProperties(IBlockAccess world, int x, int y, int z) {
+		return getInventoryProperties(world.getBlockMetadata(x, y, z));
 	}
-	
+
 	@Override
-	public BlockFaceShape getBlockFaceShape(IBlockAccess world, IBlockState state, BlockPos pos, EnumFacing side) {
-        return BlockFaceShape.UNDEFINED;
-    }
+	public Map<String, String> getInventoryProperties(int meta) {
+		return Collections.singletonMap("age", String.valueOf(Math.min(meta, 1)));
+	}
 
 }

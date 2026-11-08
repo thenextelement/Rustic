@@ -1,144 +1,124 @@
 package rustic.common.blocks;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-import javax.annotation.Nullable;
-
-import net.minecraft.block.ITileEntityProvider;
-import net.minecraft.block.SoundType;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import rustic.client.renderer.LiquidBarrelRenderer;
 import rustic.common.tileentity.TileEntityLiquidBarrel;
 
-public class BlockLiquidBarrel extends BlockBase implements ITileEntityProvider {
-	
-	protected static final AxisAlignedBB BARREL_AABB = new AxisAlignedBB(0.125D, 0.0D, 0.125D, 0.875D, 1D, 0.875D);
+public class BlockLiquidBarrel extends BlockTileBase implements IModelBlock {
 
-	public BlockLiquidBarrel() {
-		super(Material.WOOD, "liquid_barrel");
-		this.setHardness(1.5F);
-		setSoundType(SoundType.WOOD);
-	}
-	
-	@Override
-	public boolean eventReceived(IBlockState state, World worldIn, BlockPos pos, int id, int param) {
-		super.eventReceived(state, worldIn, pos, id, param);
-		TileEntity tileentity = worldIn.getTileEntity(pos);
-		return tileentity == null ? false : tileentity.receiveClientEvent(id, param);
-	}
-	
-	@Override
-	@SideOnly(Side.CLIENT)
-	public void addInformation(ItemStack stack, @Nullable World player, List<String> tooltip, ITooltipFlag advanced) {
-		super.addInformation(stack, player, tooltip, advanced);
-		NBTTagCompound nbttagcompound = stack.getTagCompound();
-		
-		if (nbttagcompound != null) {
-            if (nbttagcompound.hasKey("FluidName", Constants.NBT.TAG_STRING) && nbttagcompound.hasKey("Amount", Constants.NBT.TAG_INT)) {
-            	Fluid fluid = FluidRegistry.getFluid(nbttagcompound.getString("FluidName"));
-            	int amount = nbttagcompound.getInteger("Amount");
-            	FluidStack fluidStack = new FluidStack(fluid, amount);
-                tooltip.add(amount + "mb of " + fluid.getLocalizedName(fluidStack));
-            }    
-        }
-	}
+	/** Shows the stored fluid in the tooltip. */
+	public static class ItemBlockLiquidBarrel extends ItemBlock {
+		public ItemBlockLiquidBarrel(net.minecraft.block.Block block) {
+			super(block);
+		}
 
-	@Override
-	public TileEntity createNewTileEntity(World worldIn, int meta) {
-		return new TileEntityLiquidBarrel();
-	}
-	
-	@Override
-	public void onBlockHarvested(World world, BlockPos pos, IBlockState state, EntityPlayer player){
-		((TileEntityLiquidBarrel)world.getTileEntity(pos)).breakBlock(world,pos,state,player);
-	}
-	
-	@Override
-	public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ){
-		return ((TileEntityLiquidBarrel)world.getTileEntity(pos)).activate(world,pos,state,player,hand,side,hitX,hitY,hitZ);
-	}
-	
-	@Override
-	public List<ItemStack> getDrops(IBlockAccess world, BlockPos pos, IBlockState state, int fortune){
-		ArrayList<ItemStack> items = new ArrayList<ItemStack>();
-		return items;
-	}
-	
-	@Override
-	public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase player, ItemStack stack){
-		super.onBlockPlacedBy(world, pos, state, player, stack);
-		if (stack.hasTagCompound()){
-			TileEntityLiquidBarrel tile = (TileEntityLiquidBarrel)createNewTileEntity(world, getMetaFromState(state));
-			world.setTileEntity(pos, tile);
-			tile.getTank().readFromNBT(stack.getTagCompound());
-			tile.markDirty();
+		@Override
+		@SideOnly(Side.CLIENT)
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		public void addInformation(ItemStack stack, EntityPlayer player, List tooltip, boolean advanced) {
+			NBTTagCompound tag = stack.getTagCompound();
+			if (tag != null && tag.hasKey("FluidName", Constants.NBT.TAG_STRING) && tag.hasKey("Amount", Constants.NBT.TAG_INT)) {
+				Fluid fluid = FluidRegistry.getFluid(tag.getString("FluidName"));
+				if (fluid != null) {
+					int amount = tag.getInteger("Amount");
+					tooltip.add(amount + "mb of " + fluid.getLocalizedName(new FluidStack(fluid, amount)));
+				}
+			}
 		}
 	}
-	
-	public boolean isOpaqueCube(IBlockState state) {
-		return false;
+
+	public BlockLiquidBarrel() {
+		super(Material.wood, "liquid_barrel", false);
+		this.setHardness(1.5F);
+		setStepSound(soundTypeWood);
+		setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 1F, 0.875F);
+		register(ItemBlockLiquidBarrel.class);
 	}
 
-	public boolean isFullCube(IBlockState state) {
-		return false;
-	}
-	
-	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-		return BARREL_AABB;
-	}
-	
-	@SideOnly(Side.CLIENT)
-    public void initModel() {
-        ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(this), 0, new ModelResourceLocation(getRegistryName(), "inventory"));
-        ClientRegistry.bindTileEntitySpecialRenderer(TileEntityLiquidBarrel.class, new LiquidBarrelRenderer());
-    }
-	
 	@Override
-	public BlockFaceShape getBlockFaceShape(IBlockAccess world, IBlockState state, BlockPos pos, EnumFacing side) {
-		return BlockFaceShape.UNDEFINED;
+	public TileEntity createNewTileEntity(World world, int meta) {
+		return new TileEntityLiquidBarrel();
 	}
-	
+
 	@Override
-	public void fillWithRain(World worldIn, BlockPos pos) {
-		float f = worldIn.getBiome(pos).getTemperature(pos);
-		
-        if (worldIn.getBiomeProvider().getTemperatureAtHeight(f, pos.getY()) >= 0.15F) {
-        	TileEntity te = worldIn.getTileEntity(pos);
-        	
-        	if (te != null && te instanceof TileEntityLiquidBarrel) {
-        		TileEntityLiquidBarrel telb = (TileEntityLiquidBarrel) te;
-        		FluidStack fluid = new FluidStack(FluidRegistry.WATER, 50);
-        		
-        		if (telb.getTank().canFillFluidType(fluid)) {
-        			telb.getTank().fill(fluid, true);
-        		}
-        	}
-        }
+	public void onBlockHarvested(World world, int x, int y, int z, int meta, EntityPlayer player) {
+		TileEntity tile = world.getTileEntity(x, y, z);
+		if (tile instanceof TileEntityLiquidBarrel) {
+			((TileEntityLiquidBarrel) tile).breakBlock(world, x, y, z, player);
+		}
+	}
+
+	@Override
+	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+			float hitY, float hitZ) {
+		TileEntity tile = world.getTileEntity(x, y, z);
+		return tile instanceof TileEntityLiquidBarrel
+				&& ((TileEntityLiquidBarrel) tile).activate(world, x, y, z, player, side, hitX, hitY, hitZ);
+	}
+
+	@Override
+	public ArrayList<ItemStack> getDrops(World world, int x, int y, int z, int meta, int fortune) {
+		return new ArrayList<>(); // the tile entity drops the barrel with its contents
+	}
+
+	@Override
+	public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase placer, ItemStack stack) {
+		super.onBlockPlacedBy(world, x, y, z, placer, stack);
+		if (stack.hasTagCompound()) {
+			TileEntity tile = world.getTileEntity(x, y, z);
+			if (tile instanceof TileEntityLiquidBarrel) {
+				((TileEntityLiquidBarrel) tile).getTank().readFromNBT(stack.getTagCompound());
+				tile.markDirty();
+			}
+		}
+	}
+
+	@Override
+	public void fillWithRain(World world, int x, int y, int z) {
+		float temperature = world.getBiomeGenForCoords(x, z).getFloatTemperature(x, y, z);
+		if (temperature >= 0.15F) {
+			TileEntity tile = world.getTileEntity(x, y, z);
+			if (tile instanceof TileEntityLiquidBarrel) {
+				TileEntityLiquidBarrel barrel = (TileEntityLiquidBarrel) tile;
+				FluidStack water = new FluidStack(FluidRegistry.WATER, 50);
+				if (barrel.getTank().canFillFluidType(water)) {
+					barrel.getTank().fill(water, true);
+				}
+			}
+		}
+	}
+
+	@Override
+	public String getBlockStateName() {
+		return name;
+	}
+
+	@Override
+	public Map<String, String> getRenderProperties(IBlockAccess world, int x, int y, int z) {
+		return Collections.emptyMap();
+	}
+
+	@Override
+	public Map<String, String> getInventoryProperties(int meta) {
+		return Collections.emptyMap();
 	}
 
 }

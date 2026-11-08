@@ -4,17 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.MobEffects;
+import net.minecraft.potion.Potion;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
+
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
@@ -60,7 +60,7 @@ public class ModFluids {
 			@Override
 			public void onDrank(World world, EntityPlayer player, ItemStack stack, FluidStack fluid) {
 				player.getFoodStats().addStats(1, 0.4F);
-				player.addPotionEffect(new PotionEffect(MobEffects.NAUSEA, 600, 1));
+				player.addPotionEffect(new PotionEffect(Potion.confusion.id, 600, 1));
 			}
 		}.setDensity(920).setViscosity(2000);
 		register(OLIVE_OIL);
@@ -71,18 +71,18 @@ public class ModFluids {
 			@Override
 			public void onDrank(World world, EntityPlayer player, ItemStack stack, FluidStack fluid) {
 				player.getFoodStats().addStats(1, 0.8F);
-				//player.addPotionEffect(new PotionEffect(MobEffects.RESISTANCE, 600, 2, false, false));
-				//player.addPotionEffect(new PotionEffect(MobEffects.FIRE_RESISTANCE, 600, 2, false, false));
-				//player.addPotionEffect(new PotionEffect(MobEffects.SLOWNESS, 600, 15, false, false));
-				//player.addPotionEffect(new PotionEffect(MobEffects.MINING_FATIGUE, 600, 15, false, false));
-				//player.addPotionEffect(new PotionEffect(MobEffects.WEAKNESS, 600, 15, false, false));
-				//player.addPotionEffect(new PotionEffect(MobEffects.JUMP_BOOST, 600, 250, false, false));
+				//player.addPotionEffect(new PotionEffect(Potion.resistance.id, 600, 2, false, false));
+				//player.addPotionEffect(new PotionEffect(Potion.fireResistance.id, 600, 2, false, false));
+				//player.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 600, 15, false, false));
+				//player.addPotionEffect(new PotionEffect(Potion.digSlowdown.id, 600, 15, false, false));
+				//player.addPotionEffect(new PotionEffect(Potion.weakness.id, 600, 15, false, false));
+				//player.addPotionEffect(new PotionEffect(Potion.jump.id, 600, 250, false, false));
 				int duration = 30 * 20;
 				PotionEffect effect = player.getActivePotionEffect(PotionsRustic.FULLMETAL_POTION);
 				if (effect == null) {
-					player.addPotionEffect(new PotionEffect(PotionsRustic.FULLMETAL_POTION, duration, 0, false, true));
+					player.addPotionEffect(new PotionEffect(PotionsRustic.FULLMETAL_POTION.id, duration, 0, false, true));
 				} else {
-					player.addPotionEffect(new PotionEffect(PotionsRustic.FULLMETAL_POTION, effect.getDuration() + duration, 0, false, true));
+					player.addPotionEffect(new PotionEffect(PotionsRustic.FULLMETAL_POTION.id, effect.getDuration() + duration, 0, false, true));
 				}
 			}
 		}.setDensity(1100).setViscosity(1100);
@@ -95,10 +95,10 @@ public class ModFluids {
 			public void onDrank(World world, EntityPlayer player, ItemStack stack, FluidStack fluid) {
 				player.getFoodStats().addStats(1, 1F);
 				if (player.getRNG().nextFloat() < 0.2F) {
-					player.addPotionEffect(new PotionEffect(MobEffects.REGENERATION, 75));
+					player.addPotionEffect(new PotionEffect(Potion.regeneration.id, 75));
 				}
 				if (player.getRNG().nextFloat() < 0.1F) {
-					player.addPotionEffect(new PotionEffect(MobEffects.POISON, 200));
+					player.addPotionEffect(new PotionEffect(Potion.poison.id, 200));
 				}
 			}
 		}.setDensity(1070).setViscosity(1100);
@@ -127,7 +127,7 @@ public class ModFluids {
 			@Override
 			public void onDrank(World world, EntityPlayer player, ItemStack stack, FluidStack fluid) {
 				player.getFoodStats().addStats(1, 2F);
-				player.addPotionEffect(new PotionEffect(MobEffects.NAUSEA, 400, 1));
+				player.addPotionEffect(new PotionEffect(Potion.confusion.id, 400, 1));
 			}
 		}.setDensity(1004).setViscosity(2000);
 		register(ALE_WORT);
@@ -138,7 +138,7 @@ public class ModFluids {
 			public void onDrank(World world, EntityPlayer player, ItemStack stack, FluidStack fluid) {
 				player.getFoodStats().addStats(3, 0.4F);
 				if (player.getRNG().nextFloat() < 0.6F) {
-					player.addPotionEffect(new PotionEffect(MobEffects.REGENERATION, 75));
+					player.addPotionEffect(new PotionEffect(Potion.regeneration.id, 75));
 				}
 			}
 		}.setDensity(1433).setViscosity(5500);
@@ -149,10 +149,10 @@ public class ModFluids {
 			@Override
 			public void onDrank(World world, EntityPlayer player, ItemStack stack, FluidStack fluid) {
 				player.getFoodStats().addStats(3, 1.8F);
-				player.addPotionEffect(new PotionEffect(MobEffects.REGENERATION, 400, 1));
-                player.addPotionEffect(new PotionEffect(MobEffects.RESISTANCE, 6000, 0));
-                player.addPotionEffect(new PotionEffect(MobEffects.FIRE_RESISTANCE, 6000, 0));
-                player.addPotionEffect(new PotionEffect(MobEffects.ABSORPTION, 2400, 3));
+				player.addPotionEffect(new PotionEffect(Potion.regeneration.id, 400, 1));
+                player.addPotionEffect(new PotionEffect(Potion.resistance.id, 6000, 0));
+                player.addPotionEffect(new PotionEffect(Potion.fireResistance.id, 6000, 0));
+                player.addPotionEffect(new PotionEffect(Potion.field_76444_x.id, 2400, 3));
 			}
 			@Override
 			public EnumRarity getRarity() {
@@ -166,7 +166,7 @@ public class ModFluids {
 			@Override
 			public void onDrank(World world, EntityPlayer player, ItemStack stack, FluidStack fluid) {
 				player.getFoodStats().addStats(1, 0.4F);
-				player.addPotionEffect(new PotionEffect(MobEffects.BLINDNESS, 600, 0));
+				player.addPotionEffect(new PotionEffect(Potion.blindness.id, 600, 0));
 			}
 		}.setDensity(920).setViscosity(2000);
 		register(VANTA_OIL);
@@ -179,11 +179,11 @@ public class ModFluids {
 					float saturation = 4F * quality;
 					player.getFoodStats().addStats(2, saturation);
 					int duration = 1200 + ((int) (10800 * (Math.max(Math.abs((quality - 0.5F) * 2F), 0F))));
-					player.addPotionEffect(new PotionEffect(PotionsRustic.FULL_POTION, duration));
+					player.addPotionEffect(new PotionEffect(PotionsRustic.FULL_POTION.id, duration));
 				} else {
 					int duration = (int) (6000 * Math.max(1 - quality, 0.25));
-					player.addPotionEffect(new PotionEffect(MobEffects.HUNGER, duration));
-					player.addPotionEffect(new PotionEffect(MobEffects.NAUSEA, duration));
+					player.addPotionEffect(new PotionEffect(Potion.hunger.id, duration));
+					player.addPotionEffect(new PotionEffect(Potion.confusion.id, duration));
 				}
 			}
 		}.setInebriationChance(0.5F).setDensity(1004).setViscosity(1016);
@@ -196,12 +196,12 @@ public class ModFluids {
 					float saturation = 2F * quality;
 					player.getFoodStats().addStats(1, saturation);
 					int duration = 1200 + ((int) (10800 * (Math.max(Math.abs((quality - 0.5F) * 2F), 0F))));
-					player.addPotionEffect(new PotionEffect(PotionsRustic.MAGIC_RESISTANCE_POTION, duration));
+					player.addPotionEffect(new PotionEffect(PotionsRustic.MAGIC_RESISTANCE_POTION.id, duration));
 				} else {
 					int duration = (int) (1200 * Math.max(1 - quality, 0.25F));
-					player.addPotionEffect(new PotionEffect(MobEffects.POISON, duration));
+					player.addPotionEffect(new PotionEffect(Potion.poison.id, duration));
 					duration = (int) (6000 * Math.max(1 - quality, 0.25F));
-					player.addPotionEffect(new PotionEffect(MobEffects.NAUSEA, duration));
+					player.addPotionEffect(new PotionEffect(Potion.confusion.id, duration));
 				}
 			}
 		}.setInebriationChance(0.5F).setDensity(1004).setViscosity(1400);
@@ -219,7 +219,7 @@ public class ModFluids {
 					int duration = (int) (6000 * Math.max(1 - quality, 0.25));
 					float damage = 10F * (Math.max(Math.abs(quality - 0.5F) + 0.1F, 0.25F));
 					player.attackEntityFrom(DamageSource.MAGIC, damage);
-					player.addPotionEffect(new PotionEffect(MobEffects.NAUSEA, duration));
+					player.addPotionEffect(new PotionEffect(Potion.confusion.id, duration));
 				}
 			}
 		}.setInebriationChance(0.5F).setDensity(1034).setViscosity(1400);
@@ -232,12 +232,12 @@ public class ModFluids {
 					float saturation = 2F * quality;
 					player.getFoodStats().addStats(1, saturation);
 					int duration = 1200 + ((int) (6000 * (Math.max(Math.abs((quality - 0.5F) * 2F), 0F))));
-					player.addPotionEffect(new PotionEffect(PotionsRustic.WITHER_WARD_POTION, duration));
+					player.addPotionEffect(new PotionEffect(PotionsRustic.WITHER_WARD_POTION.id, duration));
 				} else {
 					int duration = (int) (800 * Math.max(1 - quality, 0.25));
-					player.addPotionEffect(new PotionEffect(MobEffects.WITHER, duration));
+					player.addPotionEffect(new PotionEffect(Potion.wither.id, duration));
 					duration = (int) (6000 * Math.max(1 - quality, 0.25));
-					player.addPotionEffect(new PotionEffect(MobEffects.NAUSEA, duration));
+					player.addPotionEffect(new PotionEffect(Potion.confusion.id, duration));
 				}
 			}
 		}.setInebriationChance(0.5F).setDensity(1034).setViscosity(1500);
@@ -250,25 +250,25 @@ public class ModFluids {
 					float saturation = 2F * quality;
 					player.getFoodStats().addStats(1, saturation);
 					for (PotionEffect effect : player.getActivePotionEffects()) {
-						if (!effect.getPotion().isBadEffect() && effect.getAmplifier() < 2) {
-							player.addPotionEffect(new PotionEffect(effect.getPotion(), effect.getDuration(), effect.getAmplifier() + 1, effect.getIsAmbient(), effect.doesShowParticles()));
+						if (!Potion.potionTypes[effect.getPotionID()].isBadEffect() && effect.getAmplifier() < 2) {
+							player.addPotionEffect(new PotionEffect(effect.getPotionID(), effect.getDuration(), effect.getAmplifier() + 1, effect.getIsAmbient(), effect.doesShowParticles()));
 						}
 					}
 				} else {
 					PotionEffect[] effects = player.getActivePotionEffects().toArray(new PotionEffect[0]);
 					for (int i = 0; i < effects.length; i++) {
 						PotionEffect effect = effects[i];
-						if (!effect.getPotion().isBadEffect()) {
+						if (!Potion.potionTypes[effect.getPotionID()].isBadEffect()) {
 							if (effect.getAmplifier() > 0) {
-								player.removePotionEffect(effect.getPotion());
-								player.addPotionEffect(new PotionEffect(effect.getPotion(), effect.getDuration(), effect.getAmplifier() - 1, effect.getIsAmbient(), effect.doesShowParticles()));
+								player.removePotionEffect(Potion.potionTypes[effect.getPotionID()]);
+								player.addPotionEffect(new PotionEffect(effect.getPotionID(), effect.getDuration(), effect.getAmplifier() - 1, effect.getIsAmbient(), effect.doesShowParticles()));
 							} else if (effect.getAmplifier() == 0) {
-								player.removePotionEffect(effect.getPotion());
+								player.removePotionEffect(Potion.potionTypes[effect.getPotionID()]);
 							}
 						}
 					}
 					int duration = (int) (6000 * Math.max(1 - quality, 0.25F));
-					player.addPotionEffect(new PotionEffect(MobEffects.NAUSEA, duration));
+					player.addPotionEffect(new PotionEffect(Potion.confusion.id, duration));
 				}
 			}
 		}.setInebriationChance(0.85F).setDensity(1034).setViscosity(1500);
@@ -282,9 +282,9 @@ public class ModFluids {
 					player.getFoodStats().addStats(1, saturation);
 					int durationIncrease = 600 + ((int) (2400 * ((quality - 0.5F) * 2F)));
 					for (PotionEffect effect : player.getActivePotionEffects()) {
-						if (!effect.getPotion().isBadEffect() && effect.getDuration() < 12000) {
+						if (!Potion.potionTypes[effect.getPotionID()].isBadEffect() && effect.getDuration() < 12000) {
 							int duration = Math.max(Math.min(effect.getDuration() + durationIncrease, 12000), effect.getDuration());
-							player.addPotionEffect(new PotionEffect(effect.getPotion(), duration, effect.getAmplifier(), effect.getIsAmbient(), effect.doesShowParticles()));
+							player.addPotionEffect(new PotionEffect(effect.getPotionID(), duration, effect.getAmplifier(), effect.getIsAmbient(), effect.doesShowParticles()));
 						}
 					}
 				} else {
@@ -292,18 +292,18 @@ public class ModFluids {
 					for (int i = 0; i < effects.length; i++) {
 						PotionEffect effect = effects[i];
 						int durationDecrease = (int) (2400 * (Math.abs(quality - 0.6)));
-						if (!effect.getPotion().isBadEffect()) {
+						if (!Potion.potionTypes[effect.getPotionID()].isBadEffect()) {
 							int duration = effect.getDuration() - durationDecrease;
 							if (duration > 0) {
-								player.removePotionEffect(effect.getPotion());
-								player.addPotionEffect(new PotionEffect(effect.getPotion(), duration, effect.getAmplifier(), effect.getIsAmbient(), effect.doesShowParticles()));
+								player.removePotionEffect(Potion.potionTypes[effect.getPotionID()]);
+								player.addPotionEffect(new PotionEffect(effect.getPotionID(), duration, effect.getAmplifier(), effect.getIsAmbient(), effect.doesShowParticles()));
 							} else {
-								player.removePotionEffect(effect.getPotion());
+								player.removePotionEffect(Potion.potionTypes[effect.getPotionID()]);
 							}
 						}
 					}
 					int duration = (int) (6000 * Math.max(1 - quality, 0));
-					player.addPotionEffect(new PotionEffect(MobEffects.NAUSEA, duration));
+					player.addPotionEffect(new PotionEffect(Potion.confusion.id, duration));
 				}
 			}
 		}.setInebriationChance(0.5F).setDensity(1034).setViscosity(1500);
@@ -322,7 +322,7 @@ public class ModFluids {
 					} else {
 						duration = (20 * 300) + ((int) (18000 * (Math.max(Math.abs((quality - 0.5F) * 2F), 0.00F))));
 					}
-					player.addPotionEffect(new PotionEffect(PotionsRustic.UNDYING_POTION, duration, 0, false, false));
+					player.addPotionEffect(new PotionEffect(PotionsRustic.UNDYING_POTION.id, duration, 0, false, false));
 				} else {
 					player.attackEntityFrom(RusticUtils.BAD_AMBROSIA_DAMAGE, Float.MAX_VALUE);
 				}
@@ -340,10 +340,10 @@ public class ModFluids {
 				if (world.rand.nextFloat() < this.inebriationChance) {
 					if (tipsyEffect == null) {
 						int amp = (quality > 0.99F) ? 1 : 0;
-						player.addPotionEffect(new PotionEffect(PotionsRustic.TIPSY, duration, amp, false, false));
+						player.addPotionEffect(new PotionEffect(PotionsRustic.TIPSY.id, duration, amp, false, false));
 					} else if (tipsyEffect.getAmplifier() < 3) {
 						int newAmp = Math.min(tipsyEffect.getAmplifier() + ((quality > 0.99F) ? 2 : 1), 3);
-						player.addPotionEffect(new PotionEffect(PotionsRustic.TIPSY, Math.max(duration, tipsyEffect.getDuration()), newAmp, false, false));
+						player.addPotionEffect(new PotionEffect(PotionsRustic.TIPSY.id, Math.max(duration, tipsyEffect.getDuration()), newAmp, false, false));
 					}
 				}
 			}
@@ -351,25 +351,25 @@ public class ModFluids {
 		register(AMBROSIA, false);
 		
 
-		BLOCK_OLIVE_OIL = new BlockFluidRustic("olive_oil", OLIVE_OIL, Material.WATER);
+		BLOCK_OLIVE_OIL = new BlockFluidRustic("olive_oil", OLIVE_OIL, Material.water);
 		BLOCK_OLIVE_OIL.setQuantaPerBlock(4);
 
-		BLOCK_IRONBERRY_JUICE = new BlockFluidRustic("ironberry_juice", IRONBERRY_JUICE, Material.WATER);
+		BLOCK_IRONBERRY_JUICE = new BlockFluidRustic("ironberry_juice", IRONBERRY_JUICE, Material.water);
 		BLOCK_IRONBERRY_JUICE.setQuantaPerBlock(6);
 
-		BLOCK_WILDBERRY_JUICE = new BlockFluidRustic("wildberry_juice", WILDBERRY_JUICE, Material.WATER);
+		BLOCK_WILDBERRY_JUICE = new BlockFluidRustic("wildberry_juice", WILDBERRY_JUICE, Material.water);
 		BLOCK_WILDBERRY_JUICE.setQuantaPerBlock(6);
 
-		BLOCK_GRAPE_JUICE = new BlockFluidRustic("grape_juice", GRAPE_JUICE, Material.WATER);
+		BLOCK_GRAPE_JUICE = new BlockFluidRustic("grape_juice", GRAPE_JUICE, Material.water);
 		BLOCK_GRAPE_JUICE.setQuantaPerBlock(6);
 
-		BLOCK_APPLE_JUICE = new BlockFluidRustic("apple_juice", APPLE_JUICE, Material.WATER);
+		BLOCK_APPLE_JUICE = new BlockFluidRustic("apple_juice", APPLE_JUICE, Material.water);
 		BLOCK_APPLE_JUICE.setQuantaPerBlock(6);
 
-		BLOCK_ALE_WORT = new BlockFluidRustic("ale_wort", ALE_WORT, Material.WATER);
+		BLOCK_ALE_WORT = new BlockFluidRustic("ale_wort", ALE_WORT, Material.water);
 		BLOCK_ALE_WORT.setQuantaPerBlock(4);
 
-		BLOCK_HONEY = new BlockFluidRustic("honey", HONEY, Material.WATER) {
+		BLOCK_HONEY = new BlockFluidRustic("honey", HONEY, Material.water) {
 			@Override
 			public void onEntityCollidedWithBlock(World world, BlockPos pos, IBlockState state, Entity entity) {
 				entity.motionX *= 0.5F;
@@ -379,12 +379,12 @@ public class ModFluids {
 		};
 		BLOCK_HONEY.setQuantaPerBlock(2);
 		
-		BLOCK_GOLDEN_APPLE_JUICE = new BlockFluidRustic("golden_apple_juice", GOLDEN_APPLE_JUICE, Material.WATER) {
+		BLOCK_GOLDEN_APPLE_JUICE = new BlockFluidRustic("golden_apple_juice", GOLDEN_APPLE_JUICE, Material.water) {
 			@Override
 			public void onEntityCollidedWithBlock(World world, BlockPos pos, IBlockState state, Entity entity) {
 				if ((entity != null) && (entity instanceof EntityLivingBase) && ((entity.ticksExisted % 10) == 0)) {
 					EntityLivingBase e = (EntityLivingBase) entity;
-					e.addPotionEffect(new PotionEffect(MobEffects.REGENERATION, 100, 0, true, true));
+					e.addPotionEffect(new PotionEffect(Potion.regeneration.id, 100, 0, true, true));
 				}
 			}
 		};

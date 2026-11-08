@@ -1,10 +1,9 @@
 package rustic.common.tileentity;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
 
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
+
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemBucket;
@@ -12,23 +11,23 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.ITickable;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvent;
-import net.minecraft.util.math.BlockPos;
+
+
+
+
+
+
 import net.minecraft.world.World;
-import net.minecraftforge.common.capabilities.Capability;
+
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.UniversalBucket;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.TileFluidHandler;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
+
+
+
+
 import rustic.common.crafting.IEvaporatingBasinRecipe;
 import rustic.common.crafting.Recipes;
 
@@ -44,7 +43,7 @@ public class TileEntityEvaporatingBasin extends TileFluidHandler implements ITic
 		@Override
 		protected void onContentsChanged(int slot) {
 			IBlockState state = world.getBlockState(pos);
-			TileEntityEvaporatingBasin.this.world.addBlockEvent(TileEntityEvaporatingBasin.this.pos,
+			TileEntityEvaporatingBasin.this.worldObj.addBlockEvent(TileEntityEvaporatingBasin.this.pos,
 					TileEntityEvaporatingBasin.this.getBlockType(), 1, 0);
 			getWorld().notifyBlockUpdate(pos, state, state, 3);
 			world.notifyNeighborsOfStateChange(TileEntityEvaporatingBasin.this.pos,
@@ -101,7 +100,7 @@ public class TileEntityEvaporatingBasin extends TileFluidHandler implements ITic
 					}
 				}
 				getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos), 3);
-				this.world.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
+				this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
 				this.markDirty();
 			}
 			
@@ -113,7 +112,7 @@ public class TileEntityEvaporatingBasin extends TileFluidHandler implements ITic
 					itemStackHandler.insertItem(0, result, false);
 					getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos),
 							3);
-					this.world.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
+					this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
 					this.markDirty();
 				}
 			}
@@ -203,7 +202,7 @@ public class TileEntityEvaporatingBasin extends TileFluidHandler implements ITic
 	public boolean receiveClientEvent(int id, int type) {
 		if (id == 1) {
 			getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos), 3);
-			this.world.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
+			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
 			this.markDirty();
 			return true;
 		} else {
@@ -226,15 +225,15 @@ public class TileEntityEvaporatingBasin extends TileFluidHandler implements ITic
 	public boolean activate(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand,
 			EnumFacing side, float hitX, float hitY, float hitZ) {
 		ItemStack heldItem = player.getHeldItem(hand);
-		if (heldItem != ItemStack.EMPTY) {
+		if (heldItem != null) {
 			if (FluidUtil.getFluidHandler(heldItem) != null || heldItem.getItem() instanceof ItemBucket || heldItem.getItem() instanceof UniversalBucket) {
 				boolean didFill = FluidUtil.interactWithFluidHandler(player, hand,
 						this.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, side));
 				if (didFill) {
 					//player.setHeldItem(hand, didFill.getResult());
-					this.world.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
+					this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
 					getWorld().notifyBlockUpdate(pos, state, state, 3);
-					this.world.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
+					this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
 					this.markDirty();
 				}
 				return true; // prevents placing a bucket by clicking a basin with less than 1000mb space
@@ -242,20 +241,20 @@ public class TileEntityEvaporatingBasin extends TileFluidHandler implements ITic
 		} else if (player.isSneaking() && this.getAmount() > 0) {
 			FluidStack drained = this.tank.drainInternal(capacity, true);
 			SoundEvent soundevent = drained.getFluid().getEmptySound(drained);
-			this.world.playSound(null, this.pos, soundevent, SoundCategory.BLOCKS, 1F, 1F);
-			this.world.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
+			this.worldObj.playSound(null, this.pos, soundevent, SoundCategory.BLOCKS, 1F, 1F);
+			this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
 			getWorld().notifyBlockUpdate(pos, state, state, 3);
-			this.world.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
+			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
 			markDirty();
 			return true;
 		}
-		if (itemStackHandler.getStackInSlot(0) != ItemStack.EMPTY && !world.isRemote) {
+		if (itemStackHandler.getStackInSlot(0) != null && !world.isRemote) {
 			world.spawnEntity(
 					new EntityItem(world, player.posX, player.posY, player.posZ, itemStackHandler.getStackInSlot(0)));
-			itemStackHandler.setStackInSlot(0, ItemStack.EMPTY);
-			this.world.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
+			itemStackHandler.setStackInSlot(0, null);
+			this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
 			getWorld().notifyBlockUpdate(pos, state, state, 3);
-			this.world.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
+			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
 			markDirty();
 			return true;
 		}

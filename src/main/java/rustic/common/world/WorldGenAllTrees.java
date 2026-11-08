@@ -2,9 +2,9 @@ package rustic.common.world;
 
 import java.util.Random;
 
-import net.minecraft.util.math.BlockPos;
+
 import net.minecraft.world.World;
-import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.gen.feature.WorldGenerator;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.common.BiomeDictionary.Type;
@@ -33,7 +33,7 @@ public class WorldGenAllTrees extends WorldGenerator {
 	
 	private boolean generateOliveTrees(World world, Random rand, BlockPos pos) {
 		boolean generated = false;
-		Biome biome = world.getBiome(pos);
+		BiomeGenBase biome = world.getBiome(pos);
 		boolean validBiome = (!BiomeDictionary.hasType(biome, Type.SNOWY)) && (BiomeDictionary.hasType(biome, Type.FOREST) || BiomeDictionary.hasType(biome, Type.PLAINS) || BiomeDictionary.hasType(biome, Type.MOUNTAIN));
 
 		if (validBiome && rand.nextFloat() < Config.OLIVE_GEN_CHANCE) {
@@ -54,7 +54,7 @@ public class WorldGenAllTrees extends WorldGenerator {
 	
 	private boolean generateIronwoodTrees(World world, Random rand, BlockPos pos) {
 		boolean generated = false;
-		Biome biome = world.getBiome(pos);
+		BiomeGenBase biome = world.getBiome(pos);
 		boolean validBiome = (!BiomeDictionary.hasType(biome, Type.DRY)) && (BiomeDictionary.hasType(biome, Type.FOREST) || BiomeDictionary.hasType(biome, Type.PLAINS) || BiomeDictionary.hasType(biome, Type.MOUNTAIN) || BiomeDictionary.hasType(biome, Type.SWAMP) || BiomeDictionary.hasType(biome, Type.JUNGLE));
 		
 		if (validBiome && rand.nextFloat() < Config.IRONWOOD_GEN_CHANCE) {

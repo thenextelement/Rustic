@@ -1,26 +1,25 @@
 package rustic.common.blocks.fluids;
 
-import javax.annotation.Nonnull;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.IBlockState;
+
+
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
-import net.minecraft.util.EnumBlockRenderType;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
+
+
+
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.client.model.ModelLoader;
+
 import net.minecraftforge.fluids.BlockFluidBase;
 import net.minecraftforge.fluids.BlockFluidClassic;
 import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import rustic.core.Rustic;
 
 public class BlockFluidRustic extends BlockFluidClassic {
@@ -100,8 +99,8 @@ public class BlockFluidRustic extends BlockFluidClassic {
 		}
 
 		Material material = state.getMaterial();
-		if (material.blocksMovement() || material == Material.WATER || material == Material.LAVA
-				|| material == Material.PORTAL) {
+		if (material.blocksMovement() || material == Material.water || material == Material.lava
+				|| material == Material.portal) {
 			return false;
 		}
 
@@ -171,7 +170,7 @@ public class BlockFluidRustic extends BlockFluidClassic {
 
 		if (displacements.containsKey(block)) {
 			if (displacements.get(block)) {
-				if (state.getBlock() != Blocks.SNOW_LAYER)
+				if (state.getBlock() != Blocks.snow_layer)
 					block.dropBlockAsItem(world, pos, state, 0);
 				return true;
 			}
@@ -179,7 +178,7 @@ public class BlockFluidRustic extends BlockFluidClassic {
 		}
 
 		Material material = state.getMaterial();
-		if (material.blocksMovement() || material == Material.PORTAL) {
+		if (material.blocksMovement() || material == Material.portal) {
 			return false;
 		}
 

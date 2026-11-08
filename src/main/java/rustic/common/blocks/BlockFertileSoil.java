@@ -1,43 +1,43 @@
 package rustic.common.blocks;
 
-import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.common.EnumPlantType;
+import net.minecraftforge.common.IPlantable;
+import net.minecraftforge.common.util.ForgeDirection;
 import rustic.core.Rustic;
 
 public class BlockFertileSoil extends BlockBase {
 
 	public BlockFertileSoil() {
-		super(Material.GROUND, "fertile_soil");
+		super(Material.ground, "fertile_soil");
 		setHardness(0.5F);
-		this.setCreativeTab(Rustic.farmingTab);
-		setSoundType(SoundType.GROUND);
+		setCreativeTab(Rustic.farmingTab);
+		setStepSound(soundTypeGravel);
 	}
 
 	@Override
-	public boolean isFertile(World world, BlockPos pos) {
+	public boolean isFertile(World world, int x, int y, int z) {
 		return true;
 	}
 
 	@Override
-	public boolean canSustainPlant(IBlockState state, IBlockAccess world, BlockPos pos, EnumFacing direction,
-			net.minecraftforge.common.IPlantable plantable) {
-		//IBlockState plant = plantable.getPlant(world, pos.offset(direction));
-        net.minecraftforge.common.EnumPlantType plantType = plantable.getPlantType(world, pos.offset(direction));
+	public boolean canSustainPlant(IBlockAccess world, int x, int y, int z, ForgeDirection direction, IPlantable plantable) {
+		EnumPlantType plantType = plantable.getPlantType(world, x + direction.offsetX, y + direction.offsetY, z + direction.offsetZ);
 		switch (plantType) {
-            case Desert: return true;
-            case Nether: return false;
-            case Crop:   return true;
-            case Cave:   return true;
-            case Plains: return true;
-            case Water:  return false;
-            case Beach:  return true;
-        }
-		return super.canSustainPlant(state, world, pos, direction, plantable);
+			case Desert:
+			case Crop:
+			case Cave:
+			case Plains:
+			case Beach:
+				return true;
+			case Nether:
+			case Water:
+				return false;
+			default:
+				return super.canSustainPlant(world, x, y, z, direction, plantable);
+		}
 	}
 
 }
