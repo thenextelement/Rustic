@@ -6,17 +6,17 @@ import net.minecraft.inventory.Container;
 
 public class TileEntityVase extends TileEntityInventoryBase {
 
-	public TileEntityVase() {
-		super(27);
-	}
+    public TileEntityVase() {
+        super(27);
+    }
 
-	@Override
-	protected String getDefaultName() {
-		return "container.rustic.vase";
-	}
+    @Override
+    protected String getDefaultName() {
+        return "container.rustic.vase";
+    }
 
-	public Container createContainer(InventoryPlayer playerInventory, EntityPlayer player) {
-		return new ContainerVase(playerInventory, this);
-	}
+    public Container createContainer(InventoryPlayer playerInventory, EntityPlayer player) {
+        return new ContainerVase(playerInventory, this);
+    }
 
 }

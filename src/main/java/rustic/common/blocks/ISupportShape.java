@@ -12,22 +12,22 @@ import net.minecraftforge.common.util.ForgeDirection;
  */
 public interface ISupportShape {
 
-	/** Whether the given side of this block (at x, y, z) can hold a small attached block like a chain or lantern. */
-	boolean canSupportOnSide(IBlockAccess world, int x, int y, int z, ForgeDirection side);
+    /** Whether the given side of this block (at x, y, z) can hold a small attached block like a chain or lantern. */
+    boolean canSupportOnSide(IBlockAccess world, int x, int y, int z, ForgeDirection side);
 
-	/**
-	 * Whether the block at x, y, z can hold a small attachment on its given side: a solid face, a fence/wall top or
-	 * bottom, or any {@link ISupportShape} that says so.
-	 */
-	static boolean canSupport(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
-		Block block = world.getBlock(x, y, z);
-		if (block.isAir(world, x, y, z)) return false;
-		if (block instanceof ISupportShape) {
-			return ((ISupportShape) block).canSupportOnSide(world, x, y, z, side);
-		}
-		if (block.isSideSolid(world, x, y, z, side)) return true;
-		if (side.offsetY != 0 && (block instanceof BlockFence || block instanceof BlockWall)) return true;
-		return false;
-	}
+    /**
+     * Whether the block at x, y, z can hold a small attachment on its given side: a solid face, a fence/wall top or
+     * bottom, or any {@link ISupportShape} that says so.
+     */
+    static boolean canSupport(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+        Block block = world.getBlock(x, y, z);
+        if (block.isAir(world, x, y, z)) return false;
+        if (block instanceof ISupportShape) {
+            return ((ISupportShape) block).canSupportOnSide(world, x, y, z, side);
+        }
+        if (block.isSideSolid(world, x, y, z, side)) return true;
+        if (side.offsetY != 0 && (block instanceof BlockFence || block instanceof BlockWall)) return true;
+        return false;
+    }
 
 }

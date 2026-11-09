@@ -6,17 +6,17 @@ import net.minecraft.inventory.Container;
 
 public class TileEntityBarrel extends TileEntityInventoryBase {
 
-	public TileEntityBarrel() {
-		super(27);
-	}
+    public TileEntityBarrel() {
+        super(27);
+    }
 
-	@Override
-	protected String getDefaultName() {
-		return "container.rustic.barrel";
-	}
+    @Override
+    protected String getDefaultName() {
+        return "container.rustic.barrel";
+    }
 
-	public Container createContainer(InventoryPlayer playerInventory, EntityPlayer player) {
-		return new ContainerBarrel(playerInventory, this);
-	}
+    public Container createContainer(InventoryPlayer playerInventory, EntityPlayer player) {
+        return new ContainerBarrel(playerInventory, this);
+    }
 
 }

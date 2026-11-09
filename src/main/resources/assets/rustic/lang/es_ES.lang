@@ -336,3 +336,11 @@ book.rustic.text.crushing=Las cubas de trituración se utilizan para triturar s�
 book.rustic.text.crushing_1=Si la cuba está demasiado llena de líquido, no se aplastarán los objetos. Si es necesario, puede vaciar todo el líquido contenido en la cuba interactuando con el bloque con una mano vacía mientras se agacha. Algunas recetas producen tanto líquido como objetos. Si una receta tiene un subproducto del artículo, el artículo aparecerá sobre la cuba cuando se produzca el aplastamiento.
 book.rustic.text.drying=Las cuencas de secado se utilizan para extraer elementos de los fluidos por evaporación. Pueden contener hasta una pila de objetos y hasta 6 cubos de líquido. Para usar un recipiente de evaporación, colóquelo donde quiera. Luego, inserte líquido en él interactuando con el bloque con un cubo lleno en la mano. Elimine el líquido al interactuar con el bloque con un cubo vacío en la mano, o al interactuar con el recipiente con la mano vacía mientras se agacha, lo que destruye cualquier líquido en el recipiente.
 book.rustic.text.drying_1=La evaporación ocurrirá automáticamente con el tiempo. El líquido en la cuenca se evapora a una velocidad de 1/50 de un cubo por segundo. Una vez que se haya evaporado suficiente líquido para formar una receta válida, el objeto aparecerá en la cuenca, suponiendo que haya espacio en el inventario de la cuenca. Los elementos se pueden extraer interactuando con la cuenca con una mano vacía.
+
+# 1.7.10 item keys (1.12 used item.tile.*)
+item.rustic.cloudsbluff.name=Farol Nuboso
+item.rustic.core_root.name=Raíz del Núcleo
+item.rustic.ginseng.name=Raíz de Ginseng
+item.rustic.marsh_mallow.name=Raíz de Malvavisco
+item.rustic.olive_door.name=Puerta de Olivo
+item.rustic.ironwood_door.name=Puerta de Madera Férrica

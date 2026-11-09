@@ -336,3 +336,11 @@ book.rustic.text.crushing=壓榨盆用於將固體壓榨成液體。它最多可
 book.rustic.text.crushing_1=如果盆內液體存儲滿了，則壓榨將不會發生。如有必要，你可以直接Shift +快捷盆清除內部液體。如果榨汁配方中有副產物，在壓榨時將會直接從上方拖動。
 book.rustic.text.drying=蒸發皿通過蒸發提取液體中的物品。它可以容納一組物品和六桶液體。要使用蒸發皿，你需要將其放下，使用桶快捷將流體灌入。用桶同樣可以將液體舀出。Shift+快捷蒸發皿將消除內部的所有液體。
 book.rustic.text.drying_1=當內部有相應配方的液體時，蒸發就會發生。盆中的液體會以每秒1/50的速度蒸發。一旦足夠的液體蒸發形成有效的配方，而皿中也可以擁有空餘的空間，那麼物品將出現在皿中。
+
+# 1.7.10 item keys (1.12 used item.tile.*)
+item.rustic.cloudsbluff.name=飄雲花
+item.rustic.core_root.name=核心根
+item.rustic.ginseng.name=人參根
+item.rustic.marsh_mallow.name=蜀葵根
+item.rustic.olive_door.name=橄欖樹門
+item.rustic.ironwood_door.name=鐵樹門

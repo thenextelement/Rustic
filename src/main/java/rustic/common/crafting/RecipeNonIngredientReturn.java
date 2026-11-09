@@ -9,8 +9,8 @@ import net.minecraftforge.oredict.ShapelessOreRecipe;
  */
 public class RecipeNonIngredientReturn extends ShapelessOreRecipe {
 
-	public RecipeNonIngredientReturn(ItemStack result, Object... recipe) {
-		super(result, recipe);
-	}
+    public RecipeNonIngredientReturn(ItemStack result, Object... recipe) {
+        super(result, recipe);
+    }
 
 }

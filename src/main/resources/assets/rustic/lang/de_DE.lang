@@ -198,3 +198,9 @@ rustic.jei.recipe.evaporating=Trockenbecken
 rustic.jei.recipe.simple_alchemy=Einfache Alchemie
 rustic.jei.recipe.advanced_alchemy=Erweiterte Alchemie
 rustic.jei.recipe.brewing=Braufass
+
+# 1.7.10 item keys (1.12 used item.tile.*)
+item.rustic.cloudsbluff.name=Cloudsbluff
+item.rustic.core_root.name=Kernwurzel
+item.rustic.ginseng.name=Ginsengwurzel
+item.rustic.marsh_mallow.name=Echter Eibisch Wurzel

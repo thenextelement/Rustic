@@ -6,9 +6,9 @@ package rustic.common.potions;
  */
 public class PotionIronSkin extends PotionBase {
 
-	protected PotionIronSkin(int id) {
-		super(id, false, 16777148, "ironskin");
-		setIconIndex(0, 0);
-	}
+    protected PotionIronSkin(int id) {
+        super(id, false, 16777148, "ironskin");
+        setIconIndex(0, 0);
+    }
 
 }

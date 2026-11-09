@@ -5,8 +5,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 public class ReflectionUtils {
-	
-	public static boolean isTypeOf(final Type type, final Class<?> clazz) {
+
+    public static boolean isTypeOf(final Type type, final Class<?> clazz) {
         if (Class.class.isInstance(type)) {
             return clazz.isAssignableFrom(Class.class.cast(type));
         }
@@ -16,18 +16,21 @@ public class ReflectionUtils {
         }
         return false;
     }
-	
-	public static Type[] getGenericParameter(final Type type) {
+
+    public static Type[] getGenericParameter(final Type type) {
         if (ParameterizedType.class.isInstance(type)) {
-            return ParameterizedType.class.cast(type).getActualTypeArguments();
+            return ParameterizedType.class.cast(type)
+                .getActualTypeArguments();
         }
         if (GenericArrayType.class.isInstance(type)) {
-            return getGenericParameter(GenericArrayType.class.cast(type).getGenericComponentType());
+            return getGenericParameter(
+                GenericArrayType.class.cast(type)
+                    .getGenericComponentType());
         }
         return null;
     }
-	
-	public static Type getGenericParameter(final Type type, final int index) {
+
+    public static Type getGenericParameter(final Type type, final int index) {
         if (!ParameterizedType.class.isInstance(type)) {
             return null;
         }

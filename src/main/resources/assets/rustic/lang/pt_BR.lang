@@ -156,3 +156,8 @@ rustic.jei.recipe.crushing_tub=Tina de Esmagamento
 rustic.jei.recipe.evaporating=Bacia de Secagem
 rustic.jei.recipe.simple_alchemy=Alquimia Simples
 rustic.jei.recipe.advanced_alchemy=Alquimia Avançada
+
+# 1.7.10 item keys (1.12 used item.tile.*)
+item.rustic.core_root.name=Raiz Núcleo
+item.rustic.ginseng.name=Raiz de Ginseng
+item.rustic.marsh_mallow.name=Raiz de Malvisco

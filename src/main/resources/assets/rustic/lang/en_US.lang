@@ -326,6 +326,18 @@ advancements.rustic.winemaxxing.desc=Not now honey, Mommy is winemaxxing
 advancements.rustic.max_drunk=No Ragrets
 advancements.rustic.max_drunk.desc=Reach dangerous levels of inebriation
 
+# 1.7.10 achievements (ported from the 1.12 advancements above)
+achievement.rustic.root=Rustic
+achievement.rustic.root.desc=How quaint
+achievement.rustic.almanac=Book Learnin'
+achievement.rustic.almanac.desc=Obtain an almanac
+achievement.rustic.the_good_stuff=The Good Stuff
+achievement.rustic.the_good_stuff.desc=Brew a beverage with a quality of at least 90%
+achievement.rustic.winemaxxing=Winemaxxing
+achievement.rustic.winemaxxing.desc=Not now honey, Mommy is winemaxxing
+achievement.rustic.max_drunk=No Ragrets
+achievement.rustic.max_drunk.desc=Reach dangerous levels of inebriation
+
 
 #JEI
 rustic.jei.recipe.crushing_tub=Crushing Tub
@@ -333,6 +345,8 @@ rustic.jei.recipe.evaporating=Drying Basin
 rustic.jei.recipe.simple_alchemy=Simple Alchemy
 rustic.jei.recipe.advanced_alchemy=Advanced Alchemy
 rustic.jei.recipe.brewing=Brewing Barrel
+rustic.nei.vanta_oil=Coats the weapon with the potion's effect
+rustic.nei.optional_aux=Optional starter brew: its quality influences the result
 
 #Book
 book.rustic.entry.categories=Index
@@ -472,3 +486,11 @@ book.rustic.text.crushing=Crushing tubs are used to crush solids into liquids. T
 book.rustic.text.crushing_1=If the tub is too full of fluid, crushing will not occur. If necessary, you can void all fluid contained in the tub by interacting with the block with an empty hand while sneaking. Some crushing recipes produce both fluid and items. If a recipe has an item byproduct, then the item will appear in the world above the tub when crushing occurs.
 book.rustic.text.drying=Drying basins are used to extract items from fluids through evaporation. They can hold up to one stack of items, and up to six buckets of liquid. To use an evaporation basin, place it in the world. Then, insert fluid into it by interacting with the block with a filled bucket in hand. Remove fluid by interacting with the block with an empty bucket in hand, or by interacting with the basin with an empty hand while sneaking, which destroys any fluid in the basin.
 book.rustic.text.drying_1=Evaporating will occur automatically over time. Fluid in the basin evaporates at a rate of 1/50 of a bucket every second. Once enough fluid has evaporated to form a valid recipe, the output will appear in the basin, assuming there is space in the basin's inventory. Items can be extracted by interacting with the basin with an empty hand.
+
+# 1.7.10 item keys (1.12 used item.tile.*)
+item.rustic.cloudsbluff.name=Cloudsbluff
+item.rustic.core_root.name=Core Root
+item.rustic.ginseng.name=Ginseng Root
+item.rustic.marsh_mallow.name=Marsh Mallow Root
+item.rustic.olive_door.name=Olive Door
+item.rustic.ironwood_door.name=Ironwood Door

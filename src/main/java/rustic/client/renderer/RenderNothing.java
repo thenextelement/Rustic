@@ -7,12 +7,12 @@ import net.minecraft.util.ResourceLocation;
 /** For invisible helper entities (chair seats). */
 public class RenderNothing extends Render {
 
-	@Override
-	public void doRender(Entity entity, double x, double y, double z, float yaw, float partialTicks) {}
+    @Override
+    public void doRender(Entity entity, double x, double y, double z, float yaw, float partialTicks) {}
 
-	@Override
-	protected ResourceLocation getEntityTexture(Entity entity) {
-		return null;
-	}
+    @Override
+    protected ResourceLocation getEntityTexture(Entity entity) {
+        return null;
+    }
 
 }

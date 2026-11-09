@@ -2,21 +2,21 @@ package rustic.core;
 
 import java.io.File;
 
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.network.NetworkRegistry;
-import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.BlockDispenser;
 import net.minecraft.item.Item;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fluids.FluidRegistry;
+
+import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.registry.GameRegistry;
 import rustic.client.GuiProxy;
 import rustic.common.Config;
 import rustic.common.blocks.ModBlocks;
 import rustic.common.blocks.fluids.ModFluids;
-import rustic.common.book.BookManager;
 import rustic.common.crafting.Recipes;
 import rustic.common.entities.ModEntities;
 import rustic.common.items.ItemFluidBottle;
@@ -28,68 +28,70 @@ import rustic.common.world.WorldGeneratorRustic;
 
 public class CommonProxy {
 
-	public static Configuration config;
+    public static Configuration config;
 
-	public void preInit(FMLPreInitializationEvent event) {
-		PacketHandler.registerMessages();
+    public void preInit(FMLPreInitializationEvent event) {
+        PacketHandler.registerMessages();
 
-		File directory = event.getModConfigurationDirectory();
-		config = new Configuration(new File(directory.getPath(), "rustic.cfg"));
-		Config.readConfig();
+        File directory = event.getModConfigurationDirectory();
+        config = new Configuration(new File(directory.getPath(), "rustic.cfg"));
+        Config.readConfig();
 
-		PotionsRustic.init();
+        PotionsRustic.init();
 
-		ModFluids.init();
-		ModBlocks.init();
-		ModItems.init();
-		ModEntities.init();
+        ModFluids.init();
+        ModBlocks.init();
+        ModItems.init();
+        ModEntities.init();
 
-		Recipes.initOres();
+        Recipes.initOres();
 
-		GameRegistry.registerWorldGenerator(new WorldGeneratorRustic(), 0);
-	}
+        GameRegistry.registerWorldGenerator(new WorldGeneratorRustic(), 0);
+    }
 
-	public void init(FMLInitializationEvent event) {
-		NetworkRegistry.INSTANCE.registerGuiHandler(Rustic.instance, new GuiProxy());
-		initFluidBottle();
-	}
+    public void init(FMLInitializationEvent event) {
+        NetworkRegistry.INSTANCE.registerGuiHandler(Rustic.instance, new GuiProxy());
+        initFluidBottle();
+        rustic.common.achievements.ModAchievements.init();
+        rustic.compat.nei.NEIHandlerInfo.send();
+        rustic.compat.SlateCompat.init();
+    }
 
-	public void postInit(FMLPostInitializationEvent event) {
-		if (config.hasChanged()) {
-			config.save();
-		}
+    public void postInit(FMLPostInitializationEvent event) {
+        if (config.hasChanged()) {
+            config.save();
+        }
 
-		BlockDispenser.dispenseBehaviorRegistry.putObject(Item.getItemFromBlock(ModBlocks.ROPE), DispenseRope.getInstance());
+        BlockDispenser.dispenseBehaviorRegistry
+            .putObject(Item.getItemFromBlock(ModBlocks.ROPE), DispenseRope.getInstance());
+    }
 
-		BookManager.init();
-	}
+    private void initFluidBottle() {
+        ItemFluidBottle.addFluid(ModFluids.OLIVE_OIL);
+        ItemFluidBottle.addFluid(ModFluids.IRONBERRY_JUICE);
+        ItemFluidBottle.addFluid(ModFluids.WILDBERRY_JUICE);
+        ItemFluidBottle.addFluid(ModFluids.GRAPE_JUICE);
+        ItemFluidBottle.addFluid(ModFluids.APPLE_JUICE);
+        ItemFluidBottle.addFluid(ModFluids.ALE_WORT);
+        ItemFluidBottle.addFluid(FluidRegistry.getFluid(ModFluids.HONEY.getName()));
+        if (FluidRegistry.isFluidRegistered("for.honey")) {
+            ItemFluidBottle.addFluid(FluidRegistry.getFluid("for.honey"));
+        }
+        ItemFluidBottle.addFluid(ModFluids.GOLDEN_APPLE_JUICE);
+        ItemFluidBottle.addFluid(ModFluids.VANTA_OIL);
 
-	private void initFluidBottle() {
-		ItemFluidBottle.addFluid(ModFluids.OLIVE_OIL);
-		ItemFluidBottle.addFluid(ModFluids.IRONBERRY_JUICE);
-		ItemFluidBottle.addFluid(ModFluids.WILDBERRY_JUICE);
-		ItemFluidBottle.addFluid(ModFluids.GRAPE_JUICE);
-		ItemFluidBottle.addFluid(ModFluids.APPLE_JUICE);
-		ItemFluidBottle.addFluid(ModFluids.ALE_WORT);
-		ItemFluidBottle.addFluid(FluidRegistry.getFluid(ModFluids.HONEY.getName()));
-		if (FluidRegistry.isFluidRegistered("for.honey")) {
-			ItemFluidBottle.addFluid(FluidRegistry.getFluid("for.honey"));
-		}
-		ItemFluidBottle.addFluid(ModFluids.GOLDEN_APPLE_JUICE);
-		ItemFluidBottle.addFluid(ModFluids.VANTA_OIL);
+        ItemFluidBottle.addFluid(ModFluids.ALE);
+        ItemFluidBottle.addFluid(ModFluids.CIDER);
+        ItemFluidBottle.addFluid(ModFluids.IRON_WINE);
+        ItemFluidBottle.addFluid(ModFluids.MEAD);
+        ItemFluidBottle.addFluid(ModFluids.WILDBERRY_WINE);
+        ItemFluidBottle.addFluid(ModFluids.WINE);
+        ItemFluidBottle.addFluid(ModFluids.AMBROSIA);
+    }
 
-		ItemFluidBottle.addFluid(ModFluids.ALE);
-		ItemFluidBottle.addFluid(ModFluids.CIDER);
-		ItemFluidBottle.addFluid(ModFluids.IRON_WINE);
-		ItemFluidBottle.addFluid(ModFluids.MEAD);
-		ItemFluidBottle.addFluid(ModFluids.WILDBERRY_WINE);
-		ItemFluidBottle.addFluid(ModFluids.WINE);
-		ItemFluidBottle.addFluid(ModFluids.AMBROSIA);
-	}
+    public void spawnAlchemySmokeFX(World world, int brewTime, double x, double y, double z, double xVel, double yVel,
+        double zVel) {}
 
-	public void spawnAlchemySmokeFX(World world, int brewTime, double x, double y, double z, double xVel, double yVel,
-			double zVel) {}
-
-	public void disableIronSkinRenderer(String entityName) {}
+    public void disableIronSkinRenderer(String entityName) {}
 
 }

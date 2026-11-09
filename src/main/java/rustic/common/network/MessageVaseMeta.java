@@ -1,49 +1,50 @@
 package rustic.common.network;
 
-import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import io.netty.buffer.ByteBuf;
 import rustic.common.blocks.ModBlocks;
 
 public class MessageVaseMeta implements IMessage {
 
-	int meta = 0;
-	
-	public MessageVaseMeta() {
-		
-	}
-	
-	public MessageVaseMeta(int i) {
-		this.meta = i;
-	}
-	
-	@Override
-	public void fromBytes(ByteBuf buf) {
-		this.meta = buf.readInt();
-	}
+    int meta = 0;
 
-	@Override
-	public void toBytes(ByteBuf buf) {
-		buf.writeInt(this.meta);
-	}
-	
-	public static class MessageHolder implements IMessageHandler<MessageVaseMeta, IMessage> {
-		
-		@Override
-		public IMessage onMessage(final MessageVaseMeta message, final MessageContext ctx) {
-			EntityPlayerMP player = ctx.getServerHandler().playerEntity;
-							for (ItemStack stack : player.inventory.mainInventory) {
-					if (stack != null && stack.getItem() == Item.getItemFromBlock(ModBlocks.VASE)) {
-						stack.setItemDamage(message.meta);
-					}
-				}
-			return null;
-		}
-		
-	}
+    public MessageVaseMeta() {
+
+    }
+
+    public MessageVaseMeta(int i) {
+        this.meta = i;
+    }
+
+    @Override
+    public void fromBytes(ByteBuf buf) {
+        this.meta = buf.readInt();
+    }
+
+    @Override
+    public void toBytes(ByteBuf buf) {
+        buf.writeInt(this.meta);
+    }
+
+    public static class MessageHolder implements IMessageHandler<MessageVaseMeta, IMessage> {
+
+        @Override
+        public IMessage onMessage(final MessageVaseMeta message, final MessageContext ctx) {
+            EntityPlayerMP player = ctx.getServerHandler().playerEntity;
+            for (ItemStack stack : player.inventory.mainInventory) {
+                if (stack != null && stack.getItem() == Item.getItemFromBlock(ModBlocks.VASE)) {
+                    stack.setItemDamage(message.meta);
+                }
+            }
+            return null;
+        }
+
+    }
 
 }

@@ -13,30 +13,30 @@ import net.minecraft.world.IBlockAccess;
  */
 public interface IModelBlock {
 
-	/** Name of the blockstate file (without extension), usually the block's registry name. */
-	String getBlockStateName();
+    /** Name of the blockstate file (without extension), usually the block's registry name. */
+    String getBlockStateName();
 
-	/** Blockstate properties for the block placed in the world. */
-	Map<String, String> getRenderProperties(IBlockAccess world, int x, int y, int z);
+    /** Blockstate properties for the block placed in the world. */
+    Map<String, String> getRenderProperties(IBlockAccess world, int x, int y, int z);
 
-	/** Blockstate properties used to render the item form for the given item damage. */
-	Map<String, String> getInventoryProperties(int meta);
+    /** Blockstate properties used to render the item form for the given item damage. */
+    Map<String, String> getInventoryProperties(int meta);
 
-	/** Whether to apply 1.12's random horizontal "XZ" offset (like flowers and berry bushes). */
-	default boolean hasRandomOffset() {
-		return false;
-	}
+    /** Whether to apply 1.12's random horizontal "XZ" offset (like flowers and berry bushes). */
+    default boolean hasRandomOffset() {
+        return false;
+    }
 
-	/** 1.12's per-position random XZ offset, in blocks. */
-	static double[] randomOffset(int x, int z) {
-		long i = (long) (x * 3129871) ^ (long) z * 116129781L;
-		i = i * i * 42317861L + i * 11L;
-		return new double[] { ((i >> 16 & 15L) / 15.0F - 0.5D) * 0.5D, ((i >> 24 & 15L) / 15.0F - 0.5D) * 0.5D };
-	}
+    /** 1.12's per-position random XZ offset, in blocks. */
+    static double[] randomOffset(int x, int z) {
+        long i = (long) (x * 3129871) ^ (long) z * 116129781L;
+        i = i * i * 42317861L + i * 11L;
+        return new double[] { ((i >> 16 & 15L) / 15.0F - 0.5D) * 0.5D, ((i >> 24 & 15L) / 15.0F - 0.5D) * 0.5D };
+    }
 
-	/** Whether the model should be drawn when rendering the block as an item (otherwise a flat icon is used). */
-	default boolean renderItemAsModel(int meta) {
-		return true;
-	}
+    /** Whether the model should be drawn when rendering the block as an item (otherwise a flat icon is used). */
+    default boolean renderItemAsModel(int meta) {
+        return true;
+    }
 
 }

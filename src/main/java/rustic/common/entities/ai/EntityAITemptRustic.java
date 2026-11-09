@@ -7,8 +7,8 @@ import net.minecraft.item.Item;
 // Using a custom class allows us to more easily check if an entity has this task already
 public class EntityAITemptRustic extends EntityAITempt {
 
-	public EntityAITemptRustic(EntityCreature entity, double speed, Item item, boolean scaredByMovement) {
-		super(entity, speed, item, scaredByMovement);
-	}
+    public EntityAITemptRustic(EntityCreature entity, double speed, Item item, boolean scaredByMovement) {
+        super(entity, speed, item, scaredByMovement);
+    }
 
 }
