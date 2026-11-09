@@ -99,8 +99,8 @@ public class Herbs {
 				if (!world.isRemote) {
 					// 1.7.10 has no levitation; strong jump boost and feather falling give a similar floaty effect
 					player.addPotionEffect(new PotionEffect(Potion.jump.id, 400, 3));
-					if (rustic.common.potions.PotionsRustic.FEATHER != null) {
-						player.addPotionEffect(new PotionEffect(rustic.common.potions.PotionsRustic.FEATHER.id, 600));
+					if (rustic.common.potions.PotionsRustic.FEATHER_POTION != null) {
+						player.addPotionEffect(new PotionEffect(rustic.common.potions.PotionsRustic.FEATHER_POTION.id, 600));
 					}
 				}
 			}

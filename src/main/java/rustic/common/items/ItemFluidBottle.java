@@ -3,341 +3,274 @@ package rustic.common.items;
 import java.util.ArrayList;
 import java.util.List;
 
-
-
-import net.minecraft.advancements.CriteriaTriggers;
-import net.minecraft.client.renderer.ItemMeshDefinition;
-
-
-
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.item.EnumAction;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.stats.StatList;
-
-
-
-
-
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.IIcon;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
-
-
-
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
-
-
-
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import rustic.client.models.FluidBottleModel;
+import net.minecraftforge.fluids.IFluidContainerItem;
 import rustic.client.util.ClientUtils;
 import rustic.common.blocks.fluids.FluidBooze;
 import rustic.common.blocks.fluids.FluidDrinkable;
 import rustic.common.blocks.fluids.ModFluids;
 import rustic.common.util.RusticUtils;
-import rustic.core.ClientProxy;
 import rustic.core.Rustic;
 
-public class ItemFluidBottle extends ItemFluidContainer implements IColoredItem {
+/**
+ * A glass bottle holding 1000mb of one of Rustic's fluids, stored in NBT (so booze quality is kept). Implements
+ * {@link IFluidContainerItem} so tanks from other mods can fill and empty it.
+ */
+public class ItemFluidBottle extends Item implements IFluidContainerItem {
 
 	protected static final CreativeTabs[] creative_tabs = { Rustic.farmingTab, Rustic.alchemyTab, };
-	
-	public static List<Fluid> VALID_FLUIDS = new ArrayList<Fluid>();
+	public static List<Fluid> VALID_FLUIDS = new ArrayList<>();
 	public static final String FLUID_NBT_KEY = "Fluid";
+	public static final int CAPACITY = 1000;
 
 	public static void addFluid(Fluid fluid) {
-		VALID_FLUIDS.add(fluid);
+		if (fluid != null && !VALID_FLUIDS.contains(fluid)) VALID_FLUIDS.add(fluid);
 	}
 
-	private final ItemStack empty;
+	@SideOnly(Side.CLIENT)
+	private IIcon potionOverlay, potionBottle, boozeOverlay, boozeBottle, boozeLabel;
 
 	public ItemFluidBottle() {
-		super(1000);
-		setRegistryName("fluid_bottle");
-		setUnlocalizedName(Rustic.MODID + "." + "fluid_bottle");
+		super();
+		setUnlocalizedName(Rustic.MODID + ".fluid_bottle");
 		setCreativeTab(Rustic.farmingTab);
-		GameRegistry.findRegistry(Item.class).register(this);
-		empty = new ItemStack(Items.glass_bottle);
+		setMaxStackSize(1);
+		GameRegistry.registerItem(this, "fluid_bottle");
 	}
 
-	@SideOnly(Side.CLIENT)
-	public void initModel() {
-		ItemMeshDefinition meshDefinition = new ItemMeshDefinition() {
-			@Override
-			public ModelResourceLocation getModelLocation(@Nonnull ItemStack stack) {
-				return FluidBottleModel.LOCATION;
-			}
-		};
-		ModelLoader.setCustomMeshDefinition(this, meshDefinition);
-		ModelLoader.registerItemVariants(this, FluidBottleModel.LOCATION);
-		ClientProxy.addColoredItem(this);
-	}
-
-	@SideOnly(Side.CLIENT)
-	public ItemStack getDefaultInstance() {
-		NBTTagCompound nbt = new FluidStack(ModFluids.OLIVE_OIL, this.getCapacity()).writeToNBT(new NBTTagCompound());
-		ItemStack stack = super.getDefaultInstance();
-		NBTTagCompound tag = new NBTTagCompound();
-		tag.setTag(FLUID_NBT_KEY, nbt);
-		stack.setTagCompound(nbt);
-		return stack;
-	}
-
-	@Nonnull
 	public ItemStack getFilledBottle(Fluid fluid) {
 		ItemStack bottle = new ItemStack(this);
-
-		if (ItemFluidBottle.VALID_FLUIDS.contains(fluid) && FluidRegistry.getFluidName(fluid) != null) {
-			NBTTagCompound fluidTag = new NBTTagCompound();
-			FluidStack fluidStack = new FluidStack(fluid, this.getCapacity());
-			fluidStack.writeToNBT(fluidTag);
-			NBTTagCompound tag = new NBTTagCompound();
-			tag.setTag(FLUID_NBT_KEY, fluidTag);
-			bottle.setTagCompound(tag);
+		if (VALID_FLUIDS.contains(fluid) && FluidRegistry.getFluidName(fluid) != null) {
+			setFluid(bottle, new FluidStack(fluid, CAPACITY));
 		}
-
 		return bottle;
 	}
-	
+
+	private static void setFluid(ItemStack stack, FluidStack fluid) {
+		NBTTagCompound tag = stack.hasTagCompound() ? stack.getTagCompound() : new NBTTagCompound();
+		if (fluid == null) {
+			tag.removeTag(FLUID_NBT_KEY);
+		} else {
+			FluidStack copy = fluid.copy();
+			copy.amount = CAPACITY;
+			tag.setTag(FLUID_NBT_KEY, copy.writeToNBT(new NBTTagCompound()));
+		}
+		stack.setTagCompound(tag);
+	}
+
+	/* IFluidContainerItem */
+
 	@Override
-	@SideOnly(Side.CLIENT)
-	public IItemColor getItemColor() {
-		return new IItemColor() {
-			@Override
-			public int colorMultiplier(ItemStack stack, int tintIndex) {
-				if (tintIndex == 2) {
-					FluidStack fluidstack = ItemFluidBottle.this.getFluid(stack);
-					Fluid fluid = fluidstack.getFluid() != null ? fluidstack.getFluid() : null;
-					if ((fluidstack.getFluid() != null) && (fluidstack.getFluid() instanceof FluidBooze)) {
-						float quality = 0.5f;
-						if (fluidstack.tag != null && fluidstack.tag.hasKey(FluidBooze.QUALITY_NBT_KEY, 5)) {
-							quality = fluidstack.tag.getFloat(FluidBooze.QUALITY_NBT_KEY);
-						}
-						return ClientUtils.getQualityLabelColor(quality);
-					}
-				}
-				return 0xFFFFFF;
-			}
-		};
-	}
-
-	public ItemStack onItemUseFinish(ItemStack stack, World worldIn, EntityLivingBase entityLiving) {
-		EntityPlayer entityplayer = entityLiving instanceof EntityPlayer ? (EntityPlayer) entityLiving : null;
-		FluidStack fluidstack = this.getFluid(stack);
-		Fluid fluid = fluidstack.getFluid() != null ? fluidstack.getFluid() : null;
-
-		if (!worldIn.isRemote) {
-			if (fluid instanceof FluidDrinkable && entityplayer != null) {
-				((FluidDrinkable) fluid).onDrank(worldIn, entityplayer, stack, fluidstack);
-			}
-		}
-
-		if (entityplayer != null) {
-			entityplayer.addStat(StatList.getObjectUseStats(this));
-			
-			if (entityplayer instanceof EntityPlayerMP) {
-	            CriteriaTriggers.CONSUME_ITEM.trigger((EntityPlayerMP) entityplayer, stack);
-	        }
-		}
-
-		if ((entityplayer == null) || !entityplayer.capabilities.isCreativeMode) {
-			stack.stackSize -= 1;
-			
-			if (stack.isEmpty()) {
-				return new ItemStack(Items.glass_bottle);
-			} else if (entityplayer != null) {
-				RusticUtils.givePlayerItem(entityplayer, new ItemStack(Items.glass_bottle));
-				//entityplayer.inventory.addItemStackToInventory(new ItemStack(Items.glass_bottle));
-			}
-		}
-
-		return stack;
-	}
-
-	public int getMaxItemUseDuration(ItemStack stack) {
-		return 32;
-	}
-
-	public EnumAction getItemUseAction(ItemStack stack) {
-		if (getFluid(stack) != null && getFluid(stack).getFluid() != null
-				&& getFluid(stack).getFluid() instanceof FluidDrinkable) {
-			return EnumAction.DRINK;
-		}
-		return EnumAction.NONE;
-	}
-
-	public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
-		playerIn.setActiveHand(handIn);
-		//System.out.println(playerIn.getHeldItem(handIn).getTagCompound());
-		return new ActionResult(EnumActionResult.SUCCESS, playerIn.getHeldItem(handIn));
-	}
-
-	@Nullable
-	public FluidStack getFluid(@Nonnull ItemStack container) {
-		if (container.hasTagCompound() && container.getTagCompound().hasKey(FLUID_NBT_KEY)) {
+	public FluidStack getFluid(ItemStack container) {
+		if (container != null && container.hasTagCompound() && container.getTagCompound().hasKey(FLUID_NBT_KEY)) {
 			return FluidStack.loadFluidStackFromNBT(container.getTagCompound().getCompoundTag(FLUID_NBT_KEY));
 		}
 		return null;
 	}
 
+	@Override
+	public int getCapacity(ItemStack container) {
+		return CAPACITY;
+	}
+
 	public int getCapacity() {
-		return capacity;
+		return CAPACITY;
 	}
 
 	@Override
-	public boolean hasContainerItem(@Nonnull ItemStack stack) {
-		return true;
+	public int fill(ItemStack container, FluidStack resource, boolean doFill) {
+		if (resource == null || resource.amount < CAPACITY || getFluid(container) != null
+				|| !VALID_FLUIDS.contains(resource.getFluid()) || container.stackSize != 1) {
+			return 0;
+		}
+		if (doFill) setFluid(container, resource);
+		return CAPACITY;
 	}
 
-	@Nonnull
+	/**
+	 * Draining empties the whole bottle. The caller is expected to replace the (now fluid-less) stack with a glass
+	 * bottle.
+	 */
 	@Override
-	public ItemStack getContainerItem(@Nonnull ItemStack itemStack) {
-		return this.empty;
+	public FluidStack drain(ItemStack container, int maxDrain, boolean doDrain) {
+		FluidStack fluid = getFluid(container);
+		if (fluid == null || maxDrain < CAPACITY) return null;
+		if (doDrain) setFluid(container, null);
+		return fluid;
 	}
+
+	/* using */
+
+	@Override
+	public ItemStack onEaten(ItemStack stack, World world, EntityPlayer player) {
+		FluidStack fluidstack = getFluid(stack);
+		Fluid fluid = fluidstack != null ? fluidstack.getFluid() : null;
+		if (!world.isRemote && fluid instanceof FluidDrinkable) {
+			((FluidDrinkable) fluid).onDrank(world, player, stack, fluidstack);
+		}
+		if (!player.capabilities.isCreativeMode) {
+			stack.stackSize--;
+			if (stack.stackSize <= 0) {
+				return new ItemStack(Items.glass_bottle);
+			}
+			RusticUtils.givePlayerItem(player, new ItemStack(Items.glass_bottle));
+		}
+		return stack;
+	}
+
+	@Override
+	public int getMaxItemUseDuration(ItemStack stack) {
+		return 32;
+	}
+
+	@Override
+	public EnumAction getItemUseAction(ItemStack stack) {
+		FluidStack fluid = getFluid(stack);
+		if (fluid != null && fluid.getFluid() instanceof FluidDrinkable) {
+			return EnumAction.drink;
+		}
+		return EnumAction.none;
+	}
+
+	@Override
+	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
+		if (getItemUseAction(stack) == EnumAction.drink) {
+			player.setItemInUse(stack, getMaxItemUseDuration(stack));
+		}
+		return stack;
+	}
+
+	// No container item: recipes that use a bottle's contents give the glass bottle back themselves (see
+	// EventHandlerCommon), and "bottle emptying" crafts the fluid bottle into a glass bottle.
 
 	@Override
 	public EnumRarity getRarity(ItemStack stack) {
 		FluidStack fluidStack = getFluid(stack);
-		if ((fluidStack != null) && (fluidStack.getFluid() != null)) {
+		if (fluidStack != null && fluidStack.getFluid() != null) {
 			return fluidStack.getFluid().getRarity(fluidStack);
 		}
 		return super.getRarity(stack);
 	}
-	
+
 	@Override
-	@Nonnull
-	public String getItemStackDisplayName(@Nonnull ItemStack stack) {
+	public String getItemStackDisplayName(ItemStack stack) {
 		FluidStack fluidStack = getFluid(stack);
 		if (fluidStack == null) {
-			return empty.getDisplayName();
+			return new ItemStack(Items.glass_bottle).getDisplayName();
 		}
-
-		String unloc = this.getUnlocalizedName(stack);
-
-		return StatCollector.translateToLocalFormatted(unloc + ".name", fluidStack.getLocalizedName());
+		return StatCollector.translateToLocalFormatted(getUnlocalizedName(stack) + ".name", fluidStack.getLocalizedName());
 	}
-	
+
 	@Override
 	@SideOnly(Side.CLIENT)
-	public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void addInformation(ItemStack stack, EntityPlayer player, List tooltip, boolean advanced) {
 		FluidStack fluidStack = getFluid(stack);
-		if ((fluidStack != null) && (fluidStack.getFluid() != null) && (fluidStack.getFluid() instanceof FluidDrinkable)) {
-			tooltip.add(EnumChatFormatting.DARK_GRAY + "" + EnumChatFormatting.ITALIC + StatCollector.translateToLocalFormatted("tooltip.rustic.drinkable"));
+		if (fluidStack != null && fluidStack.getFluid() instanceof FluidDrinkable) {
+			tooltip.add(EnumChatFormatting.DARK_GRAY + "" + EnumChatFormatting.ITALIC
+					+ StatCollector.translateToLocal("tooltip.rustic.drinkable"));
 		}
 	}
-	
+
 	@Override
 	public CreativeTabs[] getCreativeTabs() {
 		return creative_tabs;
 	}
 
 	@Override
-	public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> subItems) {
-		if (isInCreativeTab(tab)) {
-			if (tab == Rustic.farmingTab) {
-				for (Fluid fluid : VALID_FLUIDS) {
-					ItemStack stack = getFilledBottle(fluid);
-					if (fluid instanceof FluidBooze) {
-						if (stack.hasTagCompound() && stack.getTagCompound().hasKey(FluidHandlerItemStack.FLUID_NBT_KEY)) {
-							NBTTagCompound fluidTag = stack.getTagCompound()
-									.getCompoundTag(FluidHandlerItemStack.FLUID_NBT_KEY);
-							if (!fluidTag.hasKey("Tag")) {
-								fluidTag.setTag("Tag", new NBTTagCompound());
-							}
-							if (!fluidTag.getCompoundTag("Tag").hasKey(FluidBooze.QUALITY_NBT_KEY)) {
-								fluidTag.getCompoundTag("Tag").setFloat(FluidBooze.QUALITY_NBT_KEY, 0.75F);
-							}
-						}
+	@SideOnly(Side.CLIENT)
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void getSubItems(Item item, CreativeTabs tab, List subItems) {
+		if (tab == Rustic.farmingTab) {
+			for (Fluid fluid : VALID_FLUIDS) {
+				ItemStack stack = getFilledBottle(fluid);
+				if (fluid instanceof FluidBooze) {
+					FluidStack fs = getFluid(stack);
+					if (fs != null) {
+						if (fs.tag == null) fs.tag = new NBTTagCompound();
+						if (!fs.tag.hasKey(FluidBooze.QUALITY_NBT_KEY)) fs.tag.setFloat(FluidBooze.QUALITY_NBT_KEY, 0.75F);
+						setFluid(stack, fs);
 					}
-					subItems.add(stack);
 				}
-			} else if (tab == Rustic.alchemyTab) {
-				ItemStack oilStack = getFilledBottle(ModFluids.VANTA_OIL);
-				subItems.add(oilStack);
+				subItems.add(stack);
 			}
+		} else if (tab == Rustic.alchemyTab) {
+			subItems.add(getFilledBottle(ModFluids.VANTA_OIL));
+		}
+	}
+
+	/* rendering: liquid overlay tinted with the fluid's colour, bottle, and (for booze) a quality label */
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public void registerIcons(IIconRegister register) {
+		potionOverlay = register.registerIcon("potion_overlay");
+		potionBottle = register.registerIcon("potion_bottle_drinkable");
+		boozeOverlay = register.registerIcon(Rustic.MODID + ":alcohol_overlay");
+		boozeBottle = register.registerIcon(Rustic.MODID + ":alcohol_bottle");
+		boozeLabel = register.registerIcon(Rustic.MODID + ":alcohol_label");
+		itemIcon = potionBottle;
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public boolean requiresMultipleRenderPasses() {
+		return true;
+	}
+
+	@Override
+	public int getRenderPasses(int metadata) {
+		return 3;
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public IIcon getIcon(ItemStack stack, int pass) {
+		FluidStack fluid = getFluid(stack);
+		boolean booze = fluid != null && fluid.getFluid() instanceof FluidBooze;
+		switch (pass) {
+			case 0:
+				if (fluid == null) return booze ? boozeBottle : potionBottle;
+				return booze ? boozeOverlay : potionOverlay;
+			case 1:
+				return booze ? boozeBottle : potionBottle;
+			default:
+				return booze ? boozeLabel : (booze ? boozeBottle : potionBottle);
 		}
 	}
 
 	@Override
-	public ICapabilityProvider initCapabilities(@Nonnull ItemStack stack, @Nullable NBTTagCompound nbt) {
-		FluidHandlerItemStack.SwapEmpty handler = new FluidHandlerItemStack.SwapEmpty(stack, empty.copy(), capacity) {
-			@Override
-			public boolean canFillFluidType(FluidStack fluidstack) {
-				return ItemFluidBottle.VALID_FLUIDS.contains(fluidstack.getFluid());
+	@SideOnly(Side.CLIENT)
+	public int getColorFromItemStack(ItemStack stack, int pass) {
+		FluidStack fluid = getFluid(stack);
+		if (fluid == null || fluid.getFluid() == null) return 0xFFFFFF;
+		if (pass == 0) return ClientUtils.getFluidColor(fluid);
+		if (pass == 2 && fluid.getFluid() instanceof FluidBooze) {
+			float quality = 0.5F;
+			if (fluid.tag != null && fluid.tag.hasKey(FluidBooze.QUALITY_NBT_KEY, 5)) {
+				quality = fluid.tag.getFloat(FluidBooze.QUALITY_NBT_KEY);
 			}
-
-			@Override
-			public int fill(FluidStack resource, boolean doFill) {
-				if (resource == null || resource.amount < this.capacity || getFluid() != null
-						|| !canFillFluidType(resource)) {
-					return 0;
-				}
-				if (doFill) {
-					setFluid(resource.copy());
-				}
-				return this.capacity;
-			}
-
-			protected void setFluid(@Nullable FluidStack fluid) {
-				if (fluid == null) {
-					container = this.emptyContainer;
-				} else {
-					container = new ItemStack(ItemFluidBottle.this, 1);
-					FluidStack fs = fluid.copy();
-					fs.amount = this.capacity;
-					NBTTagCompound fluidTag = fs.writeToNBT(new NBTTagCompound());
-					NBTTagCompound tag = new NBTTagCompound();
-					tag.setTag(FLUID_NBT_KEY, fluidTag);
-					container.setTagCompound(tag);
-				}
-			}
-
-			@Override
-			public FluidStack drain(FluidStack resource, boolean doDrain) {
-				if (resource == null || resource.amount < this.capacity) {
-					return null;
-				}
-				return super.drain(resource, doDrain);
-			}
-
-			@Override
-			public FluidStack drain(int maxDrain, boolean doDrain) {
-				if (maxDrain < this.capacity) {
-					return null;
-				}
-				return super.drain(maxDrain, doDrain);
-			}
-
-			@Nonnull
-			@Override
-			public ItemStack getContainer() {
-				FluidStack contained = getFluid();
-				if (contained == null || contained.getFluid() == null || contained.amount <= 0) {
-					return this.emptyContainer;
-				}
-				return container;
-			}
-
-			@SuppressWarnings("unchecked")
-			@Override
-			@Nullable
-			public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
-				return capability == CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY ? (T) this : null;
-			}
-		};
-		return handler;
+			return ClientUtils.getQualityLabelColor(quality);
+		}
+		return 0xFFFFFF;
 	}
 
 }

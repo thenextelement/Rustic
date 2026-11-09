@@ -114,7 +114,7 @@ public class BookManager {
 		chili_peppers = new BookEntry("chili_peppers", agriculture).setIcon(new ItemStack(ModItems.CHILI_PEPPER));
 		wildberries = new BookEntry("wildberries", agriculture).setIcon(new ItemStack(ModItems.WILDBERRIES));
 		grapes = new BookEntry("grapes", agriculture).setIcon(new ItemStack(ModItems.GRAPES));
-		apple_trees = new BookEntry("apple_trees", agriculture).setIcon(new ItemStack(Items.APPLE));
+		apple_trees = new BookEntry("apple_trees", agriculture).setIcon(new ItemStack(Items.apple));
 		olive_trees = new BookEntry("olive_trees", agriculture).setIcon(new ItemStack(ModItems.OLIVES));
 		ironwood_trees = new BookEntry("ironwood_trees", agriculture).setIcon(new ItemStack(ModItems.IRONBERRIES));
 		herbs = new BookEntry("herbs", agriculture).setIcon(new ItemStack(Herbs.MARSH_MALLOW));

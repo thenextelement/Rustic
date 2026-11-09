@@ -23,10 +23,8 @@ public class MessageDismountChair implements IMessage {
 		
 		@Override
 		public IMessage onMessage(final MessageDismountChair message, final MessageContext ctx) {
-			EntityPlayerMP player = ctx.getServerHandler().player;
-			player.getServerWorld().addScheduledTask(() -> {
-				player.dismountRidingEntity();
-			});
+			EntityPlayerMP player = ctx.getServerHandler().playerEntity;
+							if (player.ridingEntity != null) player.mountEntity(null);
 			return null;
 		}
 		

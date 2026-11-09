@@ -1,8 +1,10 @@
 package rustic.common.crafting;
 
+import rustic.common.util.FluidHelper;
+import rustic.common.util.RusticUtils;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import net.minecraft.init.Items;
 import net.minecraft.inventory.InventoryCrafting;
@@ -16,25 +18,23 @@ import net.minecraft.nbt.NBTTagByte;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.potion.PotionUtils;
-import net.minecraft.util.NonNullList;
+
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
 import rustic.common.Config;
 import rustic.common.blocks.fluids.ModFluids;
 import rustic.common.items.ModItems;
 import rustic.common.util.ElixirUtils;
 import rustic.common.util.RusticUtils;
 
-public class RecipeVantaOil extends net.minecraftforge.registries.IForgeRegistryEntry.Impl<IRecipe> implements IRecipe {
+public class RecipeVantaOil implements IRecipe {
 	
 	public static int getReturnBottleCount(InventoryCrafting inv) {
 		int bottleCount = 0;
 		
 		for (int i = 0; i < inv.getSizeInventory(); i++) {
 			ItemStack tempStack = inv.getStackInSlot(i);
-			if (tempStack.isEmpty()) continue;
+			if ((tempStack == null)) continue;
 			
 			if (RusticUtils.isVantaOilBottle(tempStack)) {
 				bottleCount++;
@@ -53,17 +53,17 @@ public class RecipeVantaOil extends net.minecraftforge.registries.IForgeRegistry
 
 	@Override
 	public boolean matches(InventoryCrafting inv, World worldIn) {
-		ItemStack weaponStack = ItemStack.EMPTY;
-		ItemStack oilStack = ItemStack.EMPTY;
+		ItemStack weaponStack = null;
+		ItemStack oilStack = null;
 		Potion ingPotion = null;
 		PotionEffect weaponEffect = null;
 		
 		for (int i = 0; i < inv.getSizeInventory(); i++) {
 			ItemStack tempStack = inv.getStackInSlot(i);
-			if (tempStack.isEmpty()) continue;
+			if ((tempStack == null)) continue;
 			
 			if (RusticUtils.isVantaOilBottle(tempStack)) {
-				if (!oilStack.isEmpty()) return false;
+				if ((oilStack != null)) return false;
 				oilStack = tempStack;
 				continue;
 			}
@@ -71,24 +71,24 @@ public class RecipeVantaOil extends net.minecraftforge.registries.IForgeRegistry
 			if (tempEffect != null) {
 				if (ingPotion != null) {
 					// check if ingredient effects are compatible
-					if (ingPotion != tempEffect.getPotion()) return false;
+					if (ingPotion != Potion.potionTypes[tempEffect.getPotionID()]) return false;
 				} else {
-					ingPotion = tempEffect.getPotion();
+					ingPotion = Potion.potionTypes[tempEffect.getPotionID()];
 					if (weaponEffect != null) {
 						// check if weapon and ing potions are compatible
-						Potion weaponPotion = weaponEffect.getPotion();
+						Potion weaponPotion = Potion.potionTypes[weaponEffect.getPotionID()];
 						if ((weaponPotion != null) && (weaponPotion != ingPotion)) return false;
 					}
 				}
 				continue;
 			}
 			if (RusticUtils.isVantaOilableWeapon(tempStack)) {
-				if (!weaponStack.isEmpty()) return false;
+				if ((weaponStack != null)) return false;
 				weaponStack = tempStack;
 				weaponEffect = ElixirUtils.getVantaOilEffect(weaponStack);
 				if ((weaponEffect != null) && (ingPotion != null)) {
 					// check if weapon and ing potions are compatible
-					Potion weaponPotion = weaponEffect.getPotion();
+					Potion weaponPotion = Potion.potionTypes[weaponEffect.getPotionID()];
 					if ((weaponPotion != null) && (weaponPotion != ingPotion)) return false;
 				}
 				continue;
@@ -97,13 +97,13 @@ public class RecipeVantaOil extends net.minecraftforge.registries.IForgeRegistry
 			return false;
 		}
 		
-		return (!weaponStack.isEmpty() && !oilStack.isEmpty() && (ingPotion != null));
+		return ((weaponStack != null) && (oilStack != null) && (ingPotion != null));
 	}
 	
 	@Override
 	public ItemStack getCraftingResult(InventoryCrafting inv) {
-		ItemStack weaponStack = ItemStack.EMPTY;
-		ItemStack oilStack = ItemStack.EMPTY;
+		ItemStack weaponStack = null;
+		ItemStack oilStack = null;
 		Potion ingPotion = null;
 		int amplifier = 0;
 		int duration = 0;
@@ -111,10 +111,10 @@ public class RecipeVantaOil extends net.minecraftforge.registries.IForgeRegistry
 		
 		for (int i = 0; i < inv.getSizeInventory(); i++) {
 			ItemStack tempStack = inv.getStackInSlot(i);
-			if (tempStack.isEmpty()) continue;
+			if ((tempStack == null)) continue;
 			
 			if (RusticUtils.isVantaOilBottle(tempStack)) {
-				if (!oilStack.isEmpty()) return ItemStack.EMPTY;
+				if ((oilStack != null)) return null;
 				oilStack = tempStack;
 				continue;
 			}
@@ -124,35 +124,35 @@ public class RecipeVantaOil extends net.minecraftforge.registries.IForgeRegistry
 					if ((tempEffect.getAmplifier() >= 0) && (tempEffect.getAmplifier() < amplifier)) amplifier = tempEffect.getAmplifier();
 					duration += ingPotion.isInstant() ? 1 : Math.max(tempEffect.getDuration(), 1);
 					// check if ingredient effects are compatible
-					if (ingPotion != tempEffect.getPotion()) return ItemStack.EMPTY;
+					if (ingPotion != Potion.potionTypes[tempEffect.getPotionID()]) return null;
 				} else {
-					ingPotion = tempEffect.getPotion();
+					ingPotion = Potion.potionTypes[tempEffect.getPotionID()];
 					amplifier = tempEffect.getAmplifier();
 					duration = ingPotion.isInstant() ? 1 : Math.max(tempEffect.getDuration(), 1);
 					if (weaponEffect != null) {
 						// check if weapon and ing potions are compatible
-						Potion weaponPotion = weaponEffect.getPotion();
-						if ((weaponPotion != null) && (weaponPotion != ingPotion)) return ItemStack.EMPTY;
+						Potion weaponPotion = Potion.potionTypes[weaponEffect.getPotionID()];
+						if ((weaponPotion != null) && (weaponPotion != ingPotion)) return null;
 					}
 				}
 				continue;
 			}
 			if (RusticUtils.isVantaOilableWeapon(tempStack)) {
-				if (!weaponStack.isEmpty()) return ItemStack.EMPTY;
+				if ((weaponStack != null)) return null;
 				weaponStack = tempStack;
 				weaponEffect = ElixirUtils.getVantaOilEffect(weaponStack);
 				if ((weaponEffect != null) && (ingPotion != null)) {
 					// check if weapon and ing effects are compatible
-					Potion weaponPotion = weaponEffect.getPotion();
-					if ((weaponPotion != null) && (weaponPotion != ingPotion)) return ItemStack.EMPTY;
+					Potion weaponPotion = Potion.potionTypes[weaponEffect.getPotionID()];
+					if ((weaponPotion != null) && (weaponPotion != ingPotion)) return null;
 				}
 				continue;
 			}
 			
-			return ItemStack.EMPTY;
+			return null;
 		}
 		
-		if (weaponStack.isEmpty() || oilStack.isEmpty() || (ingPotion == null)) return ItemStack.EMPTY;
+		if ((weaponStack == null) || (oilStack == null) || (ingPotion == null)) return null;
 		
 		if (weaponEffect != null) {
 			duration += Math.max(weaponEffect.getDuration(), 0);
@@ -160,8 +160,8 @@ public class RecipeVantaOil extends net.minecraftforge.registries.IForgeRegistry
 		}
 		
 		ItemStack returnStack = weaponStack.copy();
-		returnStack.setCount(1);
-		ElixirUtils.setVantaOilEffect(returnStack, new PotionEffect(ingPotion, duration, amplifier));
+		returnStack.stackSize = 1;
+		ElixirUtils.setVantaOilEffect(returnStack, new PotionEffect(ingPotion.id, duration, amplifier));
 		
 		return returnStack;
 	}
@@ -169,18 +169,18 @@ public class RecipeVantaOil extends net.minecraftforge.registries.IForgeRegistry
 	
 	public static PotionEffect getIngredientEffect(ItemStack stack) {
 		final Item item = stack.getItem();
-		if ((item == Items.POTIONITEM) || (item == Items.SPLASH_POTION) || (item == Items.LINGERING_POTION)) {
-			List<PotionEffect> effects = PotionUtils.getEffectsFromStack(stack);
+		if (item == Items.potionitem) {
+			List<PotionEffect> effects = Items.potionitem.getEffects(stack);
 			if (effects.size() == 1) {
 				PotionEffect effect = effects.get(0);
-				if (effect.getPotion() != null) return effect;
+				if (Potion.potionTypes[effect.getPotionID()] != null) return effect;
 			}
 			return (effects.size() == 1) ? effects.get(0) : null;
 		} else if (item == ModItems.ELIXIR) {
 			List<PotionEffect> effects = ElixirUtils.getEffects(stack);
 			if (effects.size() == 1) {
 				PotionEffect effect = effects.get(0);
-				if (effect.getPotion() != null) return effect;
+				if (Potion.potionTypes[effect.getPotionID()] != null) return effect;
 			}
 		}
 		return null;
@@ -188,23 +188,14 @@ public class RecipeVantaOil extends net.minecraftforge.registries.IForgeRegistry
 
 	@Override
 	public ItemStack getRecipeOutput() {
-		return ItemStack.EMPTY;
+		return null;
 	}
 
-	@Override
-	public NonNullList<ItemStack> getRemainingItems(InventoryCrafting inv) {
-		NonNullList items = NonNullList.<ItemStack>withSize(inv.getSizeInventory(), ItemStack.EMPTY);
-		return items;
-	}
 
 	@Override
-	public boolean canFit(int width, int height) {
-		return width <= 3 && height <= 3;
+	public int getRecipeSize() {
+		return 9;
 	}
 	
-	@Override
-	public boolean isDynamic() {
-        return true;
-    }
 
 }

@@ -1,10 +1,9 @@
 package rustic.client;
 
+import cpw.mods.fml.common.network.IGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
-
 import net.minecraft.world.World;
-import cpw.mods.fml.common.network.IGuiHandler;
 import rustic.client.gui.GuiApiary;
 import rustic.client.gui.GuiBarrel;
 import rustic.client.gui.GuiBrewingBarrel;
@@ -14,7 +13,6 @@ import rustic.client.gui.GuiCondenser;
 import rustic.client.gui.GuiCondenserAdvanced;
 import rustic.client.gui.GuiVase;
 import rustic.client.gui.book.GuiBook;
-import rustic.common.blocks.BlockCabinet;
 import rustic.common.items.ItemBook;
 import rustic.common.tileentity.ContainerApiary;
 import rustic.common.tileentity.ContainerBarrel;
@@ -32,12 +30,12 @@ import rustic.common.tileentity.TileEntityCondenser;
 import rustic.common.tileentity.TileEntityCondenserAdvancedBottom;
 import rustic.common.tileentity.TileEntityVase;
 
+/** Server and client GUIs are chosen by tile entity type; the book uses its own id. */
 public class GuiProxy implements IGuiHandler {
 
 	@Override
-	public Object getServerGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z) {
-		BlockPos pos = new BlockPos(x, y, z);
-		TileEntity te = world.getTileEntity(pos);
+	public Object getServerGuiElement(int id, EntityPlayer player, World world, int x, int y, int z) {
+		TileEntity te = world.getTileEntity(x, y, z);
 		if (te instanceof TileEntityApiary) {
 			return new ContainerApiary(player.inventory, (TileEntityApiary) te);
 		} else if (te instanceof TileEntityVase) {
@@ -53,49 +51,33 @@ public class GuiProxy implements IGuiHandler {
 		} else if (te instanceof TileEntityBrewingBarrel) {
 			return new ContainerBrewingBarrel(player.inventory, (TileEntityBrewingBarrel) te);
 		}
-		if (ID == ItemBook.GUI_ID) {
-			
-		}
 		return null;
 	}
 
 	@Override
-	public Object getClientGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z) {
-		BlockPos pos = new BlockPos(x, y, z);
-		TileEntity te = world.getTileEntity(pos);
+	public Object getClientGuiElement(int id, EntityPlayer player, World world, int x, int y, int z) {
+		if (id == ItemBook.GUI_ID) {
+			return new GuiBook();
+		}
+		TileEntity te = world.getTileEntity(x, y, z);
 		if (te instanceof TileEntityApiary) {
-			TileEntityApiary apiaryTileEntity = (TileEntityApiary) te;
-			return new GuiApiary(new ContainerApiary(player.inventory, apiaryTileEntity), player.inventory);
+			return new GuiApiary(new ContainerApiary(player.inventory, (TileEntityApiary) te), player.inventory);
 		} else if (te instanceof TileEntityVase) {
-			return new GuiVase((ContainerVase) ((TileEntityVase) te).createContainer(player.inventory, player),
-					player.inventory);
+			return new GuiVase((ContainerVase) ((TileEntityVase) te).createContainer(player.inventory, player), player.inventory);
 		} else if (te instanceof TileEntityBarrel) {
-			return new GuiBarrel((ContainerBarrel) ((TileEntityBarrel) te).createContainer(player.inventory, player),
-					player.inventory);
+			return new GuiBarrel((ContainerBarrel) ((TileEntityBarrel) te).createContainer(player.inventory, player), player.inventory);
 		} else if (te instanceof TileEntityCabinet) {
-			if (world.getBlockState(pos).getValue(BlockCabinet.TOP)) {
-				return new GuiCabinetDouble(
-						(ContainerCabinetDouble) ((TileEntityCabinet) te).createContainer(player.inventory, player),
-						player.inventory);
-			} else if (world.getBlockState(pos.up()).getBlock() instanceof BlockCabinet
-					&& world.getBlockState(pos.up()).getValue(BlockCabinet.TOP)) {
-				return new GuiCabinetDouble(
-						(ContainerCabinetDouble) ((TileEntityCabinet) te).createContainer(player.inventory, player),
-						player.inventory);
-			} else {
-				return new GuiCabinet(
-						(ContainerCabinet) ((TileEntityCabinet) te).createContainer(player.inventory, player),
-						player.inventory);
+			Object container = ((TileEntityCabinet) te).createContainer(player.inventory, player);
+			if (container instanceof ContainerCabinetDouble) {
+				return new GuiCabinetDouble((ContainerCabinetDouble) container, player.inventory);
 			}
+			return new GuiCabinet((ContainerCabinet) container, player.inventory);
 		} else if (te instanceof TileEntityCondenser) {
 			return new GuiCondenser(new ContainerCondenser(player.inventory, (TileEntityCondenser) te), player.inventory);
 		} else if (te instanceof TileEntityCondenserAdvancedBottom) {
 			return new GuiCondenserAdvanced(new ContainerCondenserAdvanced(player.inventory, (TileEntityCondenserAdvancedBottom) te), player.inventory);
 		} else if (te instanceof TileEntityBrewingBarrel) {
 			return new GuiBrewingBarrel(new ContainerBrewingBarrel(player.inventory, (TileEntityBrewingBarrel) te), player.inventory);
-		}
-		if (ID == ItemBook.GUI_ID) {
-			return new GuiBook();
 		}
 		return null;
 	}

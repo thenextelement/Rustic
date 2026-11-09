@@ -27,7 +27,7 @@ public abstract class CondenserRecipe implements ICondenserRecipe {
 		if (this.inputs == null || this.inputs.size() <= 0) {
 			return false;
 		}
-		if (bottle.getItem() != Items.GLASS_BOTTLE) {
+		if (bottle == null || bottle.getItem() != Items.glass_bottle) {
 			return false;
 		}
 		if (fluid != FluidRegistry.WATER) {
@@ -36,14 +36,17 @@ public abstract class CondenserRecipe implements ICondenserRecipe {
 		List<ItemStack> tempInputs = new ArrayList<ItemStack>(this.inputs);
 
 		for (int i = 0; i < inputs.length; i++) {
+			if (inputs[i] == null) {
+				continue;
+			}
 			ItemStack stack = inputs[i].copy();
-			if (stack.isEmpty()) {
+			if (stack.stackSize <= 0) {
 				continue;
 			}
 			boolean stackNotInput = true;
 			for (ItemStack temp : tempInputs) {
 				if (temp.getItem().equals(stack.getItem())) {
-					if (temp.getMetadata() == stack.getMetadata()) {
+					if (temp.getItemDamage() == stack.getItemDamage()) {
 						if (temp.hasTagCompound() && stack.hasTagCompound()) {
 							if (temp.getTagCompound().equals(stack.getTagCompound())) {
 								tempInputs.remove(stack);
@@ -71,7 +74,7 @@ public abstract class CondenserRecipe implements ICondenserRecipe {
 	}
 	
 	public List<ItemStack> getBottles() {
-		return Arrays.asList(new ItemStack(Items.GLASS_BOTTLE));
+		return Arrays.asList(new ItemStack(Items.glass_bottle));
 	}
 	
 	public List<List<ItemStack>> getInputs() {

@@ -20,6 +20,8 @@ import rustic.common.book.BookEntryCategory;
 import rustic.common.book.BookPage;
 
 public class BookPageCategory extends BookPage {
+
+	private static final net.minecraft.client.renderer.entity.RenderItem RENDER_ITEM = new net.minecraft.client.renderer.entity.RenderItem();
 	
 	private final BookCategory category;
 	
@@ -82,10 +84,12 @@ public class BookPageCategory extends BookPage {
 		}
 		
 		@Override
-		public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+		public void drawButton(Minecraft mc, int mouseX, int mouseY) {
+			int x = this.xPosition, y = this.yPosition;
+			FontRenderer fontRenderer = mc.fontRenderer;
 			if (this.visible) {
-				boolean flag = mouseX >= this.x && mouseY >= this.y
-						&& mouseX < this.x + this.width && mouseY < this.y + this.height;
+				boolean flag = mouseX >= this.xPosition && mouseY >= this.yPosition
+						&& mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
 				if (flag) {
 					if (this.ticksHovered < width) {
 						this.ticksHovered++;
@@ -95,19 +99,19 @@ public class BookPageCategory extends BookPage {
 				} else {
 					this.ticksHovered = 0;
 				}
-				this.fontRenderer.drawString(StatCollector.translateToLocal(this.displayString), x + fontRenderer.FONT_HEIGHT + 2 + 1, y + 2, 0x000000);
-				if (this.entry != null && !this.entry.getIcon().isEmpty()) {
+				fontRenderer.drawString(StatCollector.translateToLocal(this.displayString), x + fontRenderer.FONT_HEIGHT + 2 + 1, y + 2, 0x000000);
+				if (this.entry != null && this.entry.getIcon() != null) {
 					float scale = (fontRenderer.FONT_HEIGHT + 2) / 16F;
 					
-					GlStateManager.pushMatrix();
-					GlStateManager.scale(scale, scale, scale);
-					GlStateManager.color(1F, 1F, 1F, 1F);
+					GL11.glPushMatrix();
+					GL11.glScalef(scale, scale, scale);
+					GL11.glColor4f(1F, 1F, 1F, 1F);
 					RenderHelper.enableGUIStandardItemLighting();
 					
-					mc.getRenderItem().renderItemIntoGUI(this.entry.getIcon(), (int) ((x) / scale), (int) (y / scale));
+					RENDER_ITEM.renderItemIntoGUI(fontRenderer, mc.getTextureManager(), this.entry.getIcon(), (int) ((x) / scale), (int) (y / scale));
 					
 					RenderHelper.disableStandardItemLighting();
-					GlStateManager.popMatrix();
+					GL11.glPopMatrix();
 				}
 			}
 		}

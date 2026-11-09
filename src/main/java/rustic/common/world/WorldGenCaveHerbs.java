@@ -2,9 +2,6 @@ package rustic.common.world;
 
 import java.util.Random;
 
-
-
-
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.WorldGenerator;
 import rustic.common.Config;
@@ -14,44 +11,16 @@ import rustic.common.blocks.crops.Herbs;
 public class WorldGenCaveHerbs extends WorldGenerator {
 
 	@Override
-	public boolean generate(World world, Random rand, BlockPos pos) {
-		//BiomeGenBase biome = world.getBiome(pos);
-
+	public boolean generate(World world, Random rand, int cx, int cy, int cz) {
 		BlockHerbBase herb = Herbs.getRandomCaveHerb(rand);
-
 		boolean ret = false;
 		for (int i = 0; i < Config.MAX_HERB_ATTEMPTS; i++) {
-			int x = pos.getX() + rand.nextInt(7) - rand.nextInt(7);
-			int z = pos.getZ() + rand.nextInt(7) - rand.nextInt(7);
+			int x = cx + rand.nextInt(7) - rand.nextInt(7);
+			int z = cz + rand.nextInt(7) - rand.nextInt(7);
 			int y = rand.nextInt(32) + 10;
-
-			BlockPos genPos = new BlockPos(x, y, z);
-
-			if (generateHerb(world, rand, genPos, herb)) {
-				ret = true;
-			}
-
+			ret |= HerbPlacer.placeOnFloor(world, x, y, z, herb, 4, 256);
 		}
-
 		return ret;
-	}
-
-	private boolean generateHerb(World world, Random rand, BlockPos pos, BlockHerbBase herb) {
-		if (world.isAirBlock(pos)) {
-			
-			int i = 0;
-			while (world.isAirBlock(pos.down(i)) && pos.getY() - i >= 4) {
-				i++;
-			}
-			pos = pos.down(i - 1);
-
-			IBlockState state = world.getBlockState(pos.down());
-			if (state.getBlock().canSustainPlant(state, world, pos.down(), EnumFacing.UP, herb)) {
-				world.setBlockState(pos, herb.getDefaultState().withProperty(BlockHerbBase.AGE, 3));
-				return true;
-			}
-		}
-		return false;
 	}
 
 }

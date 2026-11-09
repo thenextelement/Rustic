@@ -3,7 +3,6 @@ package rustic.common.blocks.fluids;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
 import rustic.common.potions.PotionsRustic;
@@ -14,7 +13,7 @@ public class FluidBooze extends FluidDrinkable {
 	
 	protected float inebriationChance = 0.5F;
 
-	public FluidBooze(String fluidName, ResourceLocation still, ResourceLocation flowing) {
+	public FluidBooze(String fluidName, String still, String flowing) {
 		super(fluidName, still, flowing);
 	}
 	
@@ -55,9 +54,9 @@ public class FluidBooze extends FluidDrinkable {
 		PotionEffect tipsyEffect = player.getActivePotionEffect(PotionsRustic.TIPSY);
 		if (world.rand.nextFloat() < this.inebriationChance * inebriationChanceMod) {
 			if (tipsyEffect == null) {
-				player.addPotionEffect(new PotionEffect(PotionsRustic.TIPSY, duration, 0, false, false));
+				player.addPotionEffect(new PotionEffect(PotionsRustic.TIPSY.id, duration, 0, false));
 			} else if (tipsyEffect.getAmplifier() < 3) {
-				player.addPotionEffect(new PotionEffect(PotionsRustic.TIPSY, Math.max(duration, tipsyEffect.getDuration()), tipsyEffect.getAmplifier() + 1, false, false));
+				player.addPotionEffect(new PotionEffect(PotionsRustic.TIPSY.id, Math.max(duration, tipsyEffect.getDuration()), tipsyEffect.getAmplifier() + 1, false));
 			}
 		}
 	}

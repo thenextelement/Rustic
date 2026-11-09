@@ -1,41 +1,22 @@
 package rustic.common.tileentity;
 
+import java.util.List;
 
-import net.minecraft.block.Block;
-
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
-
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagInt;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
-import net.minecraft.tileentity.TileEntityLockableLoot;
-
-
-
-import net.minecraft.util.ResourceLocation;
-
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
-
 import net.minecraft.world.World;
-
-import cpw.mods.fml.common.Optional;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
-
 import rustic.common.blocks.BlockCabinet;
 import rustic.common.blocks.ModBlocks;
-import rustic.common.inventory.DoubleCabinetItemHandler;
 import rustic.common.util.ItemStackHandlerRustic;
-import rustic.compat.Compat;
-import vazkii.quark.api.IDropoffManager;
 
-@Optional.Interface(modid = Compat.QUARK, iface = "vazkii.quark.api.IDropoffManager", striprefs = true)
-public class TileEntityCabinet extends TileEntityLockableLoot implements ITickable, IDropoffManager {
+public class TileEntityCabinet extends TileEntityInventoryBase {
 
 	public float lidAngle = 0;
 	public float prevLidAngle = 0;
@@ -43,127 +24,83 @@ public class TileEntityCabinet extends TileEntityLockableLoot implements ITickab
 	private int ticksSinceSync = 0;
 	public ItemStack material = null;
 
-	private ItemStackHandlerRustic itemStackHandler = new ItemStackHandlerRustic (27) {
-		@Override
-		protected void onContentsChanged(int slot) {
-			TileEntityCabinet.this.markDirty();
-		}
-	};
-
-	@SideOnly(Side.CLIENT)
-	private AxisAlignedBB renderAABB;
-
-	@SideOnly(Side.CLIENT)
-	@Override
-	public AxisAlignedBB getRenderBoundingBox() {
-		//IBlockState state = world.getBlockState(pos);
-		if (world.getBlockState(pos.up()).getBlock() == ModBlocks.CABINET && world.getBlockState(pos.up()).getPropertyKeys().contains(BlockCabinet.TOP) && world.getBlockState(pos.up()).getValue(BlockCabinet.TOP)) {
-			return new AxisAlignedBB(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1D, pos.getY() + 2D, pos.getZ() + 1D);
-		}
-		return new AxisAlignedBB(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1D, pos.getY() + 1D, pos.getZ() + 1D);
+	public TileEntityCabinet() {
+		super(27);
 	}
 
-	public void update() {
+	@Override
+	protected String getDefaultName() {
+		return "container.rustic.cabinet";
+	}
 
-		int i = this.pos.getX();
-		int j = this.pos.getY();
-		int k = this.pos.getZ();
-		++this.ticksSinceSync;
+	public ItemStackHandlerRustic getSingleCabinetHandler() {
+		return itemStackHandler;
+	}
 
-		if (!this.worldObj.isRemote && this.numPlayersUsing != 0 && (this.ticksSinceSync + i + j + k) % 200 == 0) {
-			
+	@Override
+	@SideOnly(Side.CLIENT)
+	public AxisAlignedBB getRenderBoundingBox() {
+		int height = (worldObj != null && BlockCabinet.isBottom(worldObj, xCoord, yCoord, zCoord)) ? 2 : 1;
+		return AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1D, yCoord + height, zCoord + 1D);
+	}
+
+	@Override
+	public void updateEntity() {
+		int i = xCoord, j = yCoord, k = zCoord;
+		++ticksSinceSync;
+		if (!worldObj.isRemote && numPlayersUsing != 0 && (ticksSinceSync + i + j + k) % 200 == 0) {
 			int recordedUsers = numPlayersUsing;
-			this.numPlayersUsing = 0;
-			//float f = 5.0F;
-
-			for (EntityPlayer entityplayer : this.worldObj.getEntitiesWithinAABB(EntityPlayer.class,
-					new AxisAlignedBB((double) ((float) i - 5.0F), (double) ((float) j - 5.0F),
-							(double) ((float) k - 5.0F), (double) ((float) (i + 1) + 5.0F),
-							(double) ((float) (j + 1) + 5.0F), (double) ((float) (k + 1) + 5.0F)))) {
-				if (entityplayer.openContainer instanceof ContainerCabinet) {
-					TileEntityCabinet tec = ((ContainerCabinet) entityplayer.openContainer).getTile();
-
-					if (tec.equals(this)) {
-						++this.numPlayersUsing;
-					}
-				} else if (entityplayer.openContainer instanceof ContainerCabinetDouble) {
-
-					TileEntityCabinet tec = ((ContainerCabinetDouble) entityplayer.openContainer).getTileBottom();
-
-					if (tec.equals(this)) {
-						++this.numPlayersUsing;
-					}
-
+			numPlayersUsing = 0;
+			List<?> players = worldObj.getEntitiesWithinAABB(EntityPlayer.class,
+					AxisAlignedBB.getBoundingBox(i - 5.0F, j - 5.0F, k - 5.0F, i + 1 + 5.0F, j + 1 + 5.0F, k + 1 + 5.0F));
+			for (Object o : players) {
+				EntityPlayer player = (EntityPlayer) o;
+				if (player.openContainer instanceof ContainerCabinet) {
+					if (((ContainerCabinet) player.openContainer).getTile() == this) ++numPlayersUsing;
+				} else if (player.openContainer instanceof ContainerCabinetDouble) {
+					if (((ContainerCabinetDouble) player.openContainer).getTileBottom() == this) ++numPlayersUsing;
 				}
 			}
-			if (numPlayersUsing != recordedUsers) {
-				markDirty();
-			}
+			if (numPlayersUsing != recordedUsers) markDirty();
 		}
 
-		this.prevLidAngle = this.lidAngle;
-		//float f1 = 0.1F;
-
-		if (this.numPlayersUsing > 0 && this.lidAngle == 0.0F) {
-			this.worldObj.playSound((EntityPlayer) null, i + 0.5D, j + 0.5D, k + 0.5D, SoundEvents.BLOCK_CHEST_OPEN,
-					SoundCategory.BLOCKS, 0.5F, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
+		prevLidAngle = lidAngle;
+		if (numPlayersUsing > 0 && lidAngle == 0.0F) {
+			worldObj.playSoundEffect(i + 0.5D, j + 0.5D, k + 0.5D, "random.chestopen", 0.5F, worldObj.rand.nextFloat() * 0.1F + 0.9F);
 		}
-
-		if (this.numPlayersUsing == 0 && this.lidAngle > 0.0F || this.numPlayersUsing > 0 && this.lidAngle < 1.0F) {
-			float f2 = this.lidAngle;
-
-			if (this.numPlayersUsing > 0) {
-				this.lidAngle += 0.1F;
-			} else {
-				this.lidAngle -= 0.1F;
+		if (numPlayersUsing == 0 && lidAngle > 0.0F || numPlayersUsing > 0 && lidAngle < 1.0F) {
+			float previous = lidAngle;
+			lidAngle += numPlayersUsing > 0 ? 0.1F : -0.1F;
+			if (lidAngle > 1.0F) lidAngle = 1.0F;
+			if (lidAngle < 0.5F && previous >= 0.5F) {
+				worldObj.playSoundEffect(i + 0.5D, j + 0.5D, k + 0.5D, "random.chestclosed", 0.5F, worldObj.rand.nextFloat() * 0.1F + 0.9F);
 			}
-
-			if (this.lidAngle > 1.0F) {
-				this.lidAngle = 1.0F;
-			}
-
-			//float f3 = 0.5F;
-
-			if (this.lidAngle < 0.5F && f2 >= 0.5F) {
-				this.worldObj.playSound((EntityPlayer) null, i + 0.5D, j + 0.5D, k + 0.5D, SoundEvents.BLOCK_CHEST_CLOSE,
-						SoundCategory.BLOCKS, 0.5F, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
-			}
-
-			if (this.lidAngle < 0.0F) {
-				this.lidAngle = 0.0F;
-			}
+			if (lidAngle < 0.0F) lidAngle = 0.0F;
 		}
 	}
 
 	@Override
 	public boolean receiveClientEvent(int id, int type) {
 		if (id == 1) {
-			this.numPlayersUsing = type;
+			numPlayersUsing = type;
 			return true;
-		} else {
-			return super.receiveClientEvent(id, type);
 		}
+		return super.receiveClientEvent(id, type);
 	}
 
-	@Override
 	public void openInventory(EntityPlayer player) {
-		if (!player.isSpectator()) {
-			if (this.numPlayersUsing < 0) {
-				this.numPlayersUsing = 0;
-			}
-
-			++this.numPlayersUsing;
-			this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, this.numPlayersUsing);
-			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), false);
-			markDirty();
-		}
+		if (numPlayersUsing < 0) numPlayersUsing = 0;
+		++numPlayersUsing;
+		worldObj.addBlockEvent(xCoord, yCoord, zCoord, getBlockType(), 1, numPlayersUsing);
+		worldObj.notifyBlocksOfNeighborChange(xCoord, yCoord, zCoord, getBlockType());
+		markDirty();
 	}
 
 	public void closeInventory(EntityPlayer player) {
-		if (!player.isSpectator() && this.getBlockType() instanceof BlockCabinet) {
-			--this.numPlayersUsing;
-			this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, this.numPlayersUsing);
-			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), false);
+		if (getBlockType() instanceof BlockCabinet) {
+			--numPlayersUsing;
+			worldObj.addBlockEvent(xCoord, yCoord, zCoord, getBlockType(), 1, numPlayersUsing);
+			worldObj.notifyBlocksOfNeighborChange(xCoord, yCoord, zCoord, getBlockType());
 			markDirty();
 		}
 	}
@@ -171,268 +108,46 @@ public class TileEntityCabinet extends TileEntityLockableLoot implements ITickab
 	@Override
 	public void readFromNBT(NBTTagCompound compound) {
 		super.readFromNBT(compound);
-		if (!this.checkLootAndRead(compound) && compound.hasKey("items")) {
-            itemStackHandler.deserializeNBT((NBTTagCompound) compound.getTag("items"));
-        }
-        if (compound.hasKey("CustomName", 8)) {
-        	this.setCustomName(compound.getString("CustomName"));
-        }
-		if (compound.hasKey("numUsers")) {
-			numPlayersUsing = compound.getInteger("numUsers");
-		}
-		if (compound.hasKey("material")) {
-			material = new ItemStack(compound.getCompoundTag("material"));
-		}
+		numPlayersUsing = compound.getInteger("numUsers");
+		material = compound.hasKey("material") ? ItemStack.loadItemStackFromNBT(compound.getCompoundTag("material")) : null;
 	}
 
 	@Override
-	public NBTTagCompound writeToNBT(NBTTagCompound compound) {
+	public void writeToNBT(NBTTagCompound compound) {
 		super.writeToNBT(compound);
-		if (!this.checkLootAndWrite(compound)) {
-        	compound.setTag("items", itemStackHandler.serializeNBT());
-        }
-		if (this.hasCustomName()) {
-            compound.setString("CustomName", this.customName);
-        }
-		compound.setTag("numUsers", new NBTTagInt(numPlayersUsing));
-		compound.setTag("material", material.serializeNBT());
-		return compound;
-	}
-
-	public boolean canInteractWith(EntityPlayer playerIn) {
-		return !isInvalid() && playerIn.getDistanceSq(pos.add(0.5D, 0.5D, 0.5D)) <= 64D;
+		compound.setInteger("numUsers", numPlayersUsing);
+		if (material != null) {
+			compound.setTag("material", material.writeToNBT(new NBTTagCompound()));
+		}
 	}
 
 	@Override
-	public boolean hasCapability(Capability<?> capability, EnumFacing facing) {
-		if (capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
-			return true;
-		}
-		return super.hasCapability(capability, facing);
-	}
-
-	public DoubleCabinetItemHandler doubleCabinetHandler;
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> T getCapability(Capability<T> capability, EnumFacing facing) {
-		if (capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
-			if (!getWorld().isRemote) {
-        		fillWithLoot((EntityPlayer) null);
-        	}
-			if (doubleCabinetHandler == null || doubleCabinetHandler.needsRefresh()) {
-				doubleCabinetHandler = DoubleCabinetItemHandler.get(this);
-			}
-			if (doubleCabinetHandler != null
-					&& doubleCabinetHandler != DoubleCabinetItemHandler.NO_ADJACENT_CABINETS_INSTANCE) {
-				if (!getWorld().isRemote) {
-	        		doubleCabinetHandler.getOtherCabinet().fillWithLoot((EntityPlayer) null);
-	        	}
-				return (T) doubleCabinetHandler;
-			}
-			return (T) itemStackHandler;
-		}
-		return super.getCapability(capability, facing);
-	}
-
-	public IItemHandler getSingleCabinetHandler() {
-		return itemStackHandler;
-	}
-
-	@Override
-	public void updateContainingBlockInfo() {
-		super.updateContainingBlockInfo();
-		doubleCabinetHandler = null;
-	}
-
-	public void breakBlock(World world, BlockPos pos, IBlockState state) {
-		this.invalidate();
-		if (itemStackHandler != null && !world.isRemote) {
-			this.fillWithLoot((EntityPlayer)null);
-			for (int i = 0; i < itemStackHandler.getSlots(); i++) {
-				if (itemStackHandler.getStackInSlot(i) != null) {
-					Block.spawnAsEntity(world, pos, itemStackHandler.getStackInSlot(i));
-				}
-			}
-		}
+	public void breakBlock(World world, int x, int y, int z) {
+		super.breakBlock(world, x, y, z);
 		if (!world.isRemote) {
 			ItemStack toDrop = new ItemStack(ModBlocks.CABINET);
-			
 			NBTTagCompound tag = new NBTTagCompound();
-			tag.setTag("material", this.material.serializeNBT());
+			if (material != null) tag.setTag("material", material.writeToNBT(new NBTTagCompound()));
 			toDrop.setTagCompound(tag);
-			
-			if (this.hasCustomName()) toDrop.setStackDisplayName(this.customName);
-			
-			Block.spawnAsEntity(world, pos, toDrop);
+			if (hasCustomInventoryName()) toDrop.setStackDisplayName(customName);
+			spawnAsEntity(world, x, y, z, toDrop);
 		}
-		world.setTileEntity(pos, null);
 	}
 
-	@Override
-	public boolean shouldRefresh(World world, BlockPos pos, IBlockState oldState, IBlockState newState) {
-		return oldState.getBlock() != newState.getBlock();
-	}
-
-	@Override
-	public int getSizeInventory() {
-		return itemStackHandler.getSlots();
-	}
-
-	@Override
-	public boolean isEmpty() {
-		for (int i = 0; i < itemStackHandler.getSlots(); i++) {
-			if (itemStackHandler.getStackInSlot(i) != null) {
-				return false;
+	public Container createContainer(InventoryPlayer playerInventory, EntityPlayer player) {
+		int meta = worldObj.getBlockMetadata(xCoord, yCoord, zCoord);
+		if (BlockCabinet.isTop(meta)) {
+			TileEntity below = worldObj.getTileEntity(xCoord, yCoord - 1, zCoord);
+			if (below instanceof TileEntityCabinet) {
+				return new ContainerCabinetDouble(playerInventory, this, (TileEntityCabinet) below, player);
+			}
+		} else if (BlockCabinet.isBottom(worldObj, xCoord, yCoord, zCoord)) {
+			TileEntity above = worldObj.getTileEntity(xCoord, yCoord + 1, zCoord);
+			if (above instanceof TileEntityCabinet) {
+				return new ContainerCabinetDouble(playerInventory, (TileEntityCabinet) above, this, player);
 			}
 		}
-		return true;
+		return new ContainerCabinet(playerInventory, this, player);
 	}
 
-	@Override
-	public ItemStack getStackInSlot(int index) {
-		this.fillWithLoot((EntityPlayer)null);
-		return itemStackHandler.getStackInSlot(index);
-	}
-
-	@Override
-	public ItemStack decrStackSize(int index, int count) {
-		this.fillWithLoot((EntityPlayer)null);
-		return itemStackHandler.extractItem(index, count, false);
-	}
-
-	@Override
-	public ItemStack removeStackFromSlot(int index) {
-		this.fillWithLoot((EntityPlayer)null);
-		ItemStack stack = itemStackHandler.getStackInSlot(index);
-		itemStackHandler.setStackInSlot(index, null);
-		return stack;
-	}
-
-	@Override
-	public void setInventorySlotContents(int index, ItemStack stack) {
-		this.fillWithLoot((EntityPlayer)null);
-		itemStackHandler.setStackInSlot(index, stack);
-	}
-
-	@Override
-	public int getInventoryStackLimit() {
-		return 64;
-	}
-
-	@Override
-	public boolean isUsableByPlayer(EntityPlayer player) {
-		return true;
-	}
-
-	@Override
-	public boolean isItemValidForSlot(int index, ItemStack stack) {
-		return true;
-	}
-
-	@Override
-	public int getField(int id) {
-		return 0;
-	}
-
-	@Override
-	public void setField(int id, int value) {
-	}
-
-	@Override
-	public int getFieldCount() {
-		return 0;
-	}
-
-	@Override
-	public void clear() {
-		this.fillWithLoot((EntityPlayer)null);
-		for (int i = 0; i < itemStackHandler.getSlots(); i++) {
-			itemStackHandler.setStackInSlot(i, null);
-		}
-	}
-
-	public String getName() {
-        return this.hasCustomName() ? this.customName : "container.rustic.cabinet";
-    }
-
-	@Override
-	public Container createContainer(InventoryPlayer playerInventory, EntityPlayer playerIn) {
-		if (!world.isRemote) {
-			this.fillWithLoot(playerIn);
-		}
-		if (getWorld().getBlockState(pos).getValue(BlockCabinet.TOP)) {
-			if (!world.isRemote) {
-				((TileEntityCabinet) world.getTileEntity(pos.down())).fillWithLoot(playerIn);
-			}
-			return new ContainerCabinetDouble(playerInventory, this,
-					(TileEntityCabinet) getWorld().getTileEntity(pos.down()), playerIn);
-		} else if (world.getBlockState(pos.up()).getBlock() instanceof BlockCabinet && world.getBlockState(pos.up()).getValue(BlockCabinet.TOP)) {
-			if (!world.isRemote) {
-				((TileEntityCabinet) world.getTileEntity(pos.up())).fillWithLoot(playerIn);
-			}
-			return new ContainerCabinetDouble(playerInventory, (TileEntityCabinet) getWorld().getTileEntity(pos.up()),
-					this, playerIn);
-		}
-		return new ContainerCabinet(playerInventory, this, playerIn);
-	}
-
-	@Override
-	public String getGuiID() {
-		return "rustic:cabinet";
-	}
-	
-	@Override
-	public NBTTagCompound getUpdateTag() {
-		return writeToNBT(new NBTTagCompound());
-	}
-
-	@Nullable
-	@Override
-	public SPacketUpdateTileEntity getUpdatePacket() {
-		return new SPacketUpdateTileEntity(getPos(), 0, getUpdateTag());
-	}
-
-	@Override
-	public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-		readFromNBT(pkt.getNbtCompound());
-	}
-	
-	/*
-	public boolean dirty = false;
-	
-	public void markForUpdate(){
-		dirty = true;
-	}
-	
-	public boolean needsUpdate(){
-		return dirty;
-	}
-	
-	public void clean(){
-		dirty = false;
-	}
-	
-	@Override
-	public void markDirty(){
-		markForUpdate();
-		super.markDirty();
-	}
-	*/
-
-	@Override
-	protected NonNullList<ItemStack> getItems() {
-		return itemStackHandler.getStacks();
-	}
-	
-	@Override
-	public void setLootTable(ResourceLocation file, long seed) {
-		super.setLootTable(file, seed);
-		markDirty();
-	}
-
-	@Override
-	public boolean acceptsDropoff(EntityPlayer entityPlayer) {
-		return canInteractWith(entityPlayer);
-	}
 }

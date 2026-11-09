@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import net.minecraft.block.material.Material;
-
-
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.gen.feature.WorldGenerator;
@@ -14,11 +11,11 @@ import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.common.BiomeDictionary.Type;
 import rustic.common.Config;
 import rustic.common.blocks.ModBlocks;
-import rustic.common.blocks.crops.BlockBerryBush;
 
 public class WorldGenWildberries extends WorldGenerator {
-	
-	public static List<Type> biomeBlacklist = new ArrayList<Type>();
+
+	public static List<Type> biomeBlacklist = new ArrayList<>();
+
 	static {
 		biomeBlacklist.add(Type.COLD);
 		biomeBlacklist.add(Type.SNOWY);
@@ -31,39 +28,25 @@ public class WorldGenWildberries extends WorldGenerator {
 		biomeBlacklist.add(Type.DEAD);
 		biomeBlacklist.add(Type.WASTELAND);
 	}
-	
+
 	@Override
-	public boolean generate(World world, Random rand, BlockPos pos) {
-		BiomeGenBase biome = world.getBiome(pos);
-		
+	public boolean generate(World world, Random rand, int cx, int cy, int cz) {
+		BiomeGenBase biome = world.getBiomeGenForCoords(cx, cz);
 		for (Type type : biomeBlacklist) {
-			if (BiomeDictionary.hasType(biome, type)) {
-				return false;
-			}
+			if (BiomeDictionary.isBiomeOfType(biome, type)) return false;
 		}
-		
 		boolean ret = false;
 		for (int i = 0; i < Config.MAX_WILDBERRY_ATTEMPTS; i++) {
-			int x = pos.getX() + rand.nextInt(7) - rand.nextInt(7);
-			int z = pos.getZ() + rand.nextInt(7) - rand.nextInt(7);
-			BlockPos genPos = world.getTopSolidOrLiquidBlock(new BlockPos(x, 0, z));
-			
-			if (generateBush(world, rand, genPos)) {
+			int x = cx + rand.nextInt(7) - rand.nextInt(7);
+			int z = cz + rand.nextInt(7) - rand.nextInt(7);
+			int y = world.getTopSolidOrLiquidBlock(x, z);
+			if (world.getBlock(x, y, z).getMaterial().isLiquid()) continue;
+			if (ModBlocks.WILDBERRY_BUSH.canPlaceBlockAt(world, x, y, z)) {
+				world.setBlock(x, y, z, ModBlocks.WILDBERRY_BUSH, rand.nextInt(6), 2);
 				ret = true;
 			}
 		}
-		
 		return ret;
-	}
-	
-	private boolean generateBush(World world, Random rand, BlockPos pos) {
-		IBlockState state = world.getBlockState(pos);
-		if (state.getMaterial().isLiquid()) return false;
-		if (ModBlocks.WILDBERRY_BUSH.canPlaceBlockAt(world, pos)) {
-			world.setBlockState(pos, ModBlocks.WILDBERRY_BUSH.withAge(rand.nextInt(6)));
-			return true;
-		}
-		return false;
 	}
 
 }

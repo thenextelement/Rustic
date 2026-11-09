@@ -1,195 +1,197 @@
 package rustic.common.tileentity;
 
 import java.util.Random;
-import java.lang.Math;
-
 
 import net.minecraft.block.Block;
 import net.minecraft.block.IGrowable;
-
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-
-
-
-import net.minecraft.util.IChatComponent;
-import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.common.IPlantable;
-
-
-
 import rustic.common.Config;
+import rustic.common.blocks.BlockTileBase;
 import rustic.common.items.ModItems;
+import rustic.common.util.ItemStackHandlerRustic;
 
-public class TileEntityApiary extends TileEntity implements ITickable {
+/** Slot 0 = bees (insert from any side), slot 1 = honeycomb (extract from the bottom). */
+public class TileEntityApiary extends TileEntityRustic implements ISidedInventory, BlockTileBase.IBreakable {
 
-	private ItemStackHandler beeItemStackHandler = new ItemStackHandler(1) {
+	private final ItemStackHandlerRustic beeItemStackHandler = new ItemStackHandlerRustic(1) {
 		@Override
 		protected void onContentsChanged(int slot) {
-			TileEntityApiary.this.markDirty();
+			markDirty();
 		}
+
 		@Override
-	    @Nonnull
-	    public ItemStack insertItem(int slot, @Nonnull ItemStack stack, boolean simulate) {
-			if (stack.getItem().equals(ModItems.BEE)) {
-				return super.insertItem(slot, stack, simulate);
-			}
-			return stack;
+		public boolean isItemValid(int slot, ItemStack stack) {
+			return stack != null && stack.getItem() == ModItems.BEE;
 		}
 	};
-	private ItemStackHandler honeyCombItemStackHandler = new ItemStackHandler(1) {
+
+	private final ItemStackHandlerRustic honeyCombItemStackHandler = new ItemStackHandlerRustic(1) {
 		@Override
 		protected void onContentsChanged(int slot) {
-			TileEntityApiary.this.markDirty();
+			markDirty();
 		}
+
 		@Override
-	    @Nonnull
-	    public ItemStack insertItem(int slot, @Nonnull ItemStack stack, boolean simulate) {
-			if (stack.getItem().equals(ModItems.HONEYCOMB)) {
-				return super.insertItem(slot, stack, simulate);
-			}
-			return stack;
+		public boolean isItemValid(int slot, ItemStack stack) {
+			return stack != null && stack.getItem() == ModItems.HONEYCOMB;
 		}
 	};
+
 	private int reproductionTime = 1200;
 	private int reproductionTimer = 0;
 	private int productionTime = 600;
 	private int productionTimer = 0;
-	private Random random = new Random();
-	
-	public IChatComponent getDisplayName() {
-        return (IChatComponent)new ChatComponentTranslation(this.getName(), new Object[0]);
-    }
-	
-	public String getName() {
-        return "container.rustic.apiary";
-    }
+	private final Random random = new Random();
+
+	public ItemStackHandlerRustic getBeeHandler() {
+		return beeItemStackHandler;
+	}
+
+	public ItemStackHandlerRustic getHoneycombHandler() {
+		return honeyCombItemStackHandler;
+	}
 
 	@Override
 	public void readFromNBT(NBTTagCompound compound) {
 		super.readFromNBT(compound);
-		if (compound.hasKey("items")) {
-			ItemStackHandler tempHandler = new ItemStackHandler(2);
-			tempHandler.deserializeNBT((NBTTagCompound) compound.getTag("items"));
-			beeItemStackHandler.setStackInSlot(0, tempHandler.getStackInSlot(0));
-			honeyCombItemStackHandler.setStackInSlot(0, tempHandler.getStackInSlot(1));
-		}
-		if (compound.hasKey("bees")) {
-			beeItemStackHandler.deserializeNBT((NBTTagCompound) compound.getTag("bees"));
-		}
-		if (compound.hasKey("honeyComb")) {
-			honeyCombItemStackHandler.deserializeNBT((NBTTagCompound) compound.getTag("honeyComb"));
-		}
+		if (compound.hasKey("bees")) beeItemStackHandler.deserializeNBT(compound.getCompoundTag("bees"));
+		if (compound.hasKey("honeyComb")) honeyCombItemStackHandler.deserializeNBT(compound.getCompoundTag("honeyComb"));
 	}
 
 	@Override
-	public NBTTagCompound writeToNBT(NBTTagCompound compound) {
+	public void writeToNBT(NBTTagCompound compound) {
 		super.writeToNBT(compound);
 		compound.setTag("bees", beeItemStackHandler.serializeNBT());
 		compound.setTag("honeyComb", honeyCombItemStackHandler.serializeNBT());
-		return compound;
-	}
-
-	public boolean canInteractWith(EntityPlayer playerIn) {
-		return !isInvalid() && playerIn.getDistanceSq(pos.add(0.5D, 0.5D, 0.5D)) <= 64D;
 	}
 
 	@Override
-	public boolean hasCapability(Capability<?> capability, EnumFacing facing) {
-		if (capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
-			return true;
+	public void breakBlock(World world, int x, int y, int z) {
+		if (!world.isRemote) {
+			spawnAsEntity(world, x, y, z, beeItemStackHandler.getStackInSlot(0));
+			spawnAsEntity(world, x, y, z, honeyCombItemStackHandler.getStackInSlot(0));
+			beeItemStackHandler.getStacks()[0] = null;
+			honeyCombItemStackHandler.getStacks()[0] = null;
 		}
-		return super.hasCapability(capability, facing);
 	}
 
 	@Override
-	public <T> T getCapability(Capability<T> capability, EnumFacing facing) {
-		if (capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
-			if (facing == EnumFacing.DOWN) {
-				return (T) honeyCombItemStackHandler;
-			}
-			return (T) beeItemStackHandler;
+	public void updateEntity() {
+		if (worldObj.isRemote) return;
+		ItemStack bees = beeItemStackHandler.getStackInSlot(0);
+		ItemStack combs = honeyCombItemStackHandler.getStackInSlot(0);
+		int numBees = bees != null && bees.getItem() == ModItems.BEE ? bees.stackSize : 0;
+		int numHoneycomb = combs != null && combs.getItem() == ModItems.HONEYCOMB ? combs.stackSize : 0;
+		if (numBees <= 0) return;
+
+		reproductionTime = (int) (Config.BEE_REPRODUCTION_MULTIPLIER * (1600F / ((numBees / 20F) + 1F)));
+		productionTime = (int) (Config.BEE_HONEYCOMB_MULTIPLIER * (800F / ((numBees / 20F) + 1F)));
+		reproductionTimer++;
+		productionTimer++;
+		if (reproductionTimer >= reproductionTime) {
+			reproductionTimer = 0;
+			if (numBees < 64) bees.stackSize += 1;
 		}
-		return super.getCapability(capability, facing);
+		if (productionTimer >= productionTime) {
+			productionTimer = 0;
+			if (numHoneycomb == 0) {
+				honeyCombItemStackHandler.setStackInSlot(0, new ItemStack(ModItems.HONEYCOMB, 1));
+			} else if (numHoneycomb < 64) {
+				combs.stackSize += 1;
+			}
+		}
+		if (Config.BEE_GROWTH_MULTIPLIER != 0
+				&& random.nextInt((int) Math.ceil(2048F / (numBees * Config.BEE_GROWTH_MULTIPLIER))) == 0) {
+			int x = xCoord + random.nextInt(9) - 4;
+			int z = zCoord + random.nextInt(9) - 4;
+			for (int i = 0; i < 3; i++) {
+				int y = yCoord + 1 - i;
+				Block block = worldObj.getBlock(x, y, z);
+				if (block instanceof IGrowable || block instanceof IPlantable) {
+					block.updateTick(worldObj, x, y, z, worldObj.rand);
+					break;
+				}
+			}
+		}
+		markDirty();
 	}
 
-	public void breakBlock(World world, BlockPos pos, IBlockState state) {
-		this.invalidate();
-		if (beeItemStackHandler != null && !world.isRemote) {
-			for (int i = 0; i < beeItemStackHandler.getSlots(); i++) {
-				if (beeItemStackHandler.getStackInSlot(i) != null) {
-					Block.spawnAsEntity(world, pos, beeItemStackHandler.getStackInSlot(i));
-				}
-			}
-		}
-		if (honeyCombItemStackHandler != null && !world.isRemote) {
-			for (int i = 0; i < honeyCombItemStackHandler.getSlots(); i++) {
-				if (honeyCombItemStackHandler.getStackInSlot(i) != null) {
-					Block.spawnAsEntity(world, pos, honeyCombItemStackHandler.getStackInSlot(i));
-				}
-			}
-		}
-		world.setTileEntity(pos, null);
+	/* ISidedInventory: slot 0 = bees, slot 1 = honeycomb */
+
+	private ItemStackHandlerRustic handlerFor(int slot) {
+		return slot == 0 ? beeItemStackHandler : honeyCombItemStackHandler;
 	}
 
 	@Override
-	public void update() {
+	public int getSizeInventory() {
+		return 2;
+	}
 
-		int numBees = 0;
-		if (beeItemStackHandler.getStackInSlot(0).getItem().equals(ModItems.BEE)) {
-			numBees = beeItemStackHandler.getStackInSlot(0).stackSize;
-		}
-		int numHoneycomb = 0;
-		if (honeyCombItemStackHandler.getStackInSlot(0).getItem().equals(ModItems.HONEYCOMB)) {
-			numHoneycomb = honeyCombItemStackHandler.getStackInSlot(0).stackSize;
-		}
+	@Override
+	public ItemStack getStackInSlot(int slot) {
+		return handlerFor(slot).getStackInSlot(0);
+	}
 
-		if (numBees > 0 && !this.getWorld().isRemote) {
-			reproductionTime = (int) (Config.BEE_REPRODUCTION_MULTIPLIER * (1600F / ((numBees / 20F) + 1F)));
-			productionTime = (int) (Config.BEE_HONEYCOMB_MULTIPLIER * (800F / ((numBees / 20F) + 1F)));
+	@Override
+	public ItemStack decrStackSize(int slot, int count) {
+		return handlerFor(slot).extractItem(0, count, false);
+	}
 
-			reproductionTimer++;
-			productionTimer++;
-			if (reproductionTimer >= reproductionTime) {
-				reproductionTimer = 0;
-				if (numBees < 64) {
-					beeItemStackHandler.getStackInSlot(0).stackSize += 1;
-				}
-			}
-			if (productionTimer >= productionTime) {
-				productionTimer = 0;
-				if (numHoneycomb == 0) {
-					honeyCombItemStackHandler.setStackInSlot(0, new ItemStack(ModItems.HONEYCOMB, 1));
-				} else if (numHoneycomb < 64) {
-					honeyCombItemStackHandler.getStackInSlot(0).stackSize += 1;
-				}
-			}
+	@Override
+	public ItemStack getStackInSlotOnClosing(int slot) {
+		ItemStack stack = getStackInSlot(slot);
+		handlerFor(slot).getStacks()[0] = null;
+		return stack;
+	}
 
-			if (Config.BEE_GROWTH_MULTIPLIER != 0 && random.nextInt((int) Math.ceil(2048F / (numBees * Config.BEE_GROWTH_MULTIPLIER))) == 0) {
-				//System.out.println("apiary growth");
-				int randX = random.nextInt(9) - 4;
-				int randZ = random.nextInt(9) - 4;
-				int x = this.getPos().getX();
-				int y = this.getPos().getY();
-				int z = this.getPos().getZ();
-				for (int i = 0; i < 3; i++) {
-					BlockPos pos = new BlockPos(x + randX, y + 1 - i, z + randZ);
-					Block block = this.getWorld().getBlockState(pos).getBlock();
-					if (block instanceof IGrowable || block instanceof IPlantable) {
-						block.updateTick(world, pos, world.getBlockState(pos), world.rand);
-						world.updateBlockTick(pos, block, 0, 1);
-						break;
-					}
-				}
-			}
+	@Override
+	public void setInventorySlotContents(int slot, ItemStack stack) {
+		handlerFor(slot).setStackInSlot(0, stack);
+	}
 
-			markDirty();
+	@Override
+	public String getInventoryName() {
+		return "container.rustic.apiary";
+	}
 
-		}
+	@Override
+	public boolean hasCustomInventoryName() {
+		return false;
+	}
 
+	@Override
+	public int getInventoryStackLimit() {
+		return 64;
+	}
+
+	@Override
+	public void openInventory() {}
+
+	@Override
+	public void closeInventory() {}
+
+	@Override
+	public boolean isItemValidForSlot(int slot, ItemStack stack) {
+		return handlerFor(slot).isItemValid(0, stack);
+	}
+
+	@Override
+	public int[] getAccessibleSlotsFromSide(int side) {
+		return side == 0 ? new int[] { 1 } : new int[] { 0 };
+	}
+
+	@Override
+	public boolean canInsertItem(int slot, ItemStack stack, int side) {
+		return slot == 0 && isItemValidForSlot(slot, stack);
+	}
+
+	@Override
+	public boolean canExtractItem(int slot, ItemStack stack, int side) {
+		return slot == 1 && side == 0;
 	}
 
 }

@@ -10,7 +10,6 @@ import net.minecraft.potion.Potion;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.stats.StatList;
 
 import net.minecraft.util.DamageSource;
 
@@ -62,7 +61,7 @@ public class ModItems {
 		OLIVES = new ItemFoodBase("olives", 1, 0.4F, false) {
 			@Override
 			public void initFood() {
-				setPotionEffect(new PotionEffect(Potion.confusion.id, 200, 1, false, false), 0.95F);
+				setPotionEffect(Potion.confusion.id, 10, 1, 0.95F);
 			}
 
 			@Override
@@ -93,9 +92,9 @@ public class ModItems {
 					int duration = 15 * 20;
 					PotionEffect effect = player.getActivePotionEffect(PotionsRustic.FULLMETAL_POTION);
 					if (effect == null) {
-						player.addPotionEffect(new PotionEffect(PotionsRustic.FULLMETAL_POTION.id, duration, 0, false, true));
+						player.addPotionEffect(new PotionEffect(PotionsRustic.FULLMETAL_POTION.id, duration, 0, false));
 					} else {
-						player.addPotionEffect(new PotionEffect(PotionsRustic.FULLMETAL_POTION.id, effect.getDuration() + duration, 0, false, true));
+						player.addPotionEffect(new PotionEffect(PotionsRustic.FULLMETAL_POTION.id, effect.getDuration() + duration, 0, false));
 					}
 				}
 			}
@@ -108,25 +107,19 @@ public class ModItems {
 		ELIXIR = new ItemElixir();
 		TOMATO = new ItemFoodBase("tomato", 4, 0.4F, false) {
 			@Override
-			public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
-				ItemStack itemstack = playerIn.getHeldItem(handIn);
+			public ItemStack onItemRightClick(ItemStack itemstack, World worldIn, EntityPlayer playerIn) {
 				if (playerIn.isSneaking()) {
 					if (!playerIn.capabilities.isCreativeMode) {
 						itemstack.stackSize -= 1;
 					}
-					worldIn.playSound((EntityPlayer) null, playerIn.posX, playerIn.posY, playerIn.posZ,
-							SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F,
-							0.4F / (itemRand.nextFloat() * 0.4F + 0.8F));
+					worldIn.playSoundAtEntity(playerIn, "random.bow", 0.5F, 0.4F / (itemRand.nextFloat() * 0.4F + 0.8F));
 					if (!worldIn.isRemote) {
 						EntityTomato entitytomato = new EntityTomato(worldIn, playerIn);
-						entitytomato.shoot(playerIn, playerIn.rotationPitch, playerIn.rotationYaw,
-								0.0F, 1.5F, 1.0F);
-						worldIn.spawnEntity(entitytomato);
+						worldIn.spawnEntityInWorld(entitytomato);
 					}
-					playerIn.addStat(StatList.getObjectUseStats(this));
-					return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, itemstack);
+					return itemstack;
 				}
-				return super.onItemRightClick(worldIn, playerIn, handIn);
+				return super.onItemRightClick(itemstack, worldIn, playerIn);
 			}
 		};
 		TOMATO_SEEDS = new ItemStakeCropSeed("tomato_seeds", ModBlocks.TOMATO_CROP);
@@ -144,7 +137,7 @@ public class ModItems {
 				if (!worldIn.isRemote) {
 					player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 400));
 					if (rand.nextInt(24) == 0) {
-						player.attackEntityFrom(DamageSource.ON_FIRE, 1.0F);
+						player.attackEntityFrom(DamageSource.onFire, 1.0F);
 					}
 				}
 			}
@@ -158,7 +151,7 @@ public class ModItems {
 			@Override
 			protected void onFoodEaten(ItemStack stack, World worldIn, EntityPlayer player) {
 				if (!worldIn.isRemote) {
-					player.attackEntityFrom(DamageSource.ON_FIRE, 2.0F);
+					player.attackEntityFrom(DamageSource.onFire, 2.0F);
 					//player.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 1200, 0));
 					player.addPotionEffect(new PotionEffect(PotionsRustic.FIRE_POWER_POTION.id, 1200, 0));
 				}
@@ -166,7 +159,8 @@ public class ModItems {
 			
 			@Override
 			@SideOnly(Side.CLIENT)
-			public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			public void addInformation(ItemStack stack, EntityPlayer player, List tooltip, boolean advanced) {
 				tooltip.add(EnumChatFormatting.YELLOW + "" + EnumChatFormatting.ITALIC + StatCollector.translateToLocalFormatted("tooltip.rustic.ghost_pepper"));
 			}
 		};
@@ -188,25 +182,4 @@ public class ModItems {
 		};
 	}
 
-	public static void initModels() {
-		BOOK.initModel();
-		
-		BEE.initModel();
-		HONEYCOMB.initModel();
-		BEESWAX.initModel();
-		TALLOW.initModel();
-		OLIVES.initModel();
-		IRONBERRIES.initModel();
-		FLUID_BOTTLE.initModel();
-		IRON_DUST_TINY.initModel();
-		GOLD_DUST.initModel();
-		ELIXIR.initModel();
-		TOMATO.initModel();
-		TOMATO_SEEDS.initModel();
-		CHILI_PEPPER.initModel();
-		GHOST_PEPPER.initModel();
-		CHILI_PEPPER_SEEDS.initModel();
-		WILDBERRIES.initModel();
-		GRAPES.initModel();
-	};
 }

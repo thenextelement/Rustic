@@ -21,6 +21,8 @@ import rustic.common.book.BookPage;
 
 public class BookPageText extends BookPage {
 
+	private static final net.minecraft.client.renderer.entity.RenderItem RENDER_ITEM = new net.minecraft.client.renderer.entity.RenderItem();
+
 	protected List<String> textKeys = new ArrayList<String>();
 	protected Set<BookEntry> relatedEntries = new HashSet<BookEntry>();
 	
@@ -43,8 +45,8 @@ public class BookPageText extends BookPage {
 		x = gui.guiLeft + 16;
 		
 		float textScale = 0.75F;
-		GlStateManager.pushMatrix();
-		GlStateManager.scale(textScale, textScale, textScale);
+		GL11.glPushMatrix();
+		GL11.glScalef(textScale, textScale, textScale);
 		for (int i = 0; i < this.textKeys.size(); i++) {
 			String text = StatCollector.translateToLocal(this.textKeys.get(i));
 			int increment = (int) ((gui.getFontRenderer().FONT_HEIGHT + 2) * textScale);
@@ -58,12 +60,12 @@ public class BookPageText extends BookPage {
 			}
 			y += (int) (4 * textScale);
 		}
-		GlStateManager.popMatrix();
+		GL11.glPopMatrix();
 		
 		if (relatedEntries.size() > 0) {
 			String text = EnumChatFormatting.UNDERLINE + StatCollector.translateToLocal("book.rustic.label.related_entries");
 			int textWidth = gui.getFontRenderer().getStringWidth(text);
-			GlStateManager.color(1F, 1F, 1F, 1F);
+			GL11.glColor4f(1F, 1F, 1F, 1F);
 			gui.mc.getTextureManager().bindTexture(GuiBook.BOOK_BACKGROUND);
 			gui.drawTexturedModalRect(gui.guiLeft + GuiBook.WIDTH, gui.guiTop + 10, (146 - 10) - (textWidth + 2), 210, (textWidth + 2) + 10, 16);
 			
@@ -137,13 +139,15 @@ public class BookPageText extends BookPage {
 		}
 		
 		@Override
-		public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+		public void drawButton(Minecraft mc, int mouseX, int mouseY) {
+			int x = this.xPosition, y = this.yPosition;
+			FontRenderer fontRenderer = mc.fontRenderer;
 			if (this.visible) {
 				String text = StatCollector.translateToLocal(this.displayString);
-				int textWidth = this.fontRenderer.getStringWidth(text);
+				int textWidth = fontRenderer.getStringWidth(text);
 				
-				boolean flag = mouseX >= this.x && mouseY >= this.y
-						&& mouseX < this.x + this.width && mouseY < this.y + this.height;
+				boolean flag = mouseX >= this.xPosition && mouseY >= this.yPosition
+						&& mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
 				if (flag) {
 					if (this.width < 140 && this.width < textWidth + BASE_WIDTH + 2) {
 						this.ticksHovered++;
@@ -156,21 +160,21 @@ public class BookPageText extends BookPage {
 					}
 				}
 				mc.getTextureManager().bindTexture(GuiBook.BOOK_BACKGROUND);
-				Gui.drawModalRectWithCustomSizedTexture(x, y, 146 - this.width, 226, this.width, this.height, 256F, 256F);
+				Gui.func_146110_a(xPosition, yPosition, 146 - this.width, 226, this.width, this.height, 256F, 256F);
 				
-				text = this.fontRenderer.trimStringToWidth(text, this.width - BASE_WIDTH, true);
-				textWidth = this.fontRenderer.getStringWidth(text);
-				this.fontRenderer.drawString(text, x + (this.width - BASE_WIDTH) - textWidth, y + 4, 0x000000);
+				text = fontRenderer.trimStringToWidth(text, this.width - BASE_WIDTH, true);
+				textWidth = fontRenderer.getStringWidth(text);
+				fontRenderer.drawString(text, x + (this.width - BASE_WIDTH) - textWidth, y + 4, 0x000000);
 				
-				if (this.entry != null && !this.entry.getIcon().isEmpty()) {
-					GlStateManager.pushMatrix();
-					GlStateManager.color(1F, 1F, 1F, 1F);
+				if (this.entry != null && this.entry.getIcon() != null) {
+					GL11.glPushMatrix();
+					GL11.glColor4f(1F, 1F, 1F, 1F);
 					RenderHelper.enableGUIStandardItemLighting();
 					
-					mc.getRenderItem().renderItemIntoGUI(this.entry.getIcon(), x + width - 22, y);
+					RENDER_ITEM.renderItemIntoGUI(fontRenderer, mc.getTextureManager(), this.entry.getIcon(), x + width - 22, y);
 					
 					RenderHelper.disableStandardItemLighting();
-					GlStateManager.popMatrix();
+					GL11.glPopMatrix();
 				}
 			}
 		}

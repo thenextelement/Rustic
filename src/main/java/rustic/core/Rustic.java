@@ -1,22 +1,10 @@
 package rustic.core;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
-
-import net.minecraftforge.common.ForgeModContainer;
-import net.minecraftforge.common.MinecraftForge;
-
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fluids.FluidStack;
-
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
@@ -25,152 +13,104 @@ import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.eventhandler.EventPriority;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import rustic.client.EventHandlerClient;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fluids.Fluid;
 import rustic.common.Config;
 import rustic.common.EventHandlerCommon;
-import rustic.common.advancements.ModAdvancements;
 import rustic.common.blocks.ModBlocks;
 import rustic.common.blocks.fluids.ModFluids;
 import rustic.common.crafting.Recipes;
 import rustic.common.items.ModItems;
 import rustic.common.potions.EventHandlerPotions;
-import rustic.common.util.RusticUtils;
 import rustic.compat.Compat;
-import rustic.compat.crafttweaker.CraftTweakerHelper;
-import rustic.compat.dynamictrees.DynamicTreesCompat;
 
 @Mod(modid = Rustic.MODID, name = Rustic.NAME, version = Rustic.VERSION, dependencies = Rustic.DEPENDENCIES)
 public class Rustic {
+
 	public static final String MODID = "rustic";
 	public static final String NAME = "Rustic";
-	public static final String VERSION = "1.3.0";
-
+	public static final String VERSION = Tags.VERSION;
+	public static final String DEPENDENCIES = "required-after:Forge;after:Forestry;after:NotEnoughItems";
 
 	@SidedProxy(clientSide = "rustic.core.ClientProxy", serverSide = "rustic.core.CommonProxy")
 	public static CommonProxy proxy;
 
 	public static CreativeTabs decorTab = new CreativeTabs("rustic.decor") {
 		@Override
-		public String getTabLabel() {
-			return "rustic.decor";
-		}
-
-		@Override
 		@SideOnly(Side.CLIENT)
-		public ItemStack getTabIconItem() {
-			return new ItemStack(ModBlocks.VASE);
+		public Item getTabIconItem() {
+			return Item.getItemFromBlock(ModBlocks.VASE);
 		}
 	};
 
 	public static CreativeTabs farmingTab = new CreativeTabs("rustic.farming") {
 		@Override
-		public String getTabLabel() {
-			return "rustic.farming";
+		@SideOnly(Side.CLIENT)
+		public Item getTabIconItem() {
+			return ModItems.OLIVES;
 		}
 
 		@Override
 		@SideOnly(Side.CLIENT)
-		public ItemStack getTabIconItem() {
-			return new ItemStack(ModItems.OLIVES);
-		}
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public void displayAllRelevantItems(NonNullList<ItemStack> p_78018_1_) {
-			for (Object obj : Item.REGISTRY) {
-				Item item = (Item) obj;
-				if (item == null) {
-					continue;
-				}
-				for (CreativeTabs tab : item.getCreativeTabs()) {
-					if (tab == this) {
-						item.getSubItems(this, p_78018_1_);
-					}
-				}
-			}
-
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		public void displayAllReleventItems(List list) {
+			super.displayAllReleventItems(list);
 			for (Fluid fluid : ModFluids.getFluids()) {
-				FluidStack fs = new FluidStack(fluid,
-						ForgeModContainer.getInstance().universalBucket.getCapacity());
-				ItemStack stack = new ItemStack(ForgeModContainer.getInstance().universalBucket);
-				IFluidHandlerItem fluidHandler = new FluidBucketWrapper(stack);
-				if (fluidHandler.fill(fs, true) == fs.amount) {
-					ItemStack filled = fluidHandler.getContainer();
-					p_78018_1_.add(filled);
-				}
+				ItemStack bucket = rustic.common.util.FluidHelper.getFilledBucket(new net.minecraftforge.fluids.FluidStack(fluid, 1000));
+				if (bucket != null) list.add(bucket);
 			}
 		}
 	};
 
 	public static CreativeTabs alchemyTab = new CreativeTabs("rustic.alchemy") {
 		@Override
-		public String getTabLabel() {
-			return "rustic.alchemy";
+		@SideOnly(Side.CLIENT)
+		public Item getTabIconItem() {
+			return ModItems.ELIXIR;
 		}
 
 		@Override
 		@SideOnly(Side.CLIENT)
-		public ItemStack getTabIconItem() {
+		public ItemStack getIconItemStack() {
 			return ModItems.ELIXIR.getDefaultInstance();
 		}
 	};
 
-	@Mod.Instance
+	@Mod.Instance(MODID)
 	public static Rustic instance;
 
 	public static final Logger logger = LogManager.getLogger(MODID);
 
 	public static final UUID ERIS_UUID = UUID.fromString("8167f7a5-2db0-42ca-b177-ebc1396dbe55");
 
-	static {
-		FluidRegistry.enableUniversalBucket();
-	}
-
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
-		MinecraftForge.EVENT_BUS.register(new EventHandlerCommon());
-		MinecraftForge.EVENT_BUS.register(new EventHandlerClient());
-
+		EventHandlerCommon common = new EventHandlerCommon();
+		MinecraftForge.EVENT_BUS.register(common);
+		FMLCommonHandler.instance().bus().register(common);
 		MinecraftForge.EVENT_BUS.register(new EventHandlerPotions());
 
-		MinecraftForge.EVENT_BUS.register(this);
-
 		proxy.preInit(event);
-
-		if (Loader.isModLoaded("crafttweaker")) {
-			CraftTweakerHelper.preInit();
-		}
-
-
-		ModAdvancements.preInit();
-	}
-
-	@SubscribeEvent
-	public void initRecipes(RegistryEvent.Register<IRecipe> event) {
-		Recipes.init();
-	}
-	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void postInitRecipes(RegistryEvent.Register<IRecipe> event) {
-		Recipes.postInit();
 	}
 
 	@EventHandler
 	public void init(FMLInitializationEvent event) {
 		proxy.init(event);
-
-		// init banners
-		RusticUtils.addBanner("eris", "eris", new ItemStack(ModItems.BOOK));
+		Recipes.init();
 	}
 
 	@EventHandler
 	public void postInit(FMLPostInitializationEvent event) {
 		proxy.postInit(event);
+		Recipes.postInit();
 
-		if (Loader.isModLoaded("forestry") && Config.ENABLE_FORESTRY_COMPAT) {
+		if (Loader.isModLoaded("Forestry") && Config.ENABLE_FORESTRY_COMPAT) {
 			Compat.doForestryCompat();
 		}
 

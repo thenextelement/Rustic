@@ -2,36 +2,30 @@ package rustic.common.items;
 
 import java.util.List;
 
-
-import net.minecraft.advancements.CriteriaTriggers;
-
-
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.init.Items;
-import net.minecraft.potion.Potion;
-import net.minecraft.item.EnumAction;
-import net.minecraft.item.ItemStack;
-import net.minecraft.potion.PotionEffect;
-import net.minecraft.stats.StatList;
-
-
-
-
-import net.minecraft.util.StatCollector;
-import net.minecraft.world.World;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Items;
+import net.minecraft.item.EnumAction;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.IIcon;
+import net.minecraft.util.StatCollector;
+import net.minecraft.world.World;
 import rustic.common.crafting.ICondenserRecipe;
 import rustic.common.crafting.Recipes;
 import rustic.common.util.ElixirUtils;
 import rustic.common.util.RusticUtils;
-import rustic.core.ClientProxy;
 import rustic.core.Rustic;
 
-public class ItemElixir extends ItemBase implements IColoredItem {
+public class ItemElixir extends ItemBase {
+
+	@SideOnly(Side.CLIENT)
+	private IIcon overlay;
 
 	public ItemElixir() {
 		super("elixir");
@@ -40,56 +34,46 @@ public class ItemElixir extends ItemBase implements IColoredItem {
 	}
 
 	@Override
-	public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> subItems) {
+	@SideOnly(Side.CLIENT)
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void getSubItems(Item item, CreativeTabs tab, List subItems) {
 		for (ICondenserRecipe recipe : Recipes.condenserRecipes) {
-			if (!subItems.contains(recipe.getResult())) {
-				if(isInCreativeTab(tab)) {
-					subItems.add(recipe.getResult());
-				}
+			ItemStack result = recipe.getResult();
+			boolean dupe = false;
+			for (Object o : subItems) {
+				if (ItemStack.areItemStacksEqual((ItemStack) o, result)) dupe = true;
 			}
+			if (!dupe) subItems.add(result);
 		}
 	}
 
-	@Override
-	@SideOnly(Side.CLIENT)
+	/** An elixir with instant health, used as the creative tab icon. */
 	public ItemStack getDefaultInstance() {
-		ItemStack stack = super.getDefaultInstance();
+		ItemStack stack = new ItemStack(this);
 		ElixirUtils.addEffect(new PotionEffect(Potion.heal.id, 1, 0), stack);
 		return stack;
 	}
 
 	@Override
-	public ItemStack onItemUseFinish(ItemStack stack, World worldIn, EntityLivingBase entityLiving) {
-		EntityPlayer entityplayer = entityLiving instanceof EntityPlayer ? (EntityPlayer) entityLiving : null;
-
-		if (!worldIn.isRemote) {
-			for (PotionEffect potioneffect : ElixirUtils.getEffects(stack)) {
-				if (Potion.potionTypes[potioneffect.getPotionID()].isInstant()) {
-					Potion.potionTypes[potioneffect.getPotionID()].affectEntity(entityplayer, entityplayer, entityLiving,
-							potioneffect.getAmplifier(), 1.0D);
+	public ItemStack onEaten(ItemStack stack, World world, EntityPlayer player) {
+		if (!world.isRemote) {
+			for (PotionEffect effect : ElixirUtils.getEffects(stack)) {
+				Potion potion = Potion.potionTypes[effect.getPotionID()];
+				if (potion == null) continue;
+				if (potion.isInstant()) {
+					potion.affectEntity(player, player, effect.getAmplifier(), 1.0D);
 				} else {
-					entityLiving.addPotionEffect(new PotionEffect(potioneffect));
+					player.addPotionEffect(new PotionEffect(effect));
 				}
 			}
 		}
-
-		if (entityplayer != null) {
-			entityplayer.addStat(StatList.getObjectUseStats(this));
-			
-			if (entityplayer instanceof EntityPlayerMP) {
-	            CriteriaTriggers.CONSUME_ITEM.trigger((EntityPlayerMP) entityplayer, stack);
-	        }
-		}
-
-		if ((entityplayer == null) || !entityplayer.capabilities.isCreativeMode) {
+		if (!player.capabilities.isCreativeMode) {
 			stack.stackSize -= 1;
-			if (stack.isEmpty()) {
+			if (stack.stackSize <= 0) {
 				return new ItemStack(Items.glass_bottle);
-			} else if (entityplayer != null) {
-				RusticUtils.givePlayerItem(entityplayer, new ItemStack(Items.glass_bottle));
 			}
+			RusticUtils.givePlayerItem(player, new ItemStack(Items.glass_bottle));
 		}
-
 		return stack;
 	}
 
@@ -100,54 +84,64 @@ public class ItemElixir extends ItemBase implements IColoredItem {
 
 	@Override
 	public EnumAction getItemUseAction(ItemStack stack) {
-		return EnumAction.DRINK;
+		return EnumAction.drink;
 	}
 
 	@Override
-	public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
-		playerIn.setActiveHand(handIn);
-		return new ActionResult(EnumActionResult.SUCCESS, playerIn.getHeldItem(handIn));
+	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
+		player.setItemInUse(stack, getMaxItemUseDuration(stack));
+		return stack;
 	}
 
 	@Override
 	public String getItemStackDisplayName(ItemStack stack) {
 		String name = StatCollector.translateToLocal("rustic.elixir.prefix");
-		int i = 0;
 		List<PotionEffect> effects = ElixirUtils.getEffects(stack);
-		for (PotionEffect effect : effects) {
-			name += StatCollector.translateToLocal(effect.getEffectName());
+		for (int i = 0; i < effects.size(); i++) {
+			name += StatCollector.translateToLocal(effects.get(i).getEffectName());
 			if (i < effects.size() - 1) {
 				name += StatCollector.translateToLocal("rustic.elixir.separator");
 			}
-			i++;
 		}
 		return name;
 	}
 
 	@Override
 	@SideOnly(Side.CLIENT)
-	public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void addInformation(ItemStack stack, EntityPlayer player, List tooltip, boolean advanced) {
 		ElixirUtils.addPotionTooltip(stack, tooltip, 1.0F);
 	}
 
 	@Override
 	@SideOnly(Side.CLIENT)
-	public IItemColor getItemColor() {
-		return new IItemColor() {
-			@Override
-			public int colorMultiplier(ItemStack stack, int tintIndex) {
-				if (tintIndex == 0) {
-					return ElixirUtils.getColor(stack);
-				}
-				return 0xFFFFFF;
-			}
-		};
+	public void registerIcons(IIconRegister register) {
+		overlay = register.registerIcon(Rustic.MODID + ":elixir_overlay");
+		itemIcon = register.registerIcon(Rustic.MODID + ":elixir_bottle");
 	}
-	
+
+	@Override
 	@SideOnly(Side.CLIENT)
-	public void initModel() {
-		super.initModel();
-		ClientProxy.addColoredItem(this);
+	public boolean requiresMultipleRenderPasses() {
+		return true;
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public IIcon getIconFromDamageForRenderPass(int damage, int pass) {
+		return pass == 0 ? overlay : itemIcon;
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public int getColorFromItemStack(ItemStack stack, int pass) {
+		return pass == 0 ? ElixirUtils.getColor(stack) : 0xFFFFFF;
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public boolean hasEffect(ItemStack stack, int pass) {
+		return pass == 0 && !ElixirUtils.getEffects(stack).isEmpty();
 	}
 
 }

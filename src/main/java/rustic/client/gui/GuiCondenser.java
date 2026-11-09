@@ -1,5 +1,7 @@
 package rustic.client.gui;
 
+import net.minecraft.util.StatCollector;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,7 +11,7 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.fluids.FluidStack;
 import rustic.client.util.FluidClientUtil;
 import rustic.common.tileentity.ContainerCondenser;
@@ -39,15 +41,14 @@ public class GuiCondenser extends GuiContainer {
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		this.drawDefaultBackground();
 		super.drawScreen(mouseX, mouseY, partialTicks);
-		this.renderHoveredToolTip(mouseX, mouseY);
 	}
 
 	@Override
 	protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
-		this.fontRenderer.drawString(this.te.getDisplayName().getUnformattedText(), 8, 6, 4210752);
-		this.fontRenderer.drawString(this.playerInv.getDisplayName().getUnformattedText(), 8, this.ySize - 96 + 2,
+		this.fontRendererObj.drawString(StatCollector.translateToLocal(this.te.getInventoryName()), 8, 6, 4210752);
+		this.fontRendererObj.drawString(StatCollector.translateToLocal(playerInv.getInventoryName()), 8, this.ySize - 96 + 2,
 				4210752);
-		if (isPointInRegion(133, 27, 16, 32, mouseX, mouseY)) {
+		if (func_146978_c(133, 27, 16, 32, mouseX, mouseY)) {
 			FluidStack fluid = null;
 			if (te.getFluid() != null && te.getAmount() > 0) {
 				fluid = new FluidStack(te.getFluid(), te.getAmount());
@@ -95,13 +96,13 @@ public class GuiCondenser extends GuiContainer {
 	protected void drawFluidTooltip(FluidStack fluid, int capacity, int x, int y) {
 		List<String> lines = new ArrayList<String>();
 		if (fluid == null || fluid.getFluid() == null || fluid.amount <= 0) {
-			lines.add(TextFormatting.GRAY + I18n.format("tooltip.rustic.empty"));
-			lines.add(TextFormatting.GRAY + "" + 0 + "/" + capacity);
+			lines.add(EnumChatFormatting.GRAY + I18n.format("tooltip.rustic.empty"));
+			lines.add(EnumChatFormatting.GRAY + "" + 0 + "/" + capacity);
 		} else {
 			lines.add(fluid.getFluid().getRarity(fluid).rarityColor + fluid.getLocalizedName());
-			lines.add(TextFormatting.GRAY + "" + fluid.amount + "/" + capacity);
+			lines.add(EnumChatFormatting.GRAY + "" + fluid.amount + "/" + capacity);
 		}
-		drawHoveringText(lines, x - guiLeft, y - guiTop);
+		drawHoveringText(lines, x - guiLeft, y - guiTop, fontRendererObj);
 	}
 
 }

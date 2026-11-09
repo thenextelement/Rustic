@@ -28,13 +28,16 @@ public class AdvancedCondenserRecipe extends CondenserRecipe {
 	
 	@Override
 	public boolean matches(Fluid fluid, ItemStack mod, ItemStack bottle, ItemStack[] stacks) {
-		if ((!this.modifier.isEmpty() && mod.isEmpty()) || (this.modifier.isEmpty() && !mod.isEmpty())) {
+		if (((this.modifier != null) && (mod == null)) || ((this.modifier == null) && (mod != null))) {
 			return false;
+		}
+		if (this.modifier == null) {
+			return super.matches(fluid, mod, bottle, stacks);
 		}
 		if (!this.modifier.getItem().equals(mod.getItem())) {
 			return false;
 		}
-		if (this.modifier.getMetadata() != mod.getMetadata()) {
+		if (this.modifier.getItemDamage() != mod.getItemDamage()) {
 			return false;
 		}
 		if (this.modifier.hasTagCompound() && (mod.hasTagCompound())) {

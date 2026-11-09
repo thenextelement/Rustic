@@ -28,7 +28,7 @@ public class BasicCondenserRecipe extends CondenserRecipe {
 	
 	@Override
 	public boolean matches(Fluid fluid, ItemStack mod, ItemStack bottle, ItemStack[] inputs) {
-		if ((!mod.isEmpty())) {
+		if (((mod != null))) {
 			return false;
 		}
 		return super.matches(fluid, mod, bottle, inputs);

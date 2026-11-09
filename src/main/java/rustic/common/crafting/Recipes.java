@@ -15,20 +15,19 @@ import net.minecraft.potion.Potion;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
 import cpw.mods.fml.common.IFuelHandler;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraftforge.oredict.OreDictionary;
 import net.minecraftforge.oredict.RecipeSorter;
 import net.minecraftforge.oredict.ShapedOreRecipe;
+import net.minecraftforge.oredict.ShapelessOreRecipe;
 import rustic.common.Config;
 import rustic.common.blocks.BlockLogRustic;
 import rustic.common.blocks.BlockPlanksRustic;
@@ -39,7 +38,6 @@ import rustic.common.blocks.fluids.FluidBooze;
 import rustic.common.blocks.fluids.ModFluids;
 import rustic.common.items.ModItems;
 import rustic.common.potions.PotionsRustic;
-import rustic.compat.dynamictrees.DynamicTreesCompat;
 import rustic.core.Rustic;
 
 public class Recipes {
@@ -58,6 +56,7 @@ public class Recipes {
 	}
 	
 	public static void init() {
+		JsonRecipes.load();
 		addCraftingRecipes();
 		addSmeltingRecipes();
 		addFuels();
@@ -175,9 +174,7 @@ public class Recipes {
 	private static void addSmeltingRecipes() {
 		GameRegistry.addSmelting(new ItemStack(ModItems.HONEYCOMB), new ItemStack(ModItems.BEESWAX), 0.3F);
 		for (int i = 0; i < BlockPlanksRustic.EnumType.values().length; i++) {
-			IBlockState state = ModBlocks.LOG.getDefaultState().withProperty(BlockLogRustic.VARIANT,
-					BlockPlanksRustic.EnumType.byMetadata(i));
-			int meta = ModBlocks.LOG.getMetaFromState(state);
+			int meta = i;
 			GameRegistry.addSmelting(new ItemStack(ModBlocks.LOG, 1, meta), new ItemStack(Items.coal, 1, 1), 0.15F);
 		}
 		GameRegistry.addSmelting(new ItemStack(ModItems.IRON_DUST_TINY), new ItemStack(Items.gold_nugget), 0.15F);
@@ -222,18 +219,12 @@ public class Recipes {
 		OreDictionary.registerOre("listAllveggie", new ItemStack(ModItems.TOMATO));
 
 		for (int i = 0; i < BlockPlanksRustic.EnumType.values().length; i++) {
-			IBlockState state = ModBlocks.LOG.getDefaultState().withProperty(BlockLogRustic.VARIANT,
-					BlockPlanksRustic.EnumType.byMetadata(i));
-			int meta = ModBlocks.LOG.getMetaFromState(state);
+			int meta = i;
 			OreDictionary.registerOre("treeWood", new ItemStack(ModBlocks.LOG, 1, meta));
 			OreDictionary.registerOre("logWood", new ItemStack(ModBlocks.LOG, 1, meta));
-			state = ModBlocks.SAPLING.getDefaultState().withProperty(BlockSaplingRustic.VARIANT,
-					BlockPlanksRustic.EnumType.byMetadata(i));
-			meta = ModBlocks.SAPLING.getMetaFromState(state);
+			meta = i;
 			OreDictionary.registerOre("treeSapling", new ItemStack(ModBlocks.SAPLING, 1, meta));
-			state = ModBlocks.PLANKS.getDefaultState().withProperty(BlockPlanksRustic.VARIANT,
-					BlockPlanksRustic.EnumType.byMetadata(i));
-			meta = ModBlocks.PLANKS.getMetaFromState(state);
+			meta = i;
 			OreDictionary.registerOre("plankWood", new ItemStack(ModBlocks.PLANKS, 1, meta));
 		}
 		if (Config.ENABLE_PAINTED_WOOD) {
@@ -255,8 +246,8 @@ public class Recipes {
 			OreDictionary.registerOre("plankWood", new ItemStack(ModBlocks.PAINTED_WOOD_YELLOW));
 		}
 		
-		OreDictionary.registerOre("slabWood", new ItemStack(ModBlocks.OLIVE_SLAB_ITEM));
-		OreDictionary.registerOre("slabWood", new ItemStack(ModBlocks.IRONWOOD_SLAB_ITEM));
+		OreDictionary.registerOre("slabWood", new ItemStack(ModBlocks.OLIVE_SLAB));
+		OreDictionary.registerOre("slabWood", new ItemStack(ModBlocks.IRONWOOD_SLAB));
 		OreDictionary.registerOre("stairWood", new ItemStack(ModBlocks.OLIVE_STAIRS));
 		OreDictionary.registerOre("stairWood", new ItemStack(ModBlocks.IRONWOOD_STAIRS));
 
@@ -296,164 +287,153 @@ public class Recipes {
 	
 	private static void addCraftingRecipes() {
 		if (Config.ENABLE_PILLARS) {
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "pillar_stone"), null, new ItemStack(ModBlocks.STONE_PILLAR, 6), "SS ", "SS ", "SS ", 'S',
-					new ItemStack(Blocks.stone, 1, 0));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "pillar_andesite"), null, new ItemStack(ModBlocks.ANDESITE_PILLAR, 6), "SS ", "SS ", "SS ", 'S',
-					new ItemStack(Blocks.stone, 1, 5));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "pillar_diorite"), null, new ItemStack(ModBlocks.DIORITE_PILLAR, 6), "SS ", "SS ", "SS ", 'S',
-					new ItemStack(Blocks.stone, 1, 3));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "pillar_granite"), null, new ItemStack(ModBlocks.GRANITE_PILLAR, 6), "SS ", "SS ", "SS ", 'S',
-					new ItemStack(Blocks.stone, 1, 1));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.STONE_PILLAR, 6), "SS ", "SS ", "SS ", 'S',
+					new ItemStack(Blocks.stone, 1, 0)));
 			if (Config.ENABLE_SLATE) {
-				GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "pillar_slate"), null, new ItemStack(ModBlocks.SLATE_PILLAR, 6), "SS", "SS", "SS", 'S',
-						new ItemStack(ModBlocks.SLATE));
+				GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.SLATE_PILLAR, 6), "SS", "SS", "SS", 'S',
+						new ItemStack(ModBlocks.SLATE)));
 			}
 		}
 		if (Config.ENABLE_SLATE) {
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "slate_roof"), null, new ItemStack(ModBlocks.SLATE_ROOF, 4), "SS", "SS", 'S',
-					new ItemStack(ModBlocks.SLATE));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "slate_roof_stairs"), null, new ItemStack(ModBlocks.SLATE_ROOF_STAIRS, 4), "S  ", "SS ", "SSS", 'S',
-					new ItemStack(ModBlocks.SLATE_ROOF));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "slate_roof_slab"), null, new ItemStack(ModBlocks.SLATE_ROOF_SLAB_ITEM, 6), "SSS", 'S',
-					new ItemStack(ModBlocks.SLATE_ROOF));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "slate_brick_stairs"), null, new ItemStack(ModBlocks.SLATE_BRICK_STAIRS, 4), "S  ", "SS ", "SSS", 'S',
-					new ItemStack(ModBlocks.SLATE_BRICK));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "slate_brick_slab"), null, new ItemStack(ModBlocks.SLATE_BRICK_SLAB_ITEM, 6), "SSS", 'S',
-					new ItemStack(ModBlocks.SLATE_BRICK));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "slate_tile"), null, new ItemStack(ModBlocks.SLATE_TILE), "S", 'S',
-					new ItemStack(ModBlocks.SLATE));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "slate_tile_1"), null, new ItemStack(ModBlocks.SLATE_TILE), "S", 'S',
-					new ItemStack(ModBlocks.SLATE_BRICK));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "slate_brick"), null, new ItemStack(ModBlocks.SLATE_BRICK, 4), "SS", "SS", 'S',
-					new ItemStack(ModBlocks.SLATE_TILE));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "slate_chiseled"), null, new ItemStack(ModBlocks.SLATE_CHISELED, 4), "SS", "SS", 'S',
-					new ItemStack(ModBlocks.SLATE_BRICK));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.SLATE_ROOF, 4), "SS", "SS", 'S',
+					new ItemStack(ModBlocks.SLATE)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.SLATE_ROOF_STAIRS, 4), "S  ", "SS ", "SSS", 'S',
+					new ItemStack(ModBlocks.SLATE_ROOF)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.SLATE_ROOF_SLAB, 6), "SSS", 'S',
+					new ItemStack(ModBlocks.SLATE_ROOF)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.SLATE_BRICK_STAIRS, 4), "S  ", "SS ", "SSS", 'S',
+					new ItemStack(ModBlocks.SLATE_BRICK)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.SLATE_BRICK_SLAB, 6), "SSS", 'S',
+					new ItemStack(ModBlocks.SLATE_BRICK)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.SLATE_TILE), "S", 'S',
+					new ItemStack(ModBlocks.SLATE)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.SLATE_TILE), "S", 'S',
+					new ItemStack(ModBlocks.SLATE_BRICK)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.SLATE_BRICK, 4), "SS", "SS", 'S',
+					new ItemStack(ModBlocks.SLATE_TILE)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.SLATE_CHISELED, 4), "SS", "SS", 'S',
+					new ItemStack(ModBlocks.SLATE_BRICK)));
 		}
 		if (Config.ENABLE_CLAY_WALLS) {
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.CLAY_WALL, 8), " P ", "PCP", " P ", 'P',
-					"plankWood", 'C', Blocks.clay).setRegistryName(new ResourceLocation(Rustic.MODID, "clay_wall")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.CLAY_WALL_CROSS), "P P", " C ", "P P",
-					'P', "plankWood", 'C', ModBlocks.CLAY_WALL).setRegistryName(new ResourceLocation(Rustic.MODID, "clay_wall_cross")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.CLAY_WALL_DIAG), "P  ", " C ", "  P",
-					'P', "plankWood", 'C', ModBlocks.CLAY_WALL).setRegistryName(new ResourceLocation(Rustic.MODID, "clay_wall_diag")));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.CLAY_WALL, 8), " P ", "PCP", " P ", 'P',
+					"plankWood", 'C', Blocks.clay));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.CLAY_WALL_CROSS), "P P", " C ", "P P",
+					'P', "plankWood", 'C', ModBlocks.CLAY_WALL));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.CLAY_WALL_DIAG), "P  ", " C ", "  P",
+					'P', "plankWood", 'C', ModBlocks.CLAY_WALL));
 		}
 		if (Config.ENABLE_CHAIRS) {
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "acacia_chair"), new ResourceLocation(Rustic.MODID, "chair"), new ItemStack(ModBlocks.CHAIR_ACACIA, 4), "P  ", "PPP", "S S", 'P',
-					new ItemStack(Blocks.planks, 1, 4), 'S', new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "big_oak_chair"), new ResourceLocation(Rustic.MODID, "chair"), new ItemStack(ModBlocks.CHAIR_BIG_OAK, 4), "P  ", "PPP", "S S", 'P',
-					new ItemStack(Blocks.planks, 1, 5), 'S', new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "birch_chair"), new ResourceLocation(Rustic.MODID, "chair"), new ItemStack(ModBlocks.CHAIR_BIRCH, 4), "P  ", "PPP", "S S", 'P',
-					new ItemStack(Blocks.planks, 1, 2), 'S', new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "jungle_chair"), new ResourceLocation(Rustic.MODID, "chair"), new ItemStack(ModBlocks.CHAIR_JUNGLE, 4), "P  ", "PPP", "S S", 'P',
-					new ItemStack(Blocks.planks, 1, 3), 'S', new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "oak_chair"), new ResourceLocation(Rustic.MODID, "chair"), new ItemStack(ModBlocks.CHAIR_OAK, 4), "P  ", "PPP", "S S", 'P',
-					new ItemStack(Blocks.planks, 1, 0), 'S', new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "spruce_chair"), new ResourceLocation(Rustic.MODID, "chair"), new ItemStack(ModBlocks.CHAIR_SPRUCE, 4), "P  ", "PPP", "S S", 'P',
-					new ItemStack(Blocks.planks, 1, 1), 'S', new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "olive_chair"), new ResourceLocation(Rustic.MODID, "chair"), new ItemStack(ModBlocks.CHAIR_OLIVE, 4), "p  ", "ppp", "s s", 'p',
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.CHAIR_ACACIA, 4), "P  ", "PPP", "S S", 'P',
+					new ItemStack(Blocks.planks, 1, 4), 'S', new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.CHAIR_BIG_OAK, 4), "P  ", "PPP", "S S", 'P',
+					new ItemStack(Blocks.planks, 1, 5), 'S', new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.CHAIR_BIRCH, 4), "P  ", "PPP", "S S", 'P',
+					new ItemStack(Blocks.planks, 1, 2), 'S', new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.CHAIR_JUNGLE, 4), "P  ", "PPP", "S S", 'P',
+					new ItemStack(Blocks.planks, 1, 3), 'S', new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.CHAIR_OAK, 4), "P  ", "PPP", "S S", 'P',
+					new ItemStack(Blocks.planks, 1, 0), 'S', new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.CHAIR_SPRUCE, 4), "P  ", "PPP", "S S", 'P',
+					new ItemStack(Blocks.planks, 1, 1), 'S', new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.CHAIR_OLIVE, 4), "p  ", "ppp", "s s", 'p',
 					new ItemStack(ModBlocks.PLANKS, 1, BlockPlanksRustic.EnumType.OLIVE.getMetadata()), 's',
-					new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "ironwood_chair"), new ResourceLocation(Rustic.MODID, "chair"), new ItemStack(ModBlocks.CHAIR_IRONWOOD, 4), "p  ", "ppp", "s s", 'p',
+					new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.CHAIR_IRONWOOD, 4), "p  ", "ppp", "s s", 'p',
 					new ItemStack(ModBlocks.PLANKS, 1, BlockPlanksRustic.EnumType.IRONWOOD.getMetadata()), 's',
-					new ItemStack(Items.stick));
+					new ItemStack(Items.stick)));
 		}
 		if (Config.ENABLE_TABLES) {
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "acacia_table"), new ResourceLocation(Rustic.MODID, "table"), new ItemStack(ModBlocks.TABLE_ACACIA, 2), "PPP", "S S", 'P',
-					new ItemStack(Blocks.planks, 1, 4), 'S', new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "big_oak_table"), new ResourceLocation(Rustic.MODID, "table"), new ItemStack(ModBlocks.TABLE_BIG_OAK, 2), "PPP", "S S", 'P',
-					new ItemStack(Blocks.planks, 1, 5), 'S', new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "birch_table"), new ResourceLocation(Rustic.MODID, "table"), new ItemStack(ModBlocks.TABLE_BIRCH, 2), "PPP", "S S", 'P',
-					new ItemStack(Blocks.planks, 1, 2), 'S', new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "jungle_table"), new ResourceLocation(Rustic.MODID, "table"), new ItemStack(ModBlocks.TABLE_JUNGLE, 2), "PPP", "S S", 'P',
-					new ItemStack(Blocks.planks, 1, 3), 'S', new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "oak_table"), new ResourceLocation(Rustic.MODID, "table"), new ItemStack(ModBlocks.TABLE_OAK, 2), "PPP", "S S", 'P',
-					new ItemStack(Blocks.planks, 1, 0), 'S', new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "spruce_table"), new ResourceLocation(Rustic.MODID, "table"), new ItemStack(ModBlocks.TABLE_SPRUCE, 2), "PPP", "S S", 'P',
-					new ItemStack(Blocks.planks, 1, 1), 'S', new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "olive_table"), new ResourceLocation(Rustic.MODID, "table"), new ItemStack(ModBlocks.TABLE_OLIVE, 2), "ppp", "s s", 'p',
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.TABLE_ACACIA, 2), "PPP", "S S", 'P',
+					new ItemStack(Blocks.planks, 1, 4), 'S', new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.TABLE_BIG_OAK, 2), "PPP", "S S", 'P',
+					new ItemStack(Blocks.planks, 1, 5), 'S', new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.TABLE_BIRCH, 2), "PPP", "S S", 'P',
+					new ItemStack(Blocks.planks, 1, 2), 'S', new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.TABLE_JUNGLE, 2), "PPP", "S S", 'P',
+					new ItemStack(Blocks.planks, 1, 3), 'S', new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.TABLE_OAK, 2), "PPP", "S S", 'P',
+					new ItemStack(Blocks.planks, 1, 0), 'S', new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.TABLE_SPRUCE, 2), "PPP", "S S", 'P',
+					new ItemStack(Blocks.planks, 1, 1), 'S', new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.TABLE_OLIVE, 2), "ppp", "s s", 'p',
 					new ItemStack(ModBlocks.PLANKS, 1, BlockPlanksRustic.EnumType.OLIVE.getMetadata()), 's',
-					new ItemStack(Items.stick));
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "ironwood_table"), new ResourceLocation(Rustic.MODID, "table"), new ItemStack(ModBlocks.TABLE_IRONWOOD, 2), "ppp", "s s", 'p',
+					new ItemStack(Items.stick)));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.TABLE_IRONWOOD, 2), "ppp", "s s", 'p',
 					new ItemStack(ModBlocks.PLANKS, 1, BlockPlanksRustic.EnumType.IRONWOOD.getMetadata()), 's',
-					new ItemStack(Items.stick));
+					new ItemStack(Items.stick)));
 		}
 		if (Config.ENABLE_LATTICE) {
-			GameRegistry.addShapedRecipe(new ResourceLocation(Rustic.MODID, "iron_lattice"), null, new ItemStack(ModBlocks.IRON_LATTICE, 16), " I ", "III", " I ", 'I',
-					new ItemStack(Items.iron_ingot));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.IRON_LATTICE, 16), " I ", "III", " I ", 'I',
+					new ItemStack(Items.iron_ingot)));
 		}
 		if (Config.ENABLE_PAINTED_WOOD) {
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_WHITE, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeWhite").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_white")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_ORANGE, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeOrange").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_orange")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_MAGENTA, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeMagenta").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_magenta")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_LIGHT_BLUE, 8), "PPP",
-					"PDP", "PPP", 'P', "plankWood", 'D', "dyeLightBlue").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_light_blue")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_YELLOW, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeYellow").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_yellow")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_LIME, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeLime").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_lime")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_PINK, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyePink").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_pink")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_GRAY, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeGray").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_gray")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_SILVER, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeLightGray").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_silver")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_CYAN, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeCyan").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_cyan")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_PURPLE, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyePurple").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_purple")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_BLUE, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeBlue").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_blue")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_BROWN, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeBrown").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_brown")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_GREEN, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeGreen").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_green")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_RED, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeRed").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_red")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null, new ItemStack(ModBlocks.PAINTED_WOOD_BLACK, 8), "PPP", "PDP",
-					"PPP", 'P', "plankWood", 'D', "dyeBlack").setRegistryName(new ResourceLocation(Rustic.MODID, "painted_wood_black")));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_WHITE, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeWhite"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_ORANGE, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeOrange"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_MAGENTA, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeMagenta"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_LIGHT_BLUE, 8), "PPP",
+					"PDP", "PPP", 'P', "plankWood", 'D', "dyeLightBlue"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_YELLOW, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeYellow"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_LIME, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeLime"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_PINK, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyePink"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_GRAY, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeGray"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_SILVER, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeLightGray"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_CYAN, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeCyan"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_PURPLE, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyePurple"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_BLUE, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeBlue"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_BROWN, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeBrown"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_GREEN, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeGreen"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_RED, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeRed"));
+			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ModBlocks.PAINTED_WOOD_BLACK, 8), "PPP", "PDP",
+					"PPP", 'P', "plankWood", 'D', "dyeBlack"));
 		}
 		
 		RecipeSorter.register("rustic:shapeless_nonreturn", RecipeNonIngredientReturn.class,
 				RecipeSorter.Category.SHAPELESS, "after:minecraft:shapeless");
-		ItemStack aleWortBucket = FluidUtil.getFilledBucket(new FluidStack(ModFluids.ALE_WORT, 1000));
-		GameRegistry.findRegistry(IRecipe.class).register(new RecipeNonIngredientReturn(null, aleWortBucket, new ItemStack(Items.bread),
-				new ItemStack(Items.sugar), new ItemStack(Items.water_bucket)).setRegistryName(new ResourceLocation(Rustic.MODID, "ale_wort")));
+		// 1.7.10 has no universal bucket: ale wort is crafted into a fluid bottle (same 1000mb); the bucket is returned
+		ItemStack aleWortBottle = ModItems.FLUID_BOTTLE.getFilledBottle(ModFluids.ALE_WORT);
+		GameRegistry.addRecipe(new ShapelessOreRecipe(aleWortBottle, new ItemStack(Items.bread),
+				new ItemStack(Items.sugar), new ItemStack(Items.water_bucket)));
 		
 		RecipeSorter.register("rustic:cabinet_recipe", RecipeCabinet.class,
 				RecipeSorter.Category.SHAPED, "after:minecraft:shapeless");
-		GameRegistry.findRegistry(IRecipe.class).register(new RecipeCabinet().setRegistryName(new ResourceLocation(Rustic.MODID, "cabinet")));
+		GameRegistry.addRecipe(new RecipeCabinet());
 		
 		if (Config.ENABLE_BOTTLE_EMPTYING) {
-			GameRegistry.findRegistry(IRecipe.class).register(new RecipeNonIngredientReturn(null, new ItemStack(Items.glass_bottle),
-					new ItemStack(ModItems.FLUID_BOTTLE)).setRegistryName(new ResourceLocation(Rustic.MODID, "bottle_emptying")));
+			GameRegistry.addRecipe(new RecipeNonIngredientReturn(new ItemStack(Items.glass_bottle),
+					new ItemStack(ModItems.FLUID_BOTTLE)));
 		}
-		GameRegistry.findRegistry(IRecipe.class).register(new RecipeNonIngredientReturn(null, new ItemStack(ModBlocks.LIQUID_BARREL),
-				new ItemStack(ModBlocks.LIQUID_BARREL)).setRegistryName(new ResourceLocation(Rustic.MODID, "barrel_emptying")));
+		GameRegistry.addRecipe(new RecipeNonIngredientReturn(new ItemStack(ModBlocks.LIQUID_BARREL),
+				new ItemStack(ModBlocks.LIQUID_BARREL)));
 
 		if (Config.ENABLE_OLIVE_OILING) {
 			RecipeSorter.register("rustic:olive_oil", RecipeOliveOil.class, RecipeSorter.Category.SHAPELESS,
 					"after:minecraft:shapeless");
-			GameRegistry.findRegistry(IRecipe.class).register(new RecipeOliveOil().setRegistryName(new ResourceLocation(Rustic.MODID, "olive_oiling")));
+			GameRegistry.addRecipe(new RecipeOliveOil());
 		}
 		
 		RecipeSorter.register("rustic:vanta_oil", RecipeVantaOil.class, RecipeSorter.Category.SHAPELESS,
 				"after:minecraft:shapeless");
-		GameRegistry.findRegistry(IRecipe.class).register(new RecipeVantaOil().setRegistryName(new ResourceLocation(Rustic.MODID, "vanta_oiling")));
+		GameRegistry.addRecipe(new RecipeVantaOil());
 		
-		if (Loader.isModLoaded("dynamictrees")) {
-			GameRegistry.addShapelessRecipe(new ResourceLocation(Rustic.MODID, "oliveseed"), null, new ItemStack(DynamicTreesCompat.getOliveSeed()), Ingredient.fromItem(ModItems.OLIVES));
-			GameRegistry.addShapelessRecipe(new ResourceLocation(Rustic.MODID, "ironwoodseed"), null, new ItemStack(DynamicTreesCompat.getIronwoodSeed()), Ingredient.fromItem(ModItems.IRONBERRIES));
-			
-			DynamicTreesCompat.addRecipes();
-		}
 	}
 	
 	private static void addSilverCraftingRecipes() {
 		if (Config.ENABLE_SILVER_DECOR && OreDictionary.doesOreNameExist("ingotSilver")) {
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null,
+			GameRegistry.addRecipe(new ShapedOreRecipe(
 					new ItemStack(ModBlocks.CANDLE_SILVER, 4),
 						"S",
 						"W",
@@ -461,8 +441,8 @@ public class Recipes {
 					'S', new ItemStack(Items.string),
 					'W', "wax",
 					'I', "ingotSilver"
-			).setRegistryName(new ResourceLocation(Rustic.MODID, "candle_silver")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null,
+			));
+			GameRegistry.addRecipe(new ShapedOreRecipe(
 					new ItemStack(ModBlocks.CANDLE_DOUBLE_SILVER, 4),
 						"S S",
 						"W W",
@@ -470,37 +450,37 @@ public class Recipes {
 					'S', new ItemStack(Items.string),
 					'W', "wax",
 					'I', "ingotSilver"
-			).setRegistryName(new ResourceLocation(Rustic.MODID, "candle_double_silver")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null,
+			));
+			GameRegistry.addRecipe(new ShapedOreRecipe(
 					new ItemStack(ModBlocks.CANDLE_LEVER_SILVER, 1),
 						"C",
 						"R",
 					'C', new ItemStack(ModBlocks.CANDLE_SILVER),
 					'R', "dustRedstone"
-			).setRegistryName(new ResourceLocation(Rustic.MODID, "candle_lever_silver")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null,
+			));
+			GameRegistry.addRecipe(new ShapedOreRecipe(
 					new ItemStack(ModBlocks.CHAIN_SILVER, 12),
 						"I",
 						"I",
 						"I",
 					'I', "ingotSilver"
-			).setRegistryName(new ResourceLocation(Rustic.MODID, "chain_silver")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null,
+			));
+			GameRegistry.addRecipe(new ShapedOreRecipe(
 					new ItemStack(ModBlocks.CHANDELIER_SILVER, 2),
 						" I ",
 						"C C",
 						"III",
 					'I', "ingotSilver",
 					'C', ModBlocks.CHAIN_SILVER
-			).setRegistryName(new ResourceLocation(Rustic.MODID, "chandelier_silver")));
-			GameRegistry.findRegistry(IRecipe.class).register(new ShapedOreRecipe(null,
+			));
+			GameRegistry.addRecipe(new ShapedOreRecipe(
 					new ItemStack(ModBlocks.SILVER_LANTERN, 4),
 						"I",
 						"C",
 						"I",
 					'I', "ingotSilver",
-					'C', Ingredient.fromStacks(new ItemStack(Items.coal, 1, 0), new ItemStack(Items.coal, 1, 1))
-			).setRegistryName(new ResourceLocation(Rustic.MODID, "silver_lantern")));
+					'C', new ItemStack(Items.coal, 1, 0), new ItemStack(Items.coal, 1, 1)
+			));
 		}
 	}
 
@@ -515,21 +495,15 @@ public class Recipes {
 				new ItemStack(ModItems.WILDBERRIES)));
 		crushingTubRecipes
 				.add(new CrushingTubRecipe(new FluidStack(ModFluids.GRAPE_JUICE, 250), new ItemStack(ModItems.GRAPES)));
-		if (!Loader.isModLoaded("dynamictrees")) {
+		{
 			crushingTubRecipes.add(new CrushingTubRecipe(new FluidStack(ModFluids.APPLE_JUICE, 250),
 				new ItemStack(Items.apple), new ItemStack(ModBlocks.APPLE_SEEDS)));
-		} else {
-			crushingTubRecipes.add(new CrushingTubRecipe(new FluidStack(ModFluids.APPLE_JUICE, 250),
-					new ItemStack(Items.apple), new ItemStack(DynamicTreesCompat.getAppleSeed())));
 		}
 		crushingTubRecipes
 				.add(new CrushingTubRecipe(new FluidStack(ModFluids.HONEY, 250), new ItemStack(ModItems.HONEYCOMB)));
-		if (!Loader.isModLoaded("dynamictrees")) {
+		{
 			crushingTubRecipes.add(new CrushingTubRecipe(new FluidStack(ModFluids.GOLDEN_APPLE_JUICE, 100), new ItemStack(Items.golden_apple, 1, 0), new ItemStack(ModBlocks.APPLE_SEEDS)));
 			crushingTubRecipes.add(new CrushingTubRecipe(new FluidStack(ModFluids.GOLDEN_APPLE_JUICE, 1000), new ItemStack(Items.golden_apple, 1, 1), new ItemStack(ModBlocks.APPLE_SEEDS)));
-		} else {
-			crushingTubRecipes.add(new CrushingTubRecipe(new FluidStack(ModFluids.GOLDEN_APPLE_JUICE, 100), new ItemStack(Items.golden_apple, 1, 0), new ItemStack(DynamicTreesCompat.getAppleSeed())));
-			crushingTubRecipes.add(new CrushingTubRecipe(new FluidStack(ModFluids.GOLDEN_APPLE_JUICE, 1000), new ItemStack(Items.golden_apple, 1, 1), new ItemStack(DynamicTreesCompat.getAppleSeed())));
 		}
 		crushingTubRecipes
 			.add(new CrushingTubRecipe(new FluidStack(ModFluids.VANTA_OIL, 250), new ItemStack(Herbs.VANTA_LILY)));

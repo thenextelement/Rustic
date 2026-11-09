@@ -1,7 +1,8 @@
 package rustic.common.tileentity;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import rustic.common.util.ItemStackHandlerRustic;
+import rustic.common.util.SlotHandler;
+
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
@@ -10,9 +11,6 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntityFurnace;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.SlotItemHandler;
 
 public class ContainerCondenser extends Container {
 
@@ -45,28 +43,27 @@ public class ContainerCondenser extends Container {
 	}
 
 	private void addOwnSlots() {
-		IItemHandler itemHandler = this.te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
-		addSlotToContainer(new SlotItemHandler(itemHandler, TileEntityCondenserBase.SLOT_RESULT, 105, 35) {
+		ItemStackHandlerRustic itemHandler = this.te.getItemHandler();
+		addSlotToContainer(new SlotHandler(itemHandler, TileEntityCondenserBase.SLOT_RESULT, 105, 35) {
 			@Override
-			public boolean isItemValid(@Nonnull ItemStack stack) {
+			public boolean isItemValid(ItemStack stack) {
 				return false;
 			}
 		});
-		addSlotToContainer(new SlotItemHandler(itemHandler, TileEntityCondenserBase.SLOT_FUEL, 66, 62) {
+		addSlotToContainer(new SlotHandler(itemHandler, TileEntityCondenserBase.SLOT_FUEL, 66, 62) {
 			@Override
-			public boolean isItemValid(@Nonnull ItemStack stack) {
+			public boolean isItemValid(ItemStack stack) {
 				return super.isItemValid(stack) && TileEntityFurnace.isItemFuel(stack);
 			}
 		});
-		addSlotToContainer(new SlotItemHandler(itemHandler, TileEntityCondenserBase.SLOT_BOTTLE, 105, 7));
-		addSlotToContainer(new SlotItemHandler(itemHandler, TileEntityCondenserBase.SLOT_INGREDIENTS_START, 27, 23));
-		addSlotToContainer(new SlotItemHandler(itemHandler, TileEntityCondenserBase.SLOT_INGREDIENTS_START + 1, 27, 47));
+		addSlotToContainer(new SlotHandler(itemHandler, TileEntityCondenserBase.SLOT_BOTTLE, 105, 7));
+		addSlotToContainer(new SlotHandler(itemHandler, TileEntityCondenserBase.SLOT_INGREDIENTS_START, 27, 23));
+		addSlotToContainer(new SlotHandler(itemHandler, TileEntityCondenserBase.SLOT_INGREDIENTS_START + 1, 27, 47));
 	}
 	
-	@Nullable
-	@Override
+		@Override
 	public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
-		ItemStack itemstack = ItemStack.EMPTY;
+		ItemStack itemstack = null;
         Slot slot = (Slot)this.inventorySlots.get(index);
         
         if (slot != null && slot.getHasStack())
@@ -75,42 +72,42 @@ public class ContainerCondenser extends Container {
             itemstack = itemstack1.copy();
             if (index < TileEntityCondenser.SLOT_NUM) {
                 if (!this.mergeItemStack(itemstack1, TileEntityCondenser.SLOT_NUM, TileEntityCondenser.SLOT_NUM + 36, true)) {
-                    return ItemStack.EMPTY;
+                    return null;
                 }
                 slot.onSlotChange(itemstack1, itemstack);
             } else if (index > 4) {
-                if (itemstack1.getItem().equals(Items.GLASS_BOTTLE)) {
+                if (itemstack1.getItem().equals(Items.glass_bottle)) {
                     if (!this.mergeItemStack(itemstack1, TileEntityCondenser.SLOT_BOTTLE, TileEntityCondenser.SLOT_BOTTLE + 1, false)) {
-                        return ItemStack.EMPTY;
+                        return null;
                     }
                 } else if (TileEntityFurnace.isItemFuel(itemstack1)) {
                     if (!this.mergeItemStack(itemstack1, TileEntityCondenser.SLOT_FUEL, TileEntityCondenser.SLOT_FUEL + 1, false)) {
-                        return ItemStack.EMPTY;
+                        return null;
                     }
                 } else if (!this.mergeItemStack(itemstack1, TileEntityCondenser.SLOT_INGREDIENTS_START, TileEntityCondenser.SLOT_INGREDIENTS_START + 2, false)) {
-                    return ItemStack.EMPTY;
+                    return null;
                 } else if (index >= TileEntityCondenser.SLOT_NUM && index < TileEntityCondenser.SLOT_NUM + 27) {
                     if (!this.mergeItemStack(itemstack1, TileEntityCondenser.SLOT_NUM + 27, TileEntityCondenser.SLOT_NUM + 36, false)) {
-                        return ItemStack.EMPTY;
+                        return null;
                     }
                 } else if (index >= TileEntityCondenser.SLOT_NUM + 27 && index < TileEntityCondenser.SLOT_NUM + 36 && !this.mergeItemStack(itemstack1, TileEntityCondenser.SLOT_NUM, TileEntityCondenser.SLOT_NUM + 27, false)) {
-                    return ItemStack.EMPTY;
+                    return null;
                 }
             } else if (!this.mergeItemStack(itemstack1, TileEntityCondenser.SLOT_NUM, TileEntityCondenser.SLOT_NUM + 36, false)) {
-                return ItemStack.EMPTY;
+                return null;
             }
             
-            if (itemstack1.isEmpty()) {
-                slot.putStack(ItemStack.EMPTY);
+            if ((itemstack1 == null || itemstack1.stackSize <= 0)) {
+                slot.putStack(null);
             } else {
                 slot.onSlotChanged();
             }
 
-            if (itemstack1.getCount() == itemstack.getCount()) {
-                return ItemStack.EMPTY;
+            if (itemstack1.stackSize == itemstack.stackSize) {
+                return null;
             }
 
-            slot.onTake(playerIn, itemstack1);
+            slot.onPickupFromSlot(playerIn, itemstack1);
         }
         
 		return itemstack;

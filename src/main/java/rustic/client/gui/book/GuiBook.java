@@ -1,6 +1,5 @@
 package rustic.client.gui.book;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,8 +74,8 @@ public class GuiBook extends GuiScreen {
 		prevEntry = currentEntry;
 		prevPageNum = currentPageNum;
 		
-		if (!this.mc.player.isEntityAlive() || this.mc.player.isDead) {
-			this.mc.player.closeScreen();
+		if (!this.mc.thePlayer.isEntityAlive() || this.mc.thePlayer.isDead) {
+			this.mc.thePlayer.closeScreen();
 		}
 
 		currentPage.update();
@@ -135,7 +134,7 @@ public class GuiBook extends GuiScreen {
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	protected void actionPerformed(GuiButton button) throws IOException {
+	protected void actionPerformed(GuiButton button) {
 		if (button instanceof PageTurnButton) {
 			if (((PageTurnButton) button).isForward()) {
 				this.goToPage(currentPageNum + 1);
@@ -158,7 +157,7 @@ public class GuiBook extends GuiScreen {
 	}
 
 	@Override
-	protected void keyTyped(char c, int key) throws IOException {
+	protected void keyTyped(char c, int key) {
 		currentPage.keyPressed(c, key);
 
 		if (mc.gameSettings.keyBindInventory.getKeyCode() == key) {
@@ -190,19 +189,19 @@ public class GuiBook extends GuiScreen {
 	public void addNavButtons() {
 		int numPages = this.currentEntry.getPages().size();
 		if (this.currentPageNum > 0) {
-			this.addButton(new PageTurnButton(this.buttonList.size(), guiLeft, guiTop + HEIGHT - 10, false));
+			this.buttonList.add(new PageTurnButton(this.buttonList.size(), guiLeft, guiTop + HEIGHT - 10, false));
 		}
 		if (this.currentPageNum < numPages - 1) {
-			this.addButton(
+			this.buttonList.add(
 					new PageTurnButton(nextButtonID(), guiLeft + WIDTH - 18, guiTop + HEIGHT - 10, true));
 		}
 		boolean backButton = this.currentEntry != BookManager.categories_entry;
 		boolean histButton = this.history.size() > 0 && this.currentEntry != BookManager.categories_entry;
 		if (backButton) {
-			this.addButton(new BackButton(nextButtonID(), (histButton) ? guiLeft + (WIDTH / 2) - (30 / 2) : guiLeft + (WIDTH / 2) - 8, guiTop + HEIGHT + 0));
+			this.buttonList.add(new BackButton(nextButtonID(), (histButton) ? guiLeft + (WIDTH / 2) - (30 / 2) : guiLeft + (WIDTH / 2) - 8, guiTop + HEIGHT + 0));
 		}
 		if (histButton) {
-			this.addButton(new LastHistoryButton(nextButtonID(), (backButton) ? guiLeft + (WIDTH / 2) + (30 / 2) - 10 : guiLeft + (WIDTH / 2) - 5, guiTop + HEIGHT - 3));
+			this.buttonList.add(new LastHistoryButton(nextButtonID(), (backButton) ? guiLeft + (WIDTH / 2) + (30 / 2) - 10 : guiLeft + (WIDTH / 2) - 5, guiTop + HEIGHT - 3));
 		}
 	}
 
@@ -211,7 +210,6 @@ public class GuiBook extends GuiScreen {
 		return false;
 	}
 
-	@Override
 	public void onResize(Minecraft mcIn, int w, int h) {
 		this.setWorldAndResolution(mcIn, w, h);
 		this.currentPage.onClosed(this);
@@ -219,7 +217,7 @@ public class GuiBook extends GuiScreen {
 	}
 
 	public FontRenderer getFontRenderer() {
-		return this.fontRenderer;
+		return this.fontRendererObj;
 	}
 
 	public List<GuiButton> getButtonList() {
@@ -231,8 +229,8 @@ public class GuiBook extends GuiScreen {
 	}
 
 	public void drawCenteredText(String text, int x, int y, int color) {
-		int cX = x - (this.fontRenderer.getStringWidth(text) / 2);
-		this.fontRenderer.drawString(text, cX, y, color);
+		int cX = x - (this.fontRendererObj.getStringWidth(text) / 2);
+		this.fontRendererObj.drawString(text, cX, y, color);
 	}
 	
 	@Override
@@ -271,11 +269,11 @@ public class GuiBook extends GuiScreen {
 		}
 
 		@Override
-		public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+		public void drawButton(Minecraft mc, int mouseX, int mouseY) {
 			if (this.visible) {
-				boolean flag = mouseX >= this.x && mouseY >= this.y && mouseX < this.x + this.width
-						&& mouseY < this.y + this.height;
-				GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+				boolean flag = mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width
+						&& mouseY < this.yPosition + this.height;
+				GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 				mc.getTextureManager().bindTexture(GuiBook.BOOK_BACKGROUND);
 				int i = 0;
 				int j = 180;
@@ -288,7 +286,7 @@ public class GuiBook extends GuiScreen {
 					j += 10;
 				}
 
-				this.drawTexturedModalRect(this.x, this.y, i, j, 18, 10);
+				this.drawTexturedModalRect(this.xPosition, this.yPosition, i, j, 18, 10);
 			}
 		}
 
@@ -306,11 +304,11 @@ public class GuiBook extends GuiScreen {
 		}
 
 		@Override
-		public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+		public void drawButton(Minecraft mc, int mouseX, int mouseY) {
 			if (this.visible) {
-				boolean flag = mouseX >= this.x && mouseY >= this.y && mouseX < this.x + this.width
-						&& mouseY < this.y + this.height;
-				GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+				boolean flag = mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width
+						&& mouseY < this.yPosition + this.height;
+				GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 				mc.getTextureManager().bindTexture(GuiBook.BOOK_BACKGROUND);
 				int i = 0;
 				int j = 200;
@@ -319,7 +317,7 @@ public class GuiBook extends GuiScreen {
 					i += 16;
 				}
 
-				this.drawTexturedModalRect(this.x, this.y, i, j, 16, 10);
+				this.drawTexturedModalRect(this.xPosition, this.yPosition, i, j, 16, 10);
 			}
 		}
 
@@ -333,11 +331,11 @@ public class GuiBook extends GuiScreen {
 		}
 
 		@Override
-		public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+		public void drawButton(Minecraft mc, int mouseX, int mouseY) {
 			if (this.visible) {
-				boolean flag = mouseX >= this.x && mouseY >= this.y && mouseX < this.x + this.width
-						&& mouseY < this.y + this.height;
-				GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+				boolean flag = mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width
+						&& mouseY < this.yPosition + this.height;
+				GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 				mc.getTextureManager().bindTexture(GuiBook.BOOK_BACKGROUND);
 				int i = 36;
 				int j = 193;
@@ -346,7 +344,7 @@ public class GuiBook extends GuiScreen {
 					i += 10;
 				}
 
-				this.drawTexturedModalRect(this.x, this.y, i, j, 10, 16);
+				this.drawTexturedModalRect(this.xPosition, this.yPosition, i, j, 10, 16);
 			}
 		}
 

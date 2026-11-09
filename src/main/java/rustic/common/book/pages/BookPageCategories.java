@@ -68,14 +68,15 @@ public class BookPageCategories extends BookPage {
 		}
 		
 		@Override
-		public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+		public void drawButton(Minecraft mc, int mouseX, int mouseY) {
+			int x = this.xPosition, y = this.yPosition;
+			FontRenderer fontRenderer = mc.fontRenderer;
 			if (this.visible) {
-				boolean flag = mouseX >= this.x && mouseY >= this.y
-						&& mouseX < this.x + this.width && mouseY < this.y + this.height;
+				boolean flag = mouseX >= this.xPosition && mouseY >= this.yPosition
+						&& mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
 
-				GlStateManager.enableBlend();
-	            GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-	            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+				GL11.glEnable(GL11.GL_BLEND);
+	            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 	            if (flag) {
 	            	ticksHovered++;
 	            	if (ticksHovered % 2 == 0 && frame < 7) {
@@ -83,21 +84,21 @@ public class BookPageCategories extends BookPage {
 	            	}
 	            	String text = StatCollector.translateToLocal(this.displayString);
 	            	int stringWidth = fontRenderer.getStringWidth(text);
-	            	fontRenderer.drawString(text, x + (width / 2) - (stringWidth / 2), y + height, 0x000000);
-	            	GlStateManager.color(44 / 256F, 114 / 256F, 44 / 256F, 1F);
+	            	fontRenderer.drawString(text, xPosition + (width / 2) - (stringWidth / 2), yPosition + height, 0x000000);
+	            	GL11.glColor4f(44 / 256F, 114 / 256F, 44 / 256F, 1F);
 	            } else {
 	            	ticksHovered = 0;
 	            	if (frame > 0) {
 	            		frame--;
 	            	}
-	            	GlStateManager.color(0F, 0F, 0F, 1F);
+	            	GL11.glColor4f(0F, 0F, 0F, 1F);
 	            }
 	            
 				mc.getTextureManager().bindTexture(category.getIcon());
-				Gui.drawModalRectWithCustomSizedTexture(x, y, 0, frame * 32F, 32, 32, 32F, 256F);
+				Gui.func_146110_a(xPosition, yPosition, 0, frame * 32F, 32, 32, 32F, 256F);
 				
-				GlStateManager.color(1F, 1F, 1F, 1F);
-				GlStateManager.disableBlend();
+				GL11.glColor4f(1F, 1F, 1F, 1F);
+				GL11.glDisable(GL11.GL_BLEND);
 			}
 		}
 		

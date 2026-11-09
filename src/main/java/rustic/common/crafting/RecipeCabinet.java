@@ -1,5 +1,8 @@
 package rustic.common.crafting;
 
+import rustic.common.util.FluidHelper;
+import rustic.common.util.RusticUtils;
+
 import net.minecraft.init.Blocks;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.Item;
@@ -10,10 +13,10 @@ import net.minecraft.world.World;
 import net.minecraftforge.oredict.OreDictionary;
 import rustic.common.blocks.ModBlocks;
 
-public class RecipeCabinet extends net.minecraftforge.registries.IForgeRegistryEntry.Impl<IRecipe> implements IRecipe {
+public class RecipeCabinet implements IRecipe {
 	
 	protected boolean hasOre(ItemStack stack, int ore) {
-		if (stack.isEmpty()) return false;
+		if ((stack == null)) return false;
 		
 		int[] oreIds = OreDictionary.getOreIDs(stack);
 		for (int oreId : oreIds) {
@@ -23,19 +26,21 @@ public class RecipeCabinet extends net.minecraftforge.registries.IForgeRegistryE
 	}
 	
 	private boolean isTrapdoor(ItemStack stack) {
+		if (stack == null) return false;
 		Item item = stack.getItem();
-		if (item == Item.getItemFromBlock(Blocks.TRAPDOOR)) return true;
+		if (item == Item.getItemFromBlock(Blocks.trapdoor)) return true;
 		
 		int trapdoorWood = OreDictionary.getOreID("trapdoorWood");
 		return hasOre(stack, trapdoorWood);
 	}
 	
 	protected boolean isWood(ItemStack stack) {
+		if (stack == null) return false;
 		if (hasOre(stack, OreDictionary.getOreID("plankWood"))) return true;
-		if (stack.getItem().getRegistryName().toString().equals("embers:sealed_planks")) return true;
-		if (stack.getItem().getRegistryName().toString().equals("botania:livingwood") && stack.getMetadata() == 1) return true;
-		if (stack.getItem().getRegistryName().toString().equals("botania:dreamwood") && stack.getMetadata() == 1) return true;
-		if (stack.getItem().getRegistryName().toString().equals("astralsorcery:blockinfusedwood") && stack.getMetadata() == 1) return true;
+		if (RusticUtils.getRegistryName(stack.getItem()).equals("embers:sealed_planks")) return true;
+		if (RusticUtils.getRegistryName(stack.getItem()).equals("botania:livingwood") && stack.getItemDamage() == 1) return true;
+		if (RusticUtils.getRegistryName(stack.getItem()).equals("botania:dreamwood") && stack.getItemDamage() == 1) return true;
+		if (RusticUtils.getRegistryName(stack.getItem()).equals("astralsorcery:blockinfusedwood") && stack.getItemDamage() == 1) return true;
 		if (hasOre(stack, OreDictionary.getOreID("plankTreatedWood"))) return true;
 		
 		return false;
@@ -43,7 +48,7 @@ public class RecipeCabinet extends net.minecraftforge.registries.IForgeRegistryE
 	
 	@Override
 	public boolean matches(InventoryCrafting inv, World worldIn) {
-		ItemStack stack = ItemStack.EMPTY;
+		ItemStack stack = null;
 		for (int y = 0; y < 3; y += 2) {
 			for (int x = 0; x < 3; x++) {
 				stack = inv.getStackInRowAndColumn(x, y);
@@ -51,7 +56,7 @@ public class RecipeCabinet extends net.minecraftforge.registries.IForgeRegistryE
 			}
 		}
 		stack = inv.getStackInRowAndColumn(1, 1);
-		if (!stack.isEmpty()) return false;
+		if ((stack != null)) return false;
 
 		//int trapdoorWood = OreDictionary.getOreID("trapdoorWood");
 		ItemStack stack2 = inv.getStackInRowAndColumn(2, 1);
@@ -62,15 +67,16 @@ public class RecipeCabinet extends net.minecraftforge.registries.IForgeRegistryE
 	@Override
 	public ItemStack getCraftingResult(InventoryCrafting inv) {
 		ItemStack result = getRecipeOutput();
-		ItemStack material = ItemStack.EMPTY;
+		ItemStack material = null;
 		
 		for (int i = 0; i < inv.getSizeInventory(); i++) {
+			if (inv.getStackInSlot(i) == null) continue;
 			ItemStack stack = inv.getStackInSlot(i).copy();
-			stack.setCount(1);
+			stack.stackSize = 1;
 			
 			if (isWood(stack)) {
-				if (!material.isEmpty() && !ItemStack.areItemStacksEqual(material, stack)) {
-					material = ItemStack.EMPTY;
+				if ((material != null) && !ItemStack.areItemStacksEqual(material, stack)) {
+					material = null;
 					break;
 				}
 				material = stack;
@@ -78,7 +84,7 @@ public class RecipeCabinet extends net.minecraftforge.registries.IForgeRegistryE
 		}
 		
 		NBTTagCompound tag = new NBTTagCompound();
-		tag.setTag("material", material.serializeNBT());
+		if (material != null) tag.setTag("material", material.writeToNBT(new NBTTagCompound()));
 		result.setTagCompound(tag);
 		
 		return result;
@@ -90,13 +96,9 @@ public class RecipeCabinet extends net.minecraftforge.registries.IForgeRegistryE
 	}
 	
 	@Override
-	public boolean canFit(int width, int height) {
-		return width >= 3 && height >= 3;
+	public int getRecipeSize() {
+		return 9;
 	}
 	
-	@Override
-	public boolean isDynamic() {
-        return true;
-    }
 
 }

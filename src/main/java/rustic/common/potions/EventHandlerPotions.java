@@ -1,54 +1,48 @@
 package rustic.common.potions;
 
-import java.util.ArrayList;
 import java.util.Random;
 
-import net.minecraft.block.material.Material;
-
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayer.SleepResult;
-import net.minecraft.entity.projectile.EntityFireball;
-import net.minecraft.entity.projectile.EntityLargeFireball;
-import net.minecraft.entity.projectile.EntitySmallFireball;
-import net.minecraft.init.Items;
-import net.minecraft.potion.Potion;
-import net.minecraft.init.PotionTypes;
-
-import net.minecraft.item.ItemStack;
-import net.minecraft.potion.PotionEffect;
-import net.minecraft.potion.PotionUtils;
-import net.minecraft.util.DamageSource;
-
-
-
-import net.minecraftforge.event.entity.EntityMountEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.event.entity.living.LivingFallEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.player.AttackEntityEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.block.material.Material;
+import net.minecraft.client.Minecraft;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.projectile.EntityFireball;
+import net.minecraft.entity.projectile.EntityLargeFireball;
+import net.minecraft.entity.projectile.EntitySmallFireball;
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.DamageSource;
+import net.minecraft.util.MathHelper;
+import net.minecraft.util.Vec3;
+import net.minecraftforge.client.event.MouseEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.event.entity.living.LivingFallEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
+import net.minecraftforge.event.entity.player.PlayerUseItemEvent;
 import rustic.common.network.MessageFirePowerAttack;
 import rustic.common.network.PacketHandler;
 
 public class EventHandlerPotions {
 
-	private Random rand = new Random();
+	private final Random rand = new Random();
 
+	/** Drinking water sobers you up a bit. */
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
-	public void onWaterBottleUse(LivingEntityUseItemEvent.Finish event) {
-		EntityLivingBase entity = event.getEntityLiving();
+	public void onWaterBottleUse(PlayerUseItemEvent.Finish event) {
+		EntityLivingBase entity = event.entityLiving;
 		PotionEffect effect = entity.getActivePotionEffect(PotionsRustic.TIPSY);
 		if (effect != null && !entity.worldObj.isRemote) {
-			ItemStack stack = event.getItem();
-			if (stack.getItem() == Items.potionitem && PotionUtils.getPotionFromItem(stack) == PotionTypes.WATER) {
+			ItemStack stack = event.item;
+			if (stack != null && stack.getItem() == Items.potionitem && stack.getItemDamage() == 0) {
 				int duration = effect.getDuration();
 				int amplifier = effect.getAmplifier();
 				if (rand.nextFloat() < 0.1F) {
@@ -56,205 +50,141 @@ public class EventHandlerPotions {
 				} else {
 					duration -= (rand.nextInt(800) + 200);
 				}
-				entity.removePotionEffect(PotionsRustic.TIPSY);
+				entity.removePotionEffect(PotionsRustic.TIPSY.id);
 				if (amplifier >= 0 && duration > 0) {
-					entity.addPotionEffect(new PotionEffect(PotionsRustic.TIPSY.id, duration, amplifier, false, false));
+					entity.addPotionEffect(new PotionEffect(PotionsRustic.TIPSY.id, duration, amplifier, false));
 				}
 			}
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onJumpEvent(LivingEvent.LivingJumpEvent event) {
-		if (event.getEntityLiving() == null) return;
-		
-		EntityLivingBase entity = event.getEntityLiving();
-		if (entity.getActivePotionEffect(PotionsRustic.FULLMETAL_POTION) != null) {
-			entity.motionY = 0;
+		if (event.entityLiving != null && event.entityLiving.isPotionActive(PotionsRustic.FULLMETAL_POTION)) {
+			event.entityLiving.motionY = 0;
 		}
 	}
-	
-	@SubscribeEvent
-	public void onMountEvent(EntityMountEvent event) {
-		if (!event.isMounting()) return;
-		if ((event.getEntityMounting() == null) || !(event.getEntityMounting() instanceof EntityLivingBase)) return;
-		if ((event.getEntityBeingMounted() == null) || !(event.getEntityBeingMounted() instanceof EntityLivingBase)) return;
-		EntityLivingBase top = (EntityLivingBase) event.getEntityMounting();
-		//EntityLivingBase bottom = (EntityLivingBase) event.getEntityBeingMounted();
-		
-		if (top.getActivePotionEffect(PotionsRustic.FULLMETAL_POTION) != null) {
-			event.setCanceled(true);
-		}
-	}
-	
+
 	@SubscribeEvent
 	public void onSleepEvent(PlayerSleepInBedEvent event) {
-		if ((event.getEntityPlayer() != null) && (event.getEntityPlayer().getActivePotionEffect(PotionsRustic.FULLMETAL_POTION) != null)) {
-			event.setResult(SleepResult.OTHER_PROBLEM);
+		if (event.entityPlayer != null && event.entityPlayer.isPotionActive(PotionsRustic.FULLMETAL_POTION)) {
+			event.result = EntityPlayer.EnumStatus.OTHER_PROBLEM;
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onFallEvent(LivingFallEvent event) {
-		EntityLivingBase entity = event.getEntityLiving();
-		float d = event.getDistance();
-		if (entity.isPotionActive(PotionsRustic.FULLMETAL_POTION) && (d >= 0.6F) && !entity.isInWater() && !entity.isInLava()) {
-			entity.playSound(SoundEvents.BLOCK_ANVIL_LAND, 1.0F, 1.0F);
-			
-			// TODO: damage anything fallen on?
+		EntityLivingBase entity = event.entityLiving;
+		if (entity.isPotionActive(PotionsRustic.FULLMETAL_POTION) && event.distance >= 0.6F && !entity.isInWater()
+				&& !entity.handleLavaMovement()) {
+			entity.playSound("random.anvil_land", 1.0F, 1.0F);
 		}
 	}
-	
+
+	/** Left click (on anything) with fire power shoots a fireball. */
 	@SubscribeEvent
 	@SideOnly(Side.CLIENT)
-	public void onPlayerAttack(PlayerInteractEvent event) {
-		if (!event.getEntityPlayer().isPotionActive(PotionsRustic.FIRE_POWER_POTION)) return;
-		
-		boolean leftClick = false;
-		if (event instanceof PlayerInteractEvent.LeftClickEmpty) {
-			leftClick = true;
-		} else if (event instanceof PlayerInteractEvent.LeftClickBlock) {
-			leftClick = true;
-		}
-		
-		EntityPlayer p = event.getEntityPlayer();
-		if (leftClick && !p.isSwingInProgress && !p.isSneaking()) {
-			PacketHandler.INSTANCE.sendToServer(new MessageFirePowerAttack());
-		}
-	}
-	
-	@SubscribeEvent
-	@SideOnly(Side.CLIENT)
-	public void onPlayerAttack(AttackEntityEvent event) {
-		if (!event.getEntityPlayer().isPotionActive(PotionsRustic.FIRE_POWER_POTION)) return;
-		
-		EntityPlayer p = event.getEntityPlayer();
-		
-		System.out.println(p.isSwingInProgress);
-		
-		
+	public void onMouse(MouseEvent event) {
+		if (event.button != 0 || !event.buttonstate) return;
+		EntityPlayer p = Minecraft.getMinecraft().thePlayer;
+		if (p == null || Minecraft.getMinecraft().currentScreen != null) return;
+		if (!p.isPotionActive(PotionsRustic.FIRE_POWER_POTION)) return;
 		if (!p.isSwingInProgress && !p.isSneaking()) {
 			PacketHandler.INSTANCE.sendToServer(new MessageFirePowerAttack());
 		}
 	}
-	
-	
+
+	@SubscribeEvent
+	public void onPlayerAttack(AttackEntityEvent event) {
+		// handled by onMouse on the client
+	}
+
 	public static void doFirePowerAttack(EntityPlayer p) {
-		if (p == null) return;
-		if (p.world.isRemote) return;
-		
+		if (p == null || p.worldObj.isRemote) return;
 		PotionEffect effect = p.getActivePotionEffect(PotionsRustic.FIRE_POWER_POTION);
 		if (effect == null) return;
-		
-		
-		if (p.world.getBlockState(new BlockPos(p.posX, p.posY + p.getEyeHeight(), p.posZ)).getMaterial() == Material.water) {
-        	return;
-		}
-		
-		double f = 0.005;
-		
-		double d1 = p.getLookVec().x * 40d;
-        double d2 = p.getLookVec().y * 40d;
-        double d3 = p.getLookVec().z * 40d;
-		
-        EntityFireball fb;
-        if (effect.getAmplifier() > 0) {
-        	fb = new EntityLargeFireball(p.world, p, d1 + p.getRNG().nextGaussian() * (double) f, d2, d3 + p.getRNG().nextGaussian() * (double) f);
-        	((EntityLargeFireball) fb).explosionPower = effect.getAmplifier();
-        } else {
-        	fb = new EntitySmallFireball(p.world, p, d1 + p.getRNG().nextGaussian() * (double) f, d2, d3 + p.getRNG().nextGaussian() * (double) f);
-        }
-        fb.posY = p.posY + (double) (p.getEyeHeight());
-        
-        //double h = Math.sqrt((p.getLookVec().x * p.getLookVec().x) + (p.getLookVec().z * p.getLookVec().z) + (p.getLookVec().y * p.getLookVec().y));
-        fb.posX += p.getLookVec().x * 1.0;
-        fb.posZ += p.getLookVec().z * 1.0;
-        fb.posY += p.getLookVec().y * 1.0;
-        
-        fb.motionX += p.motionX;
-        fb.motionZ += p.motionZ;
-        if (!p.onGround) {
-        	fb.motionY += p.motionY;
-        }
-        
-        fb.setPosition(fb.posX,  fb.posY,  fb.posZ);
-        
-        if ((fb.getEntityBoundingBox() != null) && p.world.checkBlockCollision(fb.getEntityBoundingBox().grow(0.001, 0.001, 0.001))) {
-        	return;
-        }
-        
-        p.world.playSound((EntityPlayer) null, p.posX + p.getLookVec().x, p.posY + p.getEyeHeight() + p.getLookVec().y, p.posZ + p.getLookVec().z,
-				SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.NEUTRAL, 1.0F,
-				0.4F / (p.getRNG().nextFloat() * 0.4F + 1.2F));
-        
-        p.world.spawnEntity(fb);
-	}
-	
+		int ex = MathHelper.floor_double(p.posX), ey = MathHelper.floor_double(p.posY + p.getEyeHeight()), ez = MathHelper.floor_double(p.posZ);
+		if (p.worldObj.getBlock(ex, ey, ez).getMaterial() == Material.water) return;
 
-	// FULL, MAGIC RESISTANCE, WITHER WARD
-	@SubscribeEvent
-	public void onEntityDamage(LivingHurtEvent event) {
-		DamageSource source = event.getSource();
-		EntityLivingBase entity = event.getEntityLiving();
-		
-		if (entity.isPotionActive(PotionsRustic.FULLMETAL_POTION) && (source != DamageSource.OUT_OF_WORLD) && !source.canHarmInCreative()) {
-			event.setAmount(0);
+		double f = 0.005;
+		Vec3 look = p.getLookVec();
+		double d1 = look.xCoord * 40d;
+		double d2 = look.yCoord * 40d;
+		double d3 = look.zCoord * 40d;
+		EntityFireball fb;
+		if (effect.getAmplifier() > 0) {
+			fb = new EntityLargeFireball(p.worldObj, p, d1 + p.getRNG().nextGaussian() * f, d2, d3 + p.getRNG().nextGaussian() * f);
+			((EntityLargeFireball) fb).field_92057_e = effect.getAmplifier();
+		} else {
+			fb = new EntitySmallFireball(p.worldObj, p, d1 + p.getRNG().nextGaussian() * f, d2, d3 + p.getRNG().nextGaussian() * f);
+		}
+		fb.posY = p.posY + p.getEyeHeight();
+		fb.posX += look.xCoord;
+		fb.posZ += look.zCoord;
+		fb.posY += look.yCoord;
+		fb.motionX += p.motionX;
+		fb.motionZ += p.motionZ;
+		if (!p.onGround) fb.motionY += p.motionY;
+		fb.setPosition(fb.posX, fb.posY, fb.posZ);
+		if (fb.boundingBox != null && p.worldObj.checkBlockCollision(fb.boundingBox.expand(0.001, 0.001, 0.001))) {
 			return;
 		}
-		
-		if (source == DamageSource.STARVE) {
+		p.worldObj.playSoundEffect(p.posX + look.xCoord, p.posY + p.getEyeHeight() + look.yCoord, p.posZ + look.zCoord,
+				"mob.ghast.fireball", 1.0F, 0.4F / (p.getRNG().nextFloat() * 0.4F + 1.2F));
+		p.worldObj.spawnEntityInWorld(fb);
+	}
+
+	// FULLMETAL, IRON SKIN, FULL, MAGIC RESISTANCE, WITHER WARD
+	@SubscribeEvent
+	public void onEntityDamage(LivingHurtEvent event) {
+		DamageSource source = event.source;
+		EntityLivingBase entity = event.entityLiving;
+		if (entity.isPotionActive(PotionsRustic.FULLMETAL_POTION) && source != DamageSource.outOfWorld && !source.canHarmInCreative()) {
+			event.ammount = 0;
+			return;
+		}
+		PotionEffect ironSkin = entity.getActivePotionEffect(PotionsRustic.IRON_SKIN_POTION);
+		if (ironSkin != null && !source.isUnblockable()) {
+			// 1.12 gave +3 armor per level; each armor point blocks 4% of the damage
+			float reduction = Math.min(0.12F * (ironSkin.getAmplifier() + 1), 0.8F);
+			event.ammount *= 1F - reduction;
+		}
+		if (source == DamageSource.starve) {
 			PotionEffect effect = entity.getActivePotionEffect(PotionsRustic.FULL_POTION);
 			if (effect != null) {
-				float newAmount = Math.max(event.getAmount() - (effect.getAmplifier() + 1), 0);
-				event.setAmount(newAmount);
+				event.ammount = Math.max(event.ammount - (effect.getAmplifier() + 1), 0);
 			}
-		} else if (source == DamageSource.MAGIC) {
+		} else if (source == DamageSource.magic) {
 			PotionEffect effect = entity.getActivePotionEffect(PotionsRustic.MAGIC_RESISTANCE_POTION);
 			if (effect != null) {
-				float newAmount = event.getAmount() / (2F * (effect.getAmplifier() + 1F));
-				event.setAmount(newAmount);
+				event.ammount /= (2F * (effect.getAmplifier() + 1F));
 			}
-		} else if (source == DamageSource.WITHER) {
+		} else if (source == DamageSource.wither) {
 			PotionEffect effect = entity.getActivePotionEffect(PotionsRustic.WITHER_WARD_POTION);
 			if (effect != null) {
-				float newAmount = event.getAmount() / (2F * (effect.getAmplifier() + 1F));
-				event.setAmount(newAmount);
+				event.ammount /= (2F * (effect.getAmplifier() + 1F));
 			}
 		}
 	}
-	
-	
+
 	// UNDYING
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onEntityDeath(LivingDeathEvent event) {
-		if (event.getSource().canHarmInCreative()) return;
-		if (!(event.getEntityLiving() instanceof EntityPlayer)) return; // TODO: enable for non-players?
-		
-		EntityPlayer p = (EntityPlayer) event.getEntityLiving();
-		
+		if (event.source.canHarmInCreative()) return;
+		if (!(event.entityLiving instanceof EntityPlayer)) return;
+		EntityPlayer p = (EntityPlayer) event.entityLiving;
 		PotionEffect effect = p.getActivePotionEffect(PotionsRustic.UNDYING_POTION);
 		if (effect == null) return;
-		
-		p.removePotionEffect(PotionsRustic.UNDYING_POTION);
-		
+		p.removePotionEffect(PotionsRustic.UNDYING_POTION.id);
 		p.setHealth(1.0F);
-        p.clearActivePotions();
-        p.addPotionEffect(new PotionEffect(Potion.regeneration.id, 900, 1));
-        p.addPotionEffect(new PotionEffect(Potion.field_76444_x.id, 100, 1));
-        p.world.setEntityState(p, (byte) 35);
-        
-        if (effect.getAmplifier() > 0) {
-			p.addPotionEffect(new PotionEffect(
-					PotionsRustic.UNDYING_POTION,
-					effect.getDuration(),
-					effect.getAmplifier() - 1,
-					effect.getIsAmbient(),
-					effect.doesShowParticles()
-			));
+		p.clearActivePotions();
+		p.addPotionEffect(new PotionEffect(Potion.regeneration.id, 900, 1));
+		p.addPotionEffect(new PotionEffect(Potion.field_76444_x.id, 100, 1));
+		if (effect.getAmplifier() > 0) {
+			p.addPotionEffect(new PotionEffect(PotionsRustic.UNDYING_POTION.id, effect.getDuration(),
+					effect.getAmplifier() - 1, effect.getIsAmbient()));
 		}
-		
 		event.setCanceled(true);
 	}
-	
 
 }

@@ -1,203 +1,69 @@
 package rustic.common.blocks.fluids;
 
-
-import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
-
-
-import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
-
-
-
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
-
-import net.minecraftforge.fluids.BlockFluidBase;
-import net.minecraftforge.fluids.BlockFluidClassic;
-import net.minecraftforge.fluids.Fluid;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
+import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.init.Blocks;
+import net.minecraft.util.IIcon;
+import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.World;
+import net.minecraftforge.fluids.BlockFluidBase;
+import net.minecraftforge.fluids.BlockFluidClassic;
+import net.minecraftforge.fluids.Fluid;
 import rustic.core.Rustic;
 
 public class BlockFluidRustic extends BlockFluidClassic {
 
 	public BlockFluidRustic(String name, Fluid fluid, Material material) {
 		super(fluid, material);
-		setRegistryName(name);
-		setUnlocalizedName(Rustic.MODID + "." + name);
-		GameRegistry.findRegistry(Block.class).register(this);
-		GameRegistry.findRegistry(Item.class).register(new ItemBlock(this).setRegistryName(getRegistryName()));
+		setBlockName(Rustic.MODID + "." + name);
+		GameRegistry.registerBlock(this, name);
 		fluid.setBlock(this);
 	}
 
 	@Override
-	public boolean isOpaqueCube(IBlockState state) {
-		return false;
-	}
-
-	@Override
-	public boolean isFullCube(IBlockState state) {
-		return false;
-	}
-
-	@Override
-	public EnumBlockRenderType getRenderType(IBlockState state) {
-		return EnumBlockRenderType.MODEL;
-	}
-
 	@SideOnly(Side.CLIENT)
-	public void initModel() {
-		Item item = Item.getItemFromBlock(this);
-
-		FluidStateMapper stateMapper = new FluidStateMapper(this.stack.getFluid());
-
-		//final ModelResourceLocation modelResourceLocation = new ModelResourceLocation(Rustic.MODID + ":block_fluid", stack.getFluid().getName());
-
-		ModelLoader.registerItemVariants(item);
-		ModelLoader.setCustomMeshDefinition(item, stateMapper);
-
-		ModelLoader.setCustomStateMapper(this, stateMapper);
+	public void registerBlockIcons(IIconRegister register) {
+		if (getFluid() instanceof FluidRustic) {
+			((FluidRustic) getFluid()).registerIcons(register);
+		}
 	}
 
 	@Override
-	public IBlockState getStateFromMeta(int meta) {
-		return getBlockState().getBaseState().withProperty(LEVEL, meta);
+	@SideOnly(Side.CLIENT)
+	public IIcon getIcon(int side, int meta) {
+		Fluid fluid = getFluid();
+		return (side == 0 || side == 1) ? fluid.getStillIcon() : fluid.getFlowingIcon();
 	}
 
 	@Override
-	public boolean shouldSideBeRendered(@Nonnull IBlockState state, @Nonnull IBlockAccess world, @Nonnull BlockPos pos,
-			@Nonnull EnumFacing side) {
-		IBlockState neighbor = world.getBlockState(pos.offset(side));
-		if (neighbor.getBlock() != state.getBlock()) {
-			return true;
-		} else {
-			return false;
-		}
-		/*
-		 * if (densityDir == -1 && side == EnumFacing.UP) { return true; } if
-		 * (densityDir == 1 && side == EnumFacing.DOWN) { return true; } return
-		 * super.shouldSideBeRendered(state, world, pos, side);
-		 */
+	@SideOnly(Side.CLIENT)
+	public boolean shouldSideBeRendered(IBlockAccess world, int x, int y, int z, int side) {
+		Block neighbor = world.getBlock(x, y, z);
+		return neighbor != this && super.shouldSideBeRendered(world, x, y, z, side);
 	}
 
 	@Override
-	protected boolean canFlowInto(IBlockAccess world, BlockPos pos) {
-		if (world.isAirBlock(pos)) {
-			return true;
-		}
-
-		IBlockState state = world.getBlockState(pos);
-		if (state.getBlock() == this) {
-			return true;
-		}
-
-		if (displacements.containsKey(state.getBlock())) {
-			return displacements.get(state.getBlock());
-		}
-
-		Material material = state.getMaterial();
-		if (material.blocksMovement() || material == Material.water || material == Material.lava
-				|| material == Material.portal) {
-			return false;
-		}
-
-		if (state.getBlock() instanceof BlockFluidBase) {
-			return false;
-		}
-
-		int density = getDensity(world, pos);
-		if (density == Integer.MAX_VALUE) {
-			return true;
-		}
-
-		if (this.density > density) {
-			return true;
-		} else {
-			return false;
-		}
-
+	public boolean canDisplace(IBlockAccess world, int x, int y, int z) {
+		Block block = world.getBlock(x, y, z);
+		if (block.getMaterial().isLiquid()) return false;
+		return super.canDisplace(world, x, y, z);
 	}
 
 	@Override
-	public float getFluidHeightAverage(float... flow) {
-		float total = 0;
-		int count = 0;
-
-		float end = 0;
-
-		for (int i = 0; i < flow.length; i++) {
-			if (flow[i] >= 1) {
-				return 1;
-			}
-			if (flow[i] >= 14f / 16) {
-				total += flow[i] * 10;
-				count += 10;
-			}
-
-			if (flow[i] >= 0) {
-				total += flow[i];
-				count++;
-			}
+	public boolean displaceIfPossible(World world, int x, int y, int z) {
+		Block block = world.getBlock(x, y, z);
+		if (block == this) return false;
+		if (block instanceof BlockFluidBase && world.getBlockMetadata(x, y, z) == 0) return false;
+		if (block.getMaterial().isLiquid()) return false;
+		if (block == Blocks.snow_layer) {
+			world.setBlockToAir(x, y, z);
+			return true;
 		}
-
-		if (end == 0) {
-			end = total / count;
-		}
-
-		return end;
+		return super.displaceIfPossible(world, x, y, z);
 	}
-
-	@Override
-	public boolean displaceIfPossible(World world, BlockPos pos) {
-		if (world.isAirBlock(pos)) {
-			return true;
-		}
-
-		IBlockState state = world.getBlockState(pos);
-		Block block = state.getBlock();
-		if (block == this) {
-			return false;
-		}
-
-		if (block instanceof BlockFluidBase) {
-			if (state.getValue(LEVEL) == 0) {
-				return false;
-			}
-		}
-
-		if (displacements.containsKey(block)) {
-			if (displacements.get(block)) {
-				if (state.getBlock() != Blocks.snow_layer)
-					block.dropBlockAsItem(world, pos, state, 0);
-				return true;
-			}
-			return false;
-		}
-
-		Material material = state.getMaterial();
-		if (material.blocksMovement() || material == Material.portal) {
-			return false;
-		}
-
-		int density = getDensity(world, pos);
-		if (density == Integer.MAX_VALUE) {
-			block.dropBlockAsItem(world, pos, state, 0);
-			return true;
-		}
-
-		if (this.density > density) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-	
-	@Override
-	public BlockFaceShape getBlockFaceShape(IBlockAccess world, IBlockState state, BlockPos pos, EnumFacing side) {
-        return BlockFaceShape.UNDEFINED;
-    }
 
 }

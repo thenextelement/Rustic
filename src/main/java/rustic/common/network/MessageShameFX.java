@@ -74,7 +74,7 @@ public class MessageShameFX implements IMessage {
 		@Override
 		public IMessage onMessage(final MessageShameFX message, final MessageContext ctx) {
 			// Minecraft.getMinecraft().addScheduledTask(() -> {
-			World world = Minecraft.getMinecraft().world;
+			World world = Minecraft.getMinecraft().theWorld;
 			if (world.isRemote) {
 				for (int i = 0; i < message.num; i++) {
 					double x = message.x + message.xVel;
@@ -98,7 +98,7 @@ public class MessageShameFX implements IMessage {
 						x += message.width * 0.5;
 						break;
 					}
-					world.spawnParticle(EnumParticleTypes.ITEM_CRACK, true, x, y, z, message.xVel, message.yVel, message.zVel, Item.getIdFromItem(ModItems.TOMATO));
+					world.spawnParticle("iconcrack_" + Item.getIdFromItem(ModItems.TOMATO), x, y, z, message.xVel, message.yVel, message.zVel);
 				}
 			}
 			// });

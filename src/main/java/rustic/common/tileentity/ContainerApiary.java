@@ -1,17 +1,15 @@
 package rustic.common.tileentity;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import rustic.common.util.ItemStackHandlerRustic;
+import rustic.common.util.SlotHandler;
+
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.SlotItemHandler;
+
 import rustic.common.items.ModItems;
 
 public class ContainerApiary extends Container {
@@ -45,26 +43,25 @@ public class ContainerApiary extends Container {
 	}
 
 	private void addOwnSlots() {
-		IItemHandler itemHandler = this.te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
-		addSlotToContainer(new SlotItemHandler(itemHandler, 0, 80, 26) {
+		ItemStackHandlerRustic itemHandler = this.te.getBeeHandler();
+		addSlotToContainer(new SlotHandler(itemHandler, 0, 80, 26) {
 			@Override
-			public boolean isItemValid(@Nonnull ItemStack stack) {
+			public boolean isItemValid(ItemStack stack) {
 				return super.isItemValid(stack) && stack.getItem().equals(ModItems.BEE);
 			}
 		});
-		itemHandler = this.te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, EnumFacing.DOWN);
-		addSlotToContainer(new SlotItemHandler(itemHandler, 0, 80, 44) {
+		itemHandler = this.te.getHoneycombHandler();
+		addSlotToContainer(new SlotHandler(itemHandler, 0, 80, 44) {
 			@Override
-			public boolean isItemValid(@Nonnull ItemStack stack) {
+			public boolean isItemValid(ItemStack stack) {
 				return super.isItemValid(stack) && stack.getItem().equals(ModItems.HONEYCOMB);
 			}
 		});
 	}
 
-	@Nullable
-	@Override
+		@Override
 	public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
-		ItemStack itemstack = ItemStack.EMPTY;
+		ItemStack itemstack = null;
         Slot slot = (Slot)this.inventorySlots.get(index);
         
         if (slot != null && slot.getHasStack())
@@ -73,40 +70,40 @@ public class ContainerApiary extends Container {
             itemstack = itemstack1.copy();
             if (index < 2) {
                 if (!this.mergeItemStack(itemstack1, 2, 38, true)) {
-                    return ItemStack.EMPTY;
+                    return null;
                 }
                 slot.onSlotChange(itemstack1, itemstack);
             } else if (index != 1 && index != 0) {
                 if (itemstack1.getItem().equals(ModItems.BEE)) {
                     if (!this.mergeItemStack(itemstack1, 0, 1, false)) {
-                        return ItemStack.EMPTY;
+                        return null;
                     }
                 } else if (itemstack1.getItem().equals(ModItems.HONEYCOMB)) {
                     if (!this.mergeItemStack(itemstack1, 1, 2, false)) {
-                        return ItemStack.EMPTY;
+                        return null;
                     }
                 } else if (index >= 2 && index < 29) {
                     if (!this.mergeItemStack(itemstack1, 29, 38, false)) {
-                        return ItemStack.EMPTY;
+                        return null;
                     }
                 } else if (index >= 29 && index < 38 && !this.mergeItemStack(itemstack1, 2, 29, false)) {
-                    return ItemStack.EMPTY;
+                    return null;
                 }
             } else if (!this.mergeItemStack(itemstack1, 2, 38, false)) {
-                return ItemStack.EMPTY;
+                return null;
             }
             
-            if (itemstack1.isEmpty()) {
-                slot.putStack(ItemStack.EMPTY);
+            if ((itemstack1 == null || itemstack1.stackSize <= 0)) {
+                slot.putStack(null);
             } else {
                 slot.onSlotChanged();
             }
 
-            if (itemstack1.getCount() == itemstack.getCount()) {
-                return ItemStack.EMPTY;
+            if (itemstack1.stackSize == itemstack.stackSize) {
+                return null;
             }
 
-            slot.onTake(playerIn, itemstack1);
+            slot.onPickupFromSlot(playerIn, itemstack1);
         }
         
 		return itemstack;

@@ -1,103 +1,40 @@
 package rustic.common.tileentity;
 
-
-
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemBucket;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
-
-
-
 import net.minecraft.world.World;
-import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.UniversalBucket;
-
-
 import rustic.common.blocks.ModBlocks;
+import rustic.common.util.FluidHelper;
 
-public class TileEntityLiquidBarrel extends TileFluidHandler {
+public class TileEntityLiquidBarrel extends TileEntityFluidBase {
 
-	public static int capacity = Fluid.BUCKET_VOLUME * 16;
+	public static int capacity = FluidContainerRegistry.BUCKET_VOLUME * 16;
 	public static final int MAX_TEMP = 573;
 
 	public TileEntityLiquidBarrel() {
-		super();
-		tank = new FluidTank(capacity) {
-			@Override
-			protected void onContentsChanged() {
-				markDirty();
-				getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos), 2);
-			}
-		};
-		tank.setTileEntity(this);
-		tank.setCanFill(true);
-		tank.setCanDrain(true);
+		super(capacity);
 	}
 
-	@Override
-	public NBTTagCompound getUpdateTag() {
-		return writeToNBT(new NBTTagCompound());
-	}
-
-	@Nullable
-	@Override
-	public SPacketUpdateTileEntity getUpdatePacket() {
-		return new SPacketUpdateTileEntity(getPos(), 0, getUpdateTag());
-	}
-
-	@Override
-	public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-		readFromNBT(pkt.getNbtCompound());
-	}
-
-	public int getCapacity() {
-		return tank.getCapacity();
-	}
-
-	public int getAmount() {
-		return tank.getFluidAmount();
-	}
-
-	public FluidTank getTank() {
-		return tank;
-	}
-
-	public Fluid getFluid() {
-		if (tank.getFluid() != null) {
-			return tank.getFluid().getFluid();
-		}
-		return null;
-	}
-
-	public boolean activate(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ) {
-		ItemStack heldItem = player.getHeldItem(hand);
-		if (heldItem != null) {
-			if (FluidUtil.getFluidHandler(heldItem) != null || heldItem.getItem() instanceof ItemBucket || heldItem.getItem() instanceof UniversalBucket) {
-				FluidStack f = FluidUtil.getFluidContained(heldItem);
-				if ((f != null && !f.getFluid().isGaseous() && !(f.getFluid().getTemperature() > MAX_TEMP)) || f == null) {
-					boolean didFill = FluidUtil.interactWithFluidHandler(player, hand, this.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, side));
-					if (didFill) {
-						this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
-						getWorld().notifyBlockUpdate(pos, state, state, 3);
-						this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-						this.markDirty();
-					}
+	public boolean activate(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY,
+			float hitZ) {
+		ItemStack heldItem = player.getCurrentEquippedItem();
+		if (heldItem != null && FluidHelper.isFluidContainer(heldItem)) {
+			FluidStack f = FluidHelper.getFluidContained(heldItem);
+			if (f == null || (!f.getFluid().isGaseous(f) && f.getFluid().getTemperature(f) <= MAX_TEMP)) {
+				if (!world.isRemote && FluidHelper.interactWithTank(player, tank)) {
+					sync();
 				}
-				return true;
 			}
+			return true;
 		}
 		return false;
 	}
 
-	public void breakBlock(World world, BlockPos pos, IBlockState state, EntityPlayer player) {
-		this.invalidate();
+	public void breakBlock(World world, int x, int y, int z, EntityPlayer player) {
 		if (!world.isRemote && !player.capabilities.isCreativeMode) {
 			ItemStack toDrop = new ItemStack(ModBlocks.LIQUID_BARREL, 1);
 			if (getTank().getFluidAmount() > 0) {
@@ -105,32 +42,9 @@ public class TileEntityLiquidBarrel extends TileFluidHandler {
 				getTank().writeToNBT(tag);
 				toDrop.setTagCompound(tag);
 			}
-			world.spawnEntity(new EntityItem(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, toDrop));
+			world.spawnEntityInWorld(new EntityItem(world, x + 0.5, y + 0.5, z + 0.5, toDrop));
 		}
-		world.setTileEntity(pos, null);
+		tank.setFluid(null);
 	}
-
-	@Override
-	public boolean receiveClientEvent(int id, int type) {
-		if (id == 1) {
-			getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos), 3);
-			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-			this.markDirty();
-			return true;
-		} else {
-			return super.receiveClientEvent(id, type);
-		}
-	}
-	/*
-	 * public boolean dirty = false;
-	 * 
-	 * @Override public void markForUpdate(){ dirty = true; }
-	 * 
-	 * @Override public boolean needsUpdate(){ return dirty; }
-	 * 
-	 * @Override public void clean(){ dirty = false; }
-	 * 
-	 * @Override public void markDirty(){ markForUpdate(); super.markDirty(); }
-	 */
 
 }

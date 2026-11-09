@@ -11,7 +11,7 @@ public class BookEntry {
 	private final String name;
 	private List<BookPage> pages = new ArrayList<BookPage>();
 	private final BookCategory category;
-	private ItemStack icon = ItemStack.EMPTY;
+	private ItemStack icon = null;
 	
 	public BookEntry(String name, BookCategory category) {
 		this.name = "book." + Rustic.MODID + ".entry." + name;

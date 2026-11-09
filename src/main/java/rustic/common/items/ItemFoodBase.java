@@ -1,27 +1,31 @@
 package rustic.common.items;
 
-
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemFood;
-
 import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.item.ItemFood;
 import rustic.core.Rustic;
 
 public class ItemFoodBase extends ItemFood {
-	
+
+	protected final String name;
+
 	public ItemFoodBase(String name, int hunger, float saturation, boolean wolfFood) {
 		super(hunger, saturation, wolfFood);
-		setRegistryName(name);
+		this.name = name;
 		setUnlocalizedName(Rustic.MODID + "." + name);
 		setCreativeTab(Rustic.farmingTab);
-		GameRegistry.findRegistry(Item.class).register(this);
+		GameRegistry.registerItem(this, name);
 		initFood();
 	}
-	
+
 	public void initFood() {}
-	
-	public void initModel() {
-		ModelLoader.setCustomModelResourceLocation(this, 0, new ModelResourceLocation(getRegistryName().toString()));
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public void registerIcons(IIconRegister register) {
+		itemIcon = register.registerIcon(ItemBase.iconFor(name));
 	}
 
 }

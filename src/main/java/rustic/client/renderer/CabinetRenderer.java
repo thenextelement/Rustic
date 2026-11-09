@@ -1,12 +1,15 @@
 package rustic.client.renderer;
 
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.tileentity.TileEntityItemStackRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.client.IItemRenderer;
+import net.minecraftforge.common.util.ForgeDirection;
 import rustic.client.models.ModelCabinet;
 import rustic.client.models.ModelCabinetDouble;
 import rustic.client.util.ItemColorCache;
@@ -14,144 +17,110 @@ import rustic.common.blocks.BlockCabinet;
 import rustic.common.blocks.ModBlocks;
 import rustic.common.tileentity.TileEntityCabinet;
 
-public class CabinetRenderer extends TileEntitySpecialRenderer<TileEntityCabinet> {
+public class CabinetRenderer extends TileEntitySpecialRenderer {
 
 	protected static final ResourceLocation TEXTURE_NORMAL = new ResourceLocation("rustic:textures/models/cabinet.png");
 	protected static final ResourceLocation TEXTURE_DOUBLE = new ResourceLocation("rustic:textures/models/cabinet_double.png");
 	protected static final ResourceLocation TEXTURE_NORMAL_COLOR = new ResourceLocation("rustic:textures/models/cabinet_color.png");
 	protected static final ResourceLocation TEXTURE_DOUBLE_COLOR = new ResourceLocation("rustic:textures/models/cabinet_double_color.png");
+
 	protected final ModelCabinet simpleCabinet = new ModelCabinet(false);
 	protected final ModelCabinet simpleCabinetM = new ModelCabinet(true);
 	protected final ModelCabinetDouble doubleCabinet = new ModelCabinetDouble(false);
 	protected final ModelCabinetDouble doubleCabinetM = new ModelCabinetDouble(true);
 
-	@Override
-	public void render(TileEntityCabinet te, double x, double y, double z, float partialTicks,
-			int destroyStage, float alpha) {
-		GlStateManager.enableDepth();
-		GlStateManager.depthFunc(515);
-		GlStateManager.depthMask(true);
-
-		if (te.hasWorld() && te.getWorld().getBlockState(te.getPos()).getBlock() == ModBlocks.CABINET && !te.getWorld().getBlockState(te.getPos()).getValue(BlockCabinet.TOP)) {
-
-			ModelBase modelcabinet;
-			
-			ItemStack material = te.material;
-			
-			boolean mirror = te.getWorld().getBlockState(te.getPos()).getValue(BlockCabinet.MIRROR);
-			boolean renderDouble = te.getWorld().getBlockState(te.getPos()).getActualState(te.getWorld(), te.getPos()).getValue(BlockCabinet.BOTTOM);
-			boolean useColoredTexture = material.isEmpty();
-			
-			modelcabinet = simpleCabinet;
-			this.bindTexture(useColoredTexture ? TEXTURE_NORMAL_COLOR : TEXTURE_NORMAL);
-			
-			if (mirror) {
-				modelcabinet = simpleCabinetM;
-			}
-
-			if (renderDouble) {
-				modelcabinet = doubleCabinet;
-				this.bindTexture(useColoredTexture ? TEXTURE_DOUBLE_COLOR : TEXTURE_DOUBLE);
-				if (mirror) {
-					modelcabinet = doubleCabinetM;
-				}
-			}
-
-			GlStateManager.pushMatrix();
-			GlStateManager.enableRescaleNormal();
-			if (!useColoredTexture) {
-				 int color = ItemColorCache.INSTANCE.getColor(material);
-				 float r = ((color >> 16) & 0xFF) / 255f;
-				 float g = ((color >> 8) & 0xFF) / 255f;
-				 float b = ((color) & 0xFF) / 255f;
-				 GlStateManager.color(r, g, b, alpha);
-			} else {
-				GlStateManager.color(1F, 1F, 1F, alpha);
-			}
-			GlStateManager.translate((float) x, (float) y + 1.0F, (float) z + 1.0F);
-			GlStateManager.scale(1.0F, -1.0F, -1.0F);
-
-			int rotation = 0;
-
-			switch (te.getWorld().getBlockState(te.getPos()).getValue(BlockCabinet.FACING)) {
-			case WEST:
-				rotation = 90;
-				break;
-			case NORTH:
-				rotation = 180;
-				break;
-			case EAST:
-				rotation = 270;
-				break;
-			default:
-				break;
-			}
-			
-			GlStateManager.translate(0.5F, 0.5F, 0.5F);		
-			GlStateManager.rotate((float) rotation, 0.0F, 1.0F, 0.0F);
-			GlStateManager.translate(-0.5F, -0.5F, -0.5F);
-
-			float f = te.prevLidAngle + (te.lidAngle - te.prevLidAngle) * partialTicks;
-
-			f = 1.0F - f;
-			f = 1.0F - f * f * f;
-			if (renderDouble) {
-				((ModelCabinetDouble) modelcabinet).setRotation(((ModelCabinetDouble) modelcabinet).door, 0, (mirror) ? -(f * ((float) Math.PI / 2F)) : (f * ((float) Math.PI / 2F)), 0);
-			} else {
-				((ModelCabinet) modelcabinet).setRotation(((ModelCabinet) modelcabinet).door, 0, (mirror) ? -(f * ((float) Math.PI / 2F)) : (f * ((float) Math.PI / 2F)), 0);
-			}
-			GlStateManager.translate(0.5F, -0.5F, 0.5F);
-			if (renderDouble) {
-				((ModelCabinetDouble) modelcabinet).renderAll();
-			} else {
-				((ModelCabinet) modelcabinet).renderAll();
-			}
-			GlStateManager.disableRescaleNormal();
-			GlStateManager.popMatrix();
-			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-
+	private static void applyMaterialColor(ItemStack material) {
+		if (material != null) {
+			int color = ItemColorCache.INSTANCE.getColor(material);
+			GL11.glColor4f(((color >> 16) & 0xFF) / 255f, ((color >> 8) & 0xFF) / 255f, (color & 0xFF) / 255f, 1F);
+		} else {
+			GL11.glColor4f(1F, 1F, 1F, 1F);
 		}
 	}
-	
-	public static class CabinetTEISR extends TileEntityItemStackRenderer {
-		
-		private static ModelCabinet model = new ModelCabinet(false);
-		
-		public void renderByItem(ItemStack stack, float partialTicks) {
-			GlStateManager.enableDepth();
-			GlStateManager.depthFunc(515);
-			GlStateManager.depthMask(true);
-			
-			ItemStack material = ItemStack.EMPTY;
-			if (stack.hasTagCompound() && stack.getTagCompound().hasKey("material")) {
-				material = new ItemStack(stack.getTagCompound().getCompoundTag("material"));
-			}
-			
-			boolean useColoredTexture = material.isEmpty();
-			
-			Minecraft.getMinecraft().renderEngine.bindTexture(useColoredTexture ? TEXTURE_NORMAL_COLOR : TEXTURE_NORMAL);
 
-			GlStateManager.pushMatrix();
-			GlStateManager.enableRescaleNormal();
-			if (!useColoredTexture) {
-				 int color = ItemColorCache.INSTANCE.getColor(material);
-				 float r = ((color >> 16) & 0xFF) / 255f;
-				 float g = ((color >> 8) & 0xFF) / 255f;
-				 float b = ((color) & 0xFF) / 255f;
-				 GlStateManager.color(r, g, b, 1F);
-			} else {
-				GlStateManager.color(1F, 1F, 1F, 1F);
-			}
-			GlStateManager.translate(0F, 2F, 1F);
-			GlStateManager.scale(1.0F, -1.0F, -1.0F);
-			GlStateManager.translate(0.5F, 0.5F, 0.5F);
+	@Override
+	public void renderTileEntityAt(TileEntity tile, double x, double y, double z, float partialTicks) {
+		TileEntityCabinet te = (TileEntityCabinet) tile;
+		if (te.getWorldObj() == null || te.getWorldObj().getBlock(te.xCoord, te.yCoord, te.zCoord) != ModBlocks.CABINET) return;
+		int meta = te.getWorldObj().getBlockMetadata(te.xCoord, te.yCoord, te.zCoord);
+		if (BlockCabinet.isTop(meta)) return;
+
+		boolean mirror = BlockCabinet.isMirrored(meta);
+		boolean renderDouble = BlockCabinet.isBottom(te.getWorldObj(), te.xCoord, te.yCoord, te.zCoord);
+		ItemStack material = te.material;
+		boolean colored = material == null;
+
+		if (renderDouble) bindTexture(colored ? TEXTURE_DOUBLE_COLOR : TEXTURE_DOUBLE);
+		else bindTexture(colored ? TEXTURE_NORMAL_COLOR : TEXTURE_NORMAL);
+
+		GL11.glPushMatrix();
+		GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+		applyMaterialColor(material);
+		GL11.glTranslatef((float) x, (float) y + 1.0F, (float) z + 1.0F);
+		GL11.glScalef(1.0F, -1.0F, -1.0F);
+
+		ForgeDirection facing = BlockCabinet.getFacing(meta);
+		int rotation = facing == ForgeDirection.WEST ? 90 : facing == ForgeDirection.NORTH ? 180 : facing == ForgeDirection.EAST ? 270 : 0;
+		GL11.glTranslatef(0.5F, 0.5F, 0.5F);
+		GL11.glRotatef(rotation, 0.0F, 1.0F, 0.0F);
+		GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
+
+		float f = te.prevLidAngle + (te.lidAngle - te.prevLidAngle) * partialTicks;
+		f = 1.0F - f;
+		f = 1.0F - f * f * f;
+		float angle = (mirror ? -1 : 1) * f * ((float) Math.PI / 2F);
+		GL11.glTranslatef(0.5F, -0.5F, 0.5F);
+		if (renderDouble) {
+			ModelCabinetDouble model = mirror ? doubleCabinetM : doubleCabinet;
+			model.setRotation(model.door, 0, angle, 0);
 			model.renderAll();
-			
-			GlStateManager.disableRescaleNormal();
-			GlStateManager.popMatrix();
-			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+		} else {
+			ModelCabinet model = mirror ? simpleCabinetM : simpleCabinet;
+			model.setRotation(model.door, 0, angle, 0);
+			model.renderAll();
 		}
-		
+		GL11.glDisable(GL12.GL_RESCALE_NORMAL);
+		GL11.glPopMatrix();
+		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+	}
+
+	/** Item form of the cabinet, tinted with its material. */
+	public static class CabinetItemRenderer implements IItemRenderer {
+
+		private final ModelCabinet model = new ModelCabinet(false);
+
+		@Override
+		public boolean handleRenderType(ItemStack item, ItemRenderType type) {
+			return true;
+		}
+
+		@Override
+		public boolean shouldUseRenderHelper(ItemRenderType type, ItemStack item, ItemRendererHelper helper) {
+			return true;
+		}
+
+		@Override
+		public void renderItem(ItemRenderType type, ItemStack stack, Object... data) {
+			ItemStack material = null;
+			if (stack.hasTagCompound() && stack.getTagCompound().hasKey("material")) {
+				material = ItemStack.loadItemStackFromNBT(stack.getTagCompound().getCompoundTag("material"));
+			}
+			Minecraft.getMinecraft().renderEngine.bindTexture(material == null ? TEXTURE_NORMAL_COLOR : TEXTURE_NORMAL);
+			GL11.glPushMatrix();
+			GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+			applyMaterialColor(material);
+			if (type == ItemRenderType.EQUIPPED || type == ItemRenderType.EQUIPPED_FIRST_PERSON || type == ItemRenderType.INVENTORY) {
+				GL11.glTranslatef(0.5F, 0.5F, 0.5F);
+			}
+			GL11.glTranslatef(-0.5F, 1F, 0.5F);
+			GL11.glScalef(1.0F, -1.0F, -1.0F);
+			GL11.glTranslatef(0.5F, 0.5F, 0.5F);
+			model.renderAll();
+			GL11.glDisable(GL12.GL_RESCALE_NORMAL);
+			GL11.glPopMatrix();
+			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+		}
+
 	}
 
 }

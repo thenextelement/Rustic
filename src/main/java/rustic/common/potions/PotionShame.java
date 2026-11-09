@@ -6,15 +6,15 @@ import rustic.common.network.PacketHandler;
 
 public class PotionShame extends PotionBase {
 
-	protected PotionShame() {
-		super(true, 16409650, "shame");
+	protected PotionShame(int id) {
+		super(id, true, 16409650, "shame");
 		setIconIndex(3, 0);
 	}
 
 	@Override
 	public void performEffect(EntityLivingBase entity, int amp) {
-		if (entity != null && !entity.world.isRemote) {
-			PacketHandler.INSTANCE.sendToAll(new MessageShameFX(entity.world.rand.nextInt(6) + 6, entity.posX, entity.posY,
+		if (entity != null && !entity.worldObj.isRemote) {
+			PacketHandler.INSTANCE.sendToAll(new MessageShameFX(entity.worldObj.rand.nextInt(6) + 6, entity.posX, entity.posY,
 					entity.posZ, entity.motionX, entity.motionY, entity.motionZ, entity.width, entity.height));
 		}
 	}

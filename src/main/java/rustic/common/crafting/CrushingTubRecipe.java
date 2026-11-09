@@ -11,7 +11,7 @@ public class CrushingTubRecipe implements ICrushingTubRecipe {
 	protected FluidStack output;
 	
 	public CrushingTubRecipe(FluidStack out, ItemStack in) {
-		this(out, in, ItemStack.EMPTY);
+		this(out, in, null);
 	}
 	
 	public CrushingTubRecipe(FluidStack out, ItemStack in, ItemStack by) {
@@ -21,7 +21,7 @@ public class CrushingTubRecipe implements ICrushingTubRecipe {
 	}
 	
 	public boolean matches(ItemStack in) {
-		return (in.getItem().equals(this.input.getItem()) && in.getMetadata() == this.input.getMetadata());
+		return (in.getItem().equals(this.input.getItem()) && in.getItemDamage() == this.input.getItemDamage());
 	}
 	
 	public ItemStack getInput() {

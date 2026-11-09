@@ -9,7 +9,7 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.fluids.FluidStack;
 import rustic.client.util.ClientUtils;
 import rustic.client.util.FluidClientUtil;
@@ -40,18 +40,17 @@ public class GuiBrewingBarrel extends GuiContainer {
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		this.drawDefaultBackground();
 		super.drawScreen(mouseX, mouseY, partialTicks);
-		this.renderHoveredToolTip(mouseX, mouseY);
 	}
 	
 	@Override
 	protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
-		if (isPointInRegion(62, 27, 16, 32, mouseX, mouseY)) {
+		if (func_146978_c(62, 27, 16, 32, mouseX, mouseY)) {
 			drawFluidTooltip(te.getInputFluid(), te.getInputCapacity(), mouseX, mouseY);
 		}
-		if (isPointInRegion(116, 27, 16, 32, mouseX, mouseY)) {
+		if (func_146978_c(116, 27, 16, 32, mouseX, mouseY)) {
 			drawFluidTooltip(te.getOutputFluid(), te.getOutputCapacity(), mouseX, mouseY);
 		}
-		if (isPointInRegion(26, 35, 16, 16, mouseX, mouseY)) {
+		if (func_146978_c(26, 35, 16, 16, mouseX, mouseY)) {
 			drawFluidTooltip(te.getAuxiliaryFluid(), te.getAuxiliaryCapacity(), mouseX, mouseY);
 		}
 	}
@@ -109,17 +108,17 @@ public class GuiBrewingBarrel extends GuiContainer {
 	protected void drawFluidTooltip(FluidStack fluid, int capacity, int x, int y) {
 		List<String> lines = new ArrayList<String>();
 		if (fluid == null || fluid.getFluid() == null || fluid.amount <= 0) {
-			lines.add(TextFormatting.GRAY + I18n.format("tooltip.rustic.empty"));
-			lines.add(TextFormatting.GRAY + "" + 0 + "/" + capacity);
+			lines.add(EnumChatFormatting.GRAY + I18n.format("tooltip.rustic.empty"));
+			lines.add(EnumChatFormatting.GRAY + "" + 0 + "/" + capacity);
 		} else {
 			lines.add(fluid.getFluid().getRarity(fluid).rarityColor + fluid.getLocalizedName());
-			lines.add(TextFormatting.GRAY + "" + fluid.amount + "/" + capacity);
+			lines.add(EnumChatFormatting.GRAY + "" + fluid.amount + "/" + capacity);
 			if (fluid.getFluid() instanceof FluidBooze && fluid.tag != null && fluid.tag.hasKey(FluidBooze.QUALITY_NBT_KEY, 5)) {
 				float quality = fluid.tag.getFloat(FluidBooze.QUALITY_NBT_KEY);
 				lines.add(ClientUtils.getQualityTooltip(quality));
 			}
 		}
-		drawHoveringText(lines, x - guiLeft, y - guiTop);
+		drawHoveringText(lines, x - guiLeft, y - guiTop, fontRendererObj);
 	}
 
 }

@@ -30,10 +30,8 @@ public class MessageFirePowerAttack implements IMessage {
 		
 		@Override
 		public IMessage onMessage(final MessageFirePowerAttack message, final MessageContext ctx) {
-			EntityPlayerMP player = ctx.getServerHandler().player;
-			player.getServerWorld().addScheduledTask(() -> {
-				EventHandlerPotions.doFirePowerAttack(player);
-			});
+			EntityPlayerMP player = ctx.getServerHandler().playerEntity;
+							EventHandlerPotions.doFirePowerAttack(player);
 			return null;
 		}
 		

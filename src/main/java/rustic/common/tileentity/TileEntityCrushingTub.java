@@ -2,251 +2,131 @@ package rustic.common.tileentity;
 
 import java.util.Random;
 
-
-
-import net.minecraft.block.Block;
-
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
-
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemBucket;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
-
-
-
-
-
-
 import net.minecraft.world.World;
-
-import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.UniversalBucket;
-
-
-
-
-import rustic.common.crafting.CrushingTubRecipe;
+import rustic.common.blocks.BlockTileBase;
 import rustic.common.crafting.ICrushingTubRecipe;
 import rustic.common.crafting.Recipes;
-import rustic.common.items.ModItems;
+import rustic.common.util.FluidHelper;
+import rustic.common.util.ItemStackHandlerRustic;
 
-public class TileEntityCrushingTub extends TileFluidHandler {
+public class TileEntityCrushingTub extends TileEntityFluidBase implements BlockTileBase.IBreakable {
 
-	public static int capacity = Fluid.BUCKET_VOLUME * 8;
+	public static int capacity = FluidContainerRegistry.BUCKET_VOLUME * 8;
 
-	public ItemStackHandler itemStackHandler = new ItemStackHandler(1) {
+	public ItemStackHandlerRustic itemStackHandler = new ItemStackHandlerRustic(1) {
 		@Override
 		protected void onContentsChanged(int slot) {
-			IBlockState state = world.getBlockState(pos);
-			TileEntityCrushingTub.this.worldObj.addBlockEvent(TileEntityCrushingTub.this.pos,
-					TileEntityCrushingTub.this.getBlockType(), 1, 0);
-			getWorld().notifyBlockUpdate(pos, state, state, 3);
-			world.notifyNeighborsOfStateChange(TileEntityCrushingTub.this.pos,
-					TileEntityCrushingTub.this.getBlockType(), true);
-			TileEntityCrushingTub.this.markDirty();
+			sync();
 		}
 	};
 
 	public TileEntityCrushingTub() {
-		super();
-		tank = new FluidTank(capacity) {
-			@Override
-			protected void onContentsChanged() {
-				markDirty();
-				getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos), 2);
-			}
-		};
-		tank.setTileEntity(this);
+		super(capacity);
 		tank.setCanFill(false);
 		tank.setCanDrain(true);
 	}
 
+	public ItemStackHandlerRustic getItemHandler() {
+		return itemStackHandler;
+	}
+
 	public void crush(EntityLivingBase entity) {
-		if (!itemStackHandler.getStackInSlot(0).isEmpty()) {
-			ItemStack stack = itemStackHandler.getStackInSlot(0);
-			for (ICrushingTubRecipe recipe : Recipes.crushingTubRecipes) {
-				if (recipe.matches(stack)) {
-					FluidStack output = recipe.getResult();
-					if (this.getAmount() <= this.getCapacity() - output.amount) {
-						if (!this.worldObj.isRemote) {
-							tank.fillInternal(output, true);
-							itemStackHandler.extractItem(0, 1, false);
-							ItemStack by = recipe.getByproduct().copy();
-							if (!by.isEmpty()) {
-								Block.spawnAsEntity(world, pos, by);
-							}
-							this.worldObj.playSound((EntityPlayer)null, this.pos.getX() + 0.5, this.pos.getY() + 0.5, this.pos.getZ() + 0.5, SoundEvents.BLOCK_SLIME_FALL, SoundCategory.BLOCKS, 0.5F, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
-							IBlockState state = world.getBlockState(pos);
-							this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
-							getWorld().notifyBlockUpdate(pos, state, state, 3);
-							this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-							markDirty();
-						} else {
-							Random rand = this.worldObj.rand;
-							if (stack.getHasSubtypes()) {
-			                    for (int i = 0; i < rand.nextInt(8) + 8; ++i) {
-									this.worldObj.spawnParticle(EnumParticleTypes.ITEM_CRACK, this.pos.getX() + 0.5, this.pos.getY() + 0.5, this.pos.getZ() + 0.5,
-											((rand.nextDouble() * 0.1) - 0.05), ((rand.nextDouble() * 0.05) + 0.05),
-											((rand.nextDouble() * 0.1) - 0.05), Item.getIdFromItem(stack.getItem()), stack.getMetadata());
-								}
-							} else {
-			                    for (int i = 0; i < rand.nextInt(8) + 8; ++i) {
-									this.worldObj.spawnParticle(EnumParticleTypes.ITEM_CRACK, this.pos.getX() + 0.5, this.pos.getY() + 0.5, this.pos.getZ() + 0.5,
-											((rand.nextDouble() * 0.2) - 0.1), ((rand.nextDouble() * 0.1) + 0.05),
-											((rand.nextDouble() * 0.2) - 0.1), Item.getIdFromItem(stack.getItem()));
-								}
-			                }
-						}
-					}
+		ItemStack stack = itemStackHandler.getStackInSlot(0);
+		if (stack == null) return;
+		for (ICrushingTubRecipe recipe : Recipes.crushingTubRecipes) {
+			if (!recipe.matches(stack)) continue;
+			FluidStack output = recipe.getResult();
+			if (this.getAmount() > this.getCapacity() - output.amount) continue;
+			if (!worldObj.isRemote) {
+				tank.fillInternal(output, true);
+				itemStackHandler.extractItem(0, 1, false);
+				ItemStack by = recipe.getByproduct();
+				if (by != null) spawnAsEntity(worldObj, xCoord, yCoord, zCoord, by.copy());
+				worldObj.playSoundEffect(xCoord + 0.5, yCoord + 0.5, zCoord + 0.5, "mob.slime.small", 0.5F,
+						worldObj.rand.nextFloat() * 0.1F + 0.9F);
+				sync();
+			} else {
+				Random rand = worldObj.rand;
+				String particle = "iconcrack_" + Item.getIdFromItem(stack.getItem())
+						+ (stack.getHasSubtypes() ? "_" + stack.getItemDamage() : "");
+				double spread = stack.getHasSubtypes() ? 0.1 : 0.2;
+				for (int i = 0; i < rand.nextInt(8) + 8; ++i) {
+					worldObj.spawnParticle(particle, xCoord + 0.5, yCoord + 0.5, zCoord + 0.5,
+							(rand.nextDouble() * spread) - spread / 2, (rand.nextDouble() * spread / 2) + 0.05,
+							(rand.nextDouble() * spread) - spread / 2);
 				}
 			}
+			return;
 		}
 	}
 
-	public boolean activate(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand,
-			EnumFacing side, float hitX, float hitY, float hitZ) {
-		ItemStack heldItem = player.getHeldItem(hand);
+	public boolean activate(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY,
+			float hitZ) {
+		ItemStack heldItem = player.getCurrentEquippedItem();
 		if (heldItem != null) {
-			if ((FluidUtil.getFluidHandler(heldItem) != null || heldItem.getItem() instanceof ItemBucket || heldItem.getItem() instanceof UniversalBucket) && FluidUtil.getFluidContained(heldItem) == null) {
-				boolean didFill = FluidUtil.interactWithFluidHandler(player, hand, this.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, side));
-				if (didFill) {
-					//player.setHeldItem(hand, didFill.getResult());
-					this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
-					getWorld().notifyBlockUpdate(pos, state, state, 3);
-					this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-					this.markDirty();
+			if (FluidHelper.isFluidContainer(heldItem) && FluidHelper.getFluidContained(heldItem) == null) {
+				if (world.isRemote) return true;
+				// containers drain the tub (tank only allows external draining)
+				if (FluidHelper.interactWithTank(player, tank)) {
+					sync();
 					return true;
 				}
 			} else {
-				player.setHeldItem(hand, this.itemStackHandler.insertItem(0, heldItem, false));
-				this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
-				getWorld().notifyBlockUpdate(pos, state, state, 3);
-				this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-				markDirty();
+				if (!world.isRemote) {
+					player.inventory.setInventorySlotContents(player.inventory.currentItem, itemStackHandler.insertItem(0, heldItem, false));
+					sync();
+				}
 				return true;
 			}
 		} else if (player.isSneaking() && this.getAmount() > 0) {
-			FluidStack drained = this.tank.drainInternal(capacity, true);
-			SoundEvent soundevent = drained.getFluid().getEmptySound(drained);
-			this.worldObj.playSound(null, this.pos, soundevent, SoundCategory.BLOCKS, 1F, 1F);
-			this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
-			getWorld().notifyBlockUpdate(pos, state, state, 3);
-			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-			markDirty();
+			if (!world.isRemote) {
+				tank.drainInternal(capacity, true);
+				world.playSoundEffect(x + 0.5, y + 0.5, z + 0.5, "game.neutral.swim.splash", 1F, 1F);
+				sync();
+			}
 			return true;
 		}
-		if (itemStackHandler.getStackInSlot(0) != null && !world.isRemote) {
-			world.spawnEntity(
-					new EntityItem(world, player.posX, player.posY, player.posZ, itemStackHandler.getStackInSlot(0)));
-			itemStackHandler.setStackInSlot(0, null);
-			this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
-			getWorld().notifyBlockUpdate(pos, state, state, 3);
-			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-			markDirty();
+		if (itemStackHandler.getStackInSlot(0) != null) {
+			if (!world.isRemote) {
+				world.spawnEntityInWorld(new EntityItem(world, player.posX, player.posY, player.posZ, itemStackHandler.getStackInSlot(0)));
+				itemStackHandler.setStackInSlot(0, null);
+				sync();
+			}
 			return true;
 		}
 		return false;
-	}
-
-	public int getCapacity() {
-		return tank.getCapacity();
-	}
-
-	public int getAmount() {
-		return tank.getFluidAmount();
-	}
-
-	public FluidTank getTank() {
-		return tank;
-	}
-
-	public Fluid getFluid() {
-		if (tank.getFluid() != null) {
-			return tank.getFluid().getFluid();
-		}
-		return null;
-	}
-
-	@Override
-	public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
-		return capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY
-				|| capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY
-				|| super.hasCapability(capability, facing);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	@Nullable
-	public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
-		if (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
-			return (T) tank;
-		} else if (capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
-			return (T) itemStackHandler;
-		}
-		return super.getCapability(capability, facing);
-	}
-
-	@Override
-	public NBTTagCompound getUpdateTag() {
-		return writeToNBT(new NBTTagCompound());
-	}
-
-	@Nullable
-	@Override
-	public SPacketUpdateTileEntity getUpdatePacket() {
-		return new SPacketUpdateTileEntity(getPos(), 0, getUpdateTag());
-	}
-
-	@Override
-	public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-		readFromNBT(pkt.getNbtCompound());
 	}
 
 	@Override
 	public void readFromNBT(NBTTagCompound tag) {
 		super.readFromNBT(tag);
 		if (tag.hasKey("items")) {
-			itemStackHandler.deserializeNBT((NBTTagCompound) tag.getTag("items"));
+			itemStackHandler.deserializeNBT(tag.getCompoundTag("items"));
 		}
 	}
 
 	@Override
-	public NBTTagCompound writeToNBT(NBTTagCompound tag) {
-		tag = super.writeToNBT(tag);
+	public void writeToNBT(NBTTagCompound tag) {
+		super.writeToNBT(tag);
 		tag.setTag("items", itemStackHandler.serializeNBT());
-		return tag;
 	}
 
 	@Override
-	public boolean receiveClientEvent(int id, int type) {
-		if (id == 1) {
-			getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos), 3);
-			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-			this.markDirty();
-			return true;
-		} else {
-			return super.receiveClientEvent(id, type);
-		}
-	}
-
-	public void breakBlock(World world, BlockPos pos, IBlockState state) {
-		this.invalidate();
-		if (itemStackHandler != null && !world.isRemote) {
+	public void breakBlock(World world, int x, int y, int z) {
+		if (!world.isRemote) {
 			for (int i = 0; i < itemStackHandler.getSlots(); i++) {
-				if (itemStackHandler.getStackInSlot(i) != null) {
-					Block.spawnAsEntity(world, pos, itemStackHandler.getStackInSlot(i));
-				}
+				spawnAsEntity(world, x, y, z, itemStackHandler.getStackInSlot(i));
+				itemStackHandler.getStacks()[i] = null;
 			}
 		}
-		world.setTileEntity(pos, null);
 	}
 
 }

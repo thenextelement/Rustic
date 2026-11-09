@@ -2,22 +2,11 @@ package rustic.common.blocks;
 
 import java.util.Random;
 
+import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
-import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-
-
-import net.minecraft.util.ResourceLocation;
-
-import net.minecraft.world.World;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import rustic.common.Config;
 import rustic.common.blocks.crops.BlockAppleSeeds;
 import rustic.common.blocks.crops.BlockBerryBush;
@@ -31,7 +20,6 @@ import rustic.common.blocks.crops.BlockStakeTied;
 import rustic.common.blocks.crops.Herbs;
 import rustic.common.blocks.slab.BlockDoubleSlabBase;
 import rustic.common.blocks.slab.BlockSlabBase;
-import rustic.common.blocks.slab.ItemBlockSlabBase;
 import rustic.common.items.ModItems;
 import rustic.common.tileentity.TileEntityApiary;
 import rustic.common.tileentity.TileEntityBarrel;
@@ -46,12 +34,19 @@ import rustic.common.tileentity.TileEntityLiquidBarrel;
 import rustic.common.tileentity.TileEntityVase;
 import rustic.core.Rustic;
 
+
+
+
+
+
+
 public class ModBlocks {
 
+	/** Render ids of the JSON model renderer, set by the client proxy (plain and flat-item variants). */
+	public static int MODEL_RENDER_ID = -1;
+	public static int MODEL_RENDER_ID_FLAT = -1;
+
 	public static BlockPillar STONE_PILLAR;
-	public static BlockPillar ANDESITE_PILLAR;
-	public static BlockPillar DIORITE_PILLAR;
-	public static BlockPillar GRANITE_PILLAR;
 	public static BlockPillar SLATE_PILLAR;
 	public static BlockBase SLATE;
 	public static BlockBase SLATE_ROOF;
@@ -61,7 +56,6 @@ public class ModBlocks {
 	public static BlockStairsBase SLATE_ROOF_STAIRS;
 	public static BlockDoubleSlabBase SLATE_ROOF_DOUBLESLAB;
 	public static BlockSlabBase SLATE_ROOF_SLAB;
-	public static ItemBlockSlabBase SLATE_ROOF_SLAB_ITEM;
 	public static BlockBase CLAY_WALL;
 	public static BlockBase CLAY_WALL_CROSS;
 	public static BlockClayWallDiag CLAY_WALL_DIAG;
@@ -119,7 +113,6 @@ public class ModBlocks {
 	public static BlockBase PAINTED_WOOD_BLACK;
 	public static BlockDoubleSlabBase SLATE_BRICK_DOUBLESLAB;
 	public static BlockSlabBase SLATE_BRICK_SLAB;
-	public static ItemBlockSlabBase SLATE_BRICK_SLAB_ITEM;
 	public static BlockStairsBase SLATE_BRICK_STAIRS;
 	public static BlockGargoyle GARGOYLE;
 	public static BlockCabinet CABINET;
@@ -137,10 +130,8 @@ public class ModBlocks {
 	public static BlockFenceGateRustic IRONWOOD_FENCE_GATE;
 	public static BlockDoubleSlabBase OLIVE_DOUBLESLAB;
 	public static BlockSlabBase OLIVE_SLAB;
-	public static ItemBlockSlabBase OLIVE_SLAB_ITEM;
 	public static BlockDoubleSlabBase IRONWOOD_DOUBLESLAB;
 	public static BlockSlabBase IRONWOOD_SLAB;
-	public static ItemBlockSlabBase IRONWOOD_SLAB_ITEM;
 	public static BlockStairsBase OLIVE_STAIRS;
 	public static BlockStairsBase IRONWOOD_STAIRS;
 	public static BlockChair CHAIR_OLIVE;
@@ -170,9 +161,6 @@ public class ModBlocks {
 	public static void init() {
 		if (Config.ENABLE_PILLARS) {
 			STONE_PILLAR = new BlockPillar("stone");
-			ANDESITE_PILLAR = new BlockPillar("andesite");
-			DIORITE_PILLAR = new BlockPillar("diorite");
-			GRANITE_PILLAR = new BlockPillar("granite");
 			if (Config.ENABLE_SLATE) {
 				SLATE_PILLAR = new BlockPillar("slate");
 			}
@@ -203,22 +191,18 @@ public class ModBlocks {
 			SLATE_TILE = (BlockBase) new BlockBase(Material.rock, "slate_tile").setHardness(2.0F);
 			SLATE_BRICK = (BlockBase) new BlockBase(Material.rock, "slate_brick").setHardness(2.0F);
 			SLATE_CHISELED = (BlockBase) new BlockBase(Material.rock, "slate_chiseled").setHardness(2.0F);
-			SLATE_ROOF_STAIRS = new BlockStairsBase(SLATE_ROOF.getDefaultState(), "stairs_slate_roof");
+			SLATE_ROOF_STAIRS = new BlockStairsBase(SLATE_ROOF, "stairs_slate_roof");
 			SLATE_ROOF_DOUBLESLAB = new BlockDoubleSlabBase(Material.rock, "slate_roof_doubleslab");
 			SLATE_ROOF_SLAB = new BlockSlabBase(Material.rock, "slate_roof_slab", SLATE_ROOF_DOUBLESLAB);
-			SLATE_ROOF_DOUBLESLAB.setSlab(SLATE_ROOF_SLAB);
-			SLATE_ROOF_SLAB_ITEM = new ItemBlockSlabBase(SLATE_ROOF_SLAB, SLATE_ROOF_DOUBLESLAB);
-			SLATE_BRICK_STAIRS = new BlockStairsBase(SLATE_BRICK.getDefaultState(), "stairs_slate_brick");
+			SLATE_BRICK_STAIRS = new BlockStairsBase(SLATE_BRICK, "stairs_slate_brick");
 			SLATE_BRICK_DOUBLESLAB = new BlockDoubleSlabBase(Material.rock, "slate_brick_doubleslab");
 			SLATE_BRICK_SLAB = new BlockSlabBase(Material.rock, "slate_brick_slab", SLATE_BRICK_DOUBLESLAB);
-			SLATE_BRICK_DOUBLESLAB.setSlab(SLATE_BRICK_SLAB);
-			SLATE_BRICK_SLAB_ITEM = new ItemBlockSlabBase(SLATE_BRICK_SLAB, SLATE_BRICK_DOUBLESLAB);
 		}
 		if (Config.ENABLE_CLAY_WALLS) {
 			CLAY_WALL = ((BlockBase) new BlockBase(Material.clay, "clay_wall").setHardness(1F))
-					.setBlockSoundType(SoundType.GROUND);
+					.setBlockSoundType(Block.soundTypeGravel);
 			CLAY_WALL_CROSS = ((BlockBase) new BlockBase(Material.clay, "clay_wall_cross").setHardness(1F))
-					.setBlockSoundType(SoundType.GROUND);
+					.setBlockSoundType(Block.soundTypeGravel);
 			CLAY_WALL_DIAG = (BlockClayWallDiag) new BlockClayWallDiag().setHardness(1F);
 		}
 		if (Config.ENABLE_CHAIRS) {
@@ -253,37 +237,37 @@ public class ModBlocks {
 		}
 		if (Config.ENABLE_PAINTED_WOOD) {
 			PAINTED_WOOD_WHITE = ((BlockBase) new BlockBase(Material.wood, "painted_wood_white").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_ORANGE = ((BlockBase) new BlockBase(Material.wood, "painted_wood_orange").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_MAGENTA = ((BlockBase) new BlockBase(Material.wood, "painted_wood_magenta").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_LIGHT_BLUE = ((BlockBase) new BlockBase(Material.wood, "painted_wood_light_blue")
-					.setHardness(2.0F)).setBlockSoundType(SoundType.WOOD);
+					.setHardness(2.0F)).setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_YELLOW = ((BlockBase) new BlockBase(Material.wood, "painted_wood_yellow").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_LIME = ((BlockBase) new BlockBase(Material.wood, "painted_wood_lime").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_PINK = ((BlockBase) new BlockBase(Material.wood, "painted_wood_pink").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_GRAY = ((BlockBase) new BlockBase(Material.wood, "painted_wood_gray").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_SILVER = ((BlockBase) new BlockBase(Material.wood, "painted_wood_silver").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_CYAN = ((BlockBase) new BlockBase(Material.wood, "painted_wood_cyan").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_PURPLE = ((BlockBase) new BlockBase(Material.wood, "painted_wood_purple").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_BLUE = ((BlockBase) new BlockBase(Material.wood, "painted_wood_blue").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_BROWN = ((BlockBase) new BlockBase(Material.wood, "painted_wood_brown").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_GREEN = ((BlockBase) new BlockBase(Material.wood, "painted_wood_green").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_RED = ((BlockBase) new BlockBase(Material.wood, "painted_wood_red").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			PAINTED_WOOD_BLACK = ((BlockBase) new BlockBase(Material.wood, "painted_wood_black").setHardness(2.0F))
-					.setBlockSoundType(SoundType.WOOD);
+					.setBlockSoundType(Block.soundTypeWood);
 			Blocks.fire.setFireInfo(PAINTED_WOOD_WHITE, 5, 20);
 			Blocks.fire.setFireInfo(PAINTED_WOOD_ORANGE, 5, 20);
 			Blocks.fire.setFireInfo(PAINTED_WOOD_MAGENTA, 5, 20);
@@ -312,36 +296,22 @@ public class ModBlocks {
 		CRUSHING_TUB = new BlockCrushingTub();
 		EVAPORATING_BASIN = new BlockEvaporatingBasin();
 		OLIVE_FENCE = new BlockFenceRustic(
-				PLANKS.getDefaultState().withProperty(BlockPlanksRustic.VARIANT, BlockPlanksRustic.EnumType.OLIVE),
-				"fence_olive");
+				Rustic.MODID + ":planks_olive", "fence_olive");
 		IRONWOOD_FENCE = new BlockFenceRustic(
-				PLANKS.getDefaultState().withProperty(BlockPlanksRustic.VARIANT, BlockPlanksRustic.EnumType.IRONWOOD),
-				"fence_ironwood");
+				Rustic.MODID + ":planks_ironwood", "fence_ironwood");
 		OLIVE_FENCE_GATE = new BlockFenceGateRustic(
-				PLANKS.getDefaultState().withProperty(BlockPlanksRustic.VARIANT, BlockPlanksRustic.EnumType.OLIVE),
-				"fence_gate_olive");
+				Rustic.MODID + ":planks_olive", "fence_gate_olive");
 		IRONWOOD_FENCE_GATE = new BlockFenceGateRustic(
-				PLANKS.getDefaultState().withProperty(BlockPlanksRustic.VARIANT, BlockPlanksRustic.EnumType.IRONWOOD),
-				"fence_gate_ironwood");
-		OLIVE_DOUBLESLAB = new BlockDoubleSlabBase(Material.wood, "olive_doubleslab", SoundType.WOOD);
-		OLIVE_SLAB = new BlockSlabBase(Material.wood, "olive_slab", OLIVE_DOUBLESLAB, SoundType.WOOD);
-		OLIVE_DOUBLESLAB.setSlab(OLIVE_SLAB);
-		OLIVE_SLAB_ITEM = new ItemBlockSlabBase(OLIVE_SLAB, OLIVE_DOUBLESLAB);
-		Blocks.fire.setFireInfo(OLIVE_DOUBLESLAB, 5, 20);
-		Blocks.fire.setFireInfo(OLIVE_SLAB, 5, 20);
-		IRONWOOD_DOUBLESLAB = new BlockDoubleSlabBase(Material.wood, "ironwood_doubleslab", SoundType.WOOD);
-		IRONWOOD_SLAB = new BlockSlabBase(Material.wood, "ironwood_slab", IRONWOOD_DOUBLESLAB, SoundType.WOOD);
-		IRONWOOD_DOUBLESLAB.setSlab(IRONWOOD_SLAB);
-		IRONWOOD_SLAB_ITEM = new ItemBlockSlabBase(IRONWOOD_SLAB, IRONWOOD_DOUBLESLAB);
-		Blocks.fire.setFireInfo(IRONWOOD_DOUBLESLAB, 5, 20);
-		Blocks.fire.setFireInfo(IRONWOOD_SLAB, 5, 20);
+				Rustic.MODID + ":planks_ironwood", "fence_gate_ironwood");
+		OLIVE_DOUBLESLAB = new BlockDoubleSlabBase(Material.wood, "olive_doubleslab", Block.soundTypeWood);
+		OLIVE_SLAB = new BlockSlabBase(Material.wood, "olive_slab", OLIVE_DOUBLESLAB, Block.soundTypeWood);
+		IRONWOOD_DOUBLESLAB = new BlockDoubleSlabBase(Material.wood, "ironwood_doubleslab", Block.soundTypeWood);
+		IRONWOOD_SLAB = new BlockSlabBase(Material.wood, "ironwood_slab", IRONWOOD_DOUBLESLAB, Block.soundTypeWood);
 		OLIVE_STAIRS = new BlockStairsBase(
-				PLANKS.getDefaultState().withProperty(BlockPlanksRustic.VARIANT, BlockPlanksRustic.EnumType.OLIVE),
-				"stairs_olive");
+				PLANKS, 0, "stairs_olive");
 		Blocks.fire.setFireInfo(OLIVE_STAIRS, 5, 20);
 		IRONWOOD_STAIRS = new BlockStairsBase(
-				PLANKS.getDefaultState().withProperty(BlockPlanksRustic.VARIANT, BlockPlanksRustic.EnumType.IRONWOOD),
-				"stairs_ironwood");
+				PLANKS, 1, "stairs_ironwood");
 		Blocks.fire.setFireInfo(IRONWOOD_STAIRS, 5, 20);
 		CONDENSER = new BlockCondenser();
 		RETORT = new BlockRetort("retort");
@@ -401,158 +371,17 @@ public class ModBlocks {
 
 		Herbs.init();
 		
-		GameRegistry.registerTileEntity(TileEntityApiary.class, new ResourceLocation(Rustic.MODID , "tileEntityApiary"));
-		GameRegistry.registerTileEntity(TileEntityVase.class, new ResourceLocation(Rustic.MODID,  "tileEntityVase"));
-		GameRegistry.registerTileEntity(TileEntityBarrel.class, new ResourceLocation(Rustic.MODID, "tileEntityBarrel"));
-		GameRegistry.registerTileEntity(TileEntityCabinet.class, new ResourceLocation(Rustic.MODID, "tileEntityCabinet"));
-		GameRegistry.registerTileEntity(TileEntityLiquidBarrel.class, new ResourceLocation(Rustic.MODID, "tileEntityLiquidBarrel"));
-		GameRegistry.registerTileEntity(TileEntityCrushingTub.class, new ResourceLocation(Rustic.MODID, "tileEntityCrushingTub"));
-		GameRegistry.registerTileEntity(TileEntityEvaporatingBasin.class, new ResourceLocation(Rustic.MODID, "tileEntityEvaporatingBasin"));
-		GameRegistry.registerTileEntity(TileEntityCondenser.class, new ResourceLocation(Rustic.MODID, "tileEntityCondenser"));
-		GameRegistry.registerTileEntity(TileEntityCondenserAdvancedBottom.class, new ResourceLocation(Rustic.MODID, "tileEntityCondenserAdvanced"));
-		GameRegistry.registerTileEntity(TileEntityCondenserAdvancedTop.class, new ResourceLocation(Rustic.MODID, "tileEntityCondenserAdvancedProxy"));
-		GameRegistry.registerTileEntity(TileEntityBrewingBarrel.class, new ResourceLocation(Rustic.MODID, "tileEntityBrewingBarrel"));
-	}
-
-	@SideOnly(Side.CLIENT)
-	public static void initModels() {
-		if (Config.ENABLE_PILLARS) {
-			STONE_PILLAR.initModel();
-			ANDESITE_PILLAR.initModel();
-			DIORITE_PILLAR.initModel();
-			GRANITE_PILLAR.initModel();
-			if (Config.ENABLE_SLATE) {
-				SLATE_PILLAR.initModel();
-			}
-		}
-		CHAIN.initModel();
-		CANDLE.initModel();
-		CANDLE_DOUBLE.initModel();
-		CANDLE_LEVER.initModel();
-		CHANDELIER.initModel();
-		IRON_TORCH.initModel();
-		CHAIN_GOLD.initModel();
-		CANDLE_GOLD.initModel();
-		CANDLE_DOUBLE_GOLD.initModel();
-		CANDLE_LEVER_GOLD.initModel();
-		CHANDELIER_GOLD.initModel();
-		if (Config.ENABLE_SILVER_DECOR) {
-			CHAIN_SILVER.initModel();
-			CANDLE_SILVER.initModel();
-			CANDLE_DOUBLE_SILVER.initModel();
-			CANDLE_LEVER_SILVER.initModel();
-			CHANDELIER_SILVER.initModel();
-		}
-		BEEHIVE.initModel();
-		APIARY.initModel();
-		if (Config.ENABLE_SLATE) {
-			SLATE.initModel();
-			SLATE_ROOF.initModel();
-			SLATE_TILE.initModel();
-			SLATE_BRICK.initModel();
-			SLATE_CHISELED.initModel();
-			SLATE_ROOF_STAIRS.initModel();
-			SLATE_ROOF_DOUBLESLAB.initModel();
-			SLATE_ROOF_SLAB.initModel();
-			SLATE_ROOF_SLAB_ITEM.initModel();
-			SLATE_BRICK_DOUBLESLAB.initModel();
-			SLATE_BRICK_SLAB.initModel();
-			SLATE_BRICK_SLAB_ITEM.initModel();
-			SLATE_BRICK_STAIRS.initModel();
-		}
-		if (Config.ENABLE_CLAY_WALLS) {
-			CLAY_WALL.initModel();
-			CLAY_WALL_CROSS.initModel();
-			CLAY_WALL_DIAG.initModel();
-		}
-		if (Config.ENABLE_CHAIRS) {
-			CHAIR_OAK.initModel();
-			CHAIR_BIG_OAK.initModel();
-			CHAIR_BIRCH.initModel();
-			CHAIR_SPRUCE.initModel();
-			CHAIR_ACACIA.initModel();
-			CHAIR_JUNGLE.initModel();
-			CHAIR_OLIVE.initModel();
-			CHAIR_IRONWOOD.initModel();
-		}
-		if (Config.ENABLE_TABLES) {
-			TABLE_OAK.initModel();
-			TABLE_BIG_OAK.initModel();
-			TABLE_BIRCH.initModel();
-			TABLE_SPRUCE.initModel();
-			TABLE_ACACIA.initModel();
-			TABLE_JUNGLE.initModel();
-			TABLE_OLIVE.initModel();
-			TABLE_IRONWOOD.initModel();
-		}
-		VASE.initModel();
-		BARREL.initModel();
-		if (Config.ENABLE_LATTICE) {
-			IRON_LATTICE.initModel();
-		}
-		IRON_LANTERN.initModel();
-		GOLDEN_LANTERN.initModel();
-		if (Config.ENABLE_SILVER_DECOR) {
-			SILVER_LANTERN.initModel();
-		}
-		if (Config.ENABLE_PAINTED_WOOD) {
-			PAINTED_WOOD_WHITE.initModel();
-			PAINTED_WOOD_ORANGE.initModel();
-			PAINTED_WOOD_MAGENTA.initModel();
-			PAINTED_WOOD_LIGHT_BLUE.initModel();
-			PAINTED_WOOD_YELLOW.initModel();
-			PAINTED_WOOD_LIME.initModel();
-			PAINTED_WOOD_PINK.initModel();
-			PAINTED_WOOD_GRAY.initModel();
-			PAINTED_WOOD_SILVER.initModel();
-			PAINTED_WOOD_CYAN.initModel();
-			PAINTED_WOOD_PURPLE.initModel();
-			PAINTED_WOOD_BLUE.initModel();
-			PAINTED_WOOD_BROWN.initModel();
-			PAINTED_WOOD_GREEN.initModel();
-			PAINTED_WOOD_RED.initModel();
-			PAINTED_WOOD_BLACK.initModel();
-		}
-		GARGOYLE.initModel();
-		CABINET.initModel();
-		LIQUID_BARREL.initModel();
-		FERTILE_SOIL.initModel();
-		PLANKS.initModel();
-		LOG.initModel();
-		LEAVES.initModel();
-		SAPLING.initModel();
-		CRUSHING_TUB.initModel();
-		EVAPORATING_BASIN.initModel();
-		OLIVE_FENCE.initModel();
-		IRONWOOD_FENCE.initModel();
-		OLIVE_FENCE_GATE.initModel();
-		IRONWOOD_FENCE_GATE.initModel();
-		OLIVE_DOUBLESLAB.initModel();
-		OLIVE_SLAB.initModel();
-		OLIVE_SLAB_ITEM.initModel();
-		IRONWOOD_DOUBLESLAB.initModel();
-		IRONWOOD_SLAB.initModel();
-		IRONWOOD_SLAB_ITEM.initModel();
-		OLIVE_STAIRS.initModel();
-		IRONWOOD_STAIRS.initModel();
-		CONDENSER.initModel();
-		RETORT.initModel();
-		CONDENSER_ADVANCED.initModel();
-		RETORT_ADVANCED.initModel();
-		CROP_STAKE.initModel();
-		WILDBERRY_BUSH.initModel();
-		ROPE.initModel();
-		GRAPE_STEM.initModel();
-		GRAPE_LEAVES.initModel();
-		BREWING_BARREL.initModel();
-		APPLE_SEEDS.initModel();
-		APPLE_SAPLING.initModel();
-		APPLE_LEAVES.initModel();
-		DOOR_OLIVE.initModel();
-		DOOR_IRONWOOD.initModel();
-		LANTERN_WOOD.initModel();
-
-		Herbs.initModels();
+		GameRegistry.registerTileEntity(TileEntityApiary.class, Rustic.MODID + ":tileEntityApiary");
+		GameRegistry.registerTileEntity(TileEntityVase.class, Rustic.MODID + ":tileEntityVase");
+		GameRegistry.registerTileEntity(TileEntityBarrel.class, Rustic.MODID + ":tileEntityBarrel");
+		GameRegistry.registerTileEntity(TileEntityCabinet.class, Rustic.MODID + ":tileEntityCabinet");
+		GameRegistry.registerTileEntity(TileEntityLiquidBarrel.class, Rustic.MODID + ":tileEntityLiquidBarrel");
+		GameRegistry.registerTileEntity(TileEntityCrushingTub.class, Rustic.MODID + ":tileEntityCrushingTub");
+		GameRegistry.registerTileEntity(TileEntityEvaporatingBasin.class, Rustic.MODID + ":tileEntityEvaporatingBasin");
+		GameRegistry.registerTileEntity(TileEntityCondenser.class, Rustic.MODID + ":tileEntityCondenser");
+		GameRegistry.registerTileEntity(TileEntityCondenserAdvancedBottom.class, Rustic.MODID + ":tileEntityCondenserAdvanced");
+		GameRegistry.registerTileEntity(TileEntityCondenserAdvancedTop.class, Rustic.MODID + ":tileEntityCondenserAdvancedProxy");
+		GameRegistry.registerTileEntity(TileEntityBrewingBarrel.class, Rustic.MODID + ":tileEntityBrewingBarrel");
 	}
 
 }

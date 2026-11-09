@@ -1,264 +1,156 @@
 package rustic.common.tileentity;
 
-
-
-import net.minecraft.block.Block;
-
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemBucket;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
-
-
-
-
-
-
 import net.minecraft.world.World;
-
-import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.UniversalBucket;
-
-
-
-
+import rustic.common.blocks.BlockTileBase;
 import rustic.common.crafting.IEvaporatingBasinRecipe;
 import rustic.common.crafting.Recipes;
+import rustic.common.util.FluidHelper;
+import rustic.common.util.ItemStackHandlerRustic;
 
-public class TileEntityEvaporatingBasin extends TileFluidHandler implements ITickable {
+public class TileEntityEvaporatingBasin extends TileEntityFluidBase implements BlockTileBase.IBreakable {
 
-	private int capacity = Fluid.BUCKET_VOLUME * 6;
+	private static final int CAPACITY = FluidContainerRegistry.BUCKET_VOLUME * 6;
 
 	private FluidStack evaporatedFluid;
 	private int age = 0;
 	private int remainder = 0;
 
-	private ItemStackHandler itemStackHandler = new ItemStackHandler(1) {
+	private final ItemStackHandlerRustic itemStackHandler = new ItemStackHandlerRustic(1) {
 		@Override
 		protected void onContentsChanged(int slot) {
-			IBlockState state = world.getBlockState(pos);
-			TileEntityEvaporatingBasin.this.worldObj.addBlockEvent(TileEntityEvaporatingBasin.this.pos,
-					TileEntityEvaporatingBasin.this.getBlockType(), 1, 0);
-			getWorld().notifyBlockUpdate(pos, state, state, 3);
-			world.notifyNeighborsOfStateChange(TileEntityEvaporatingBasin.this.pos,
-					TileEntityEvaporatingBasin.this.getBlockType(), true);
-			TileEntityEvaporatingBasin.this.markDirty();
+			sync();
 		}
 	};
 
 	public TileEntityEvaporatingBasin() {
-		super();
-		tank = new FluidTank(capacity) {
-			public boolean canFillFluidType(FluidStack fluid)
-		    {
-		        return fluid != null && Recipes.evaporatingRecipesMap.containsKey(fluid.getFluid()) && canFill();
-		    }
+		super(CAPACITY);
+		tank = new RusticTank(CAPACITY) {
+			@Override
+			public boolean canFillFluidType(FluidStack fluid) {
+				return fluid != null && Recipes.evaporatingRecipesMap.containsKey(fluid.getFluid()) && canFill();
+			}
+
+			@Override
+			public int fill(FluidStack resource, boolean doFill) {
+				return canFillFluidType(resource) ? super.fill(resource, doFill) : 0;
+			}
+
+			@Override
+			protected void onContentsChanged() {
+				onTankChanged();
+			}
 		};
-		tank.setTileEntity(this);
-		tank.setCanFill(true);
-		tank.setCanDrain(true);
-		this.evaporatedFluid = null;
+	}
+
+	public ItemStackHandlerRustic getItemHandler() {
+		return itemStackHandler;
 	}
 
 	@Override
-	public void update() {
+	public boolean canFill(net.minecraftforge.common.util.ForgeDirection from, net.minecraftforge.fluids.Fluid fluid) {
+		return Recipes.evaporatingRecipesMap.containsKey(fluid) && super.canFill(from, fluid);
+	}
+
+	@Override
+	public void updateEntity() {
+		if (worldObj.isRemote) return;
 		age++;
-		if (age >= 1000000) {
-			age = 0;
+		if (age >= 1000000) age = 0;
+		if (age % 20 != 0) return;
+
+		if (getFluid() == null || (evaporatedFluid != null && evaporatedFluid.getFluid() != getFluid())) {
+			// change of recipe - reset
+			evaporatedFluid = null;
+			remainder = 0;
 		}
-		if (this.age % 20 == 0) {
-			if (this.getFluid() == null  || (this.evaporatedFluid != null && this.evaporatedFluid.getFluid() != this.getFluid())) {
-				// change of recipe - reset
-				this.evaporatedFluid = null;
-				this.remainder = 0;
-			}
-			int to_drain = 0;
-			IEvaporatingBasinRecipe recipe;
-			if (this.getFluid() != null) {
-				recipe = Recipes.evaporatingRecipesMap.get(this.getFluid());
-				int temp = 20 * recipe.getAmount() + this.remainder;
-				to_drain = temp / recipe.getTime();
-				this.remainder = temp % recipe.getTime();
-			}
-			
-			FluidStack drained = tank.drain(to_drain, true);
-			
-			if (drained != null) {
-				if (evaporatedFluid == null) {
-					evaporatedFluid = drained;
-				} else {
-					if (!evaporatedFluid.getFluid().equals(drained.getFluid())) {
-						evaporatedFluid = drained;
-					} else {
-						evaporatedFluid.amount += drained.amount;
-					}
-				}
-				getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos), 3);
-				this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-				this.markDirty();
-			}
-			
-			if (evaporatedFluid != null && evaporatedFluid.amount > 0) {
-				recipe = Recipes.evaporatingRecipesMap.get(evaporatedFluid.getFluid());
-				ItemStack result = recipe.getOutput();
-				if (evaporatedFluid.amount >= recipe.getAmount() && itemStackHandler.insertItem(0, result, true).isEmpty()) {
-					evaporatedFluid.amount -= recipe.getAmount();
-					itemStackHandler.insertItem(0, result, false);
-					getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos),
-							3);
-					this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-					this.markDirty();
-				}
+		int toDrain = 0;
+		IEvaporatingBasinRecipe recipe;
+		if (getFluid() != null) {
+			recipe = Recipes.evaporatingRecipesMap.get(getFluid());
+			if (recipe != null) {
+				int temp = 20 * recipe.getAmount() + remainder;
+				toDrain = temp / recipe.getTime();
+				remainder = temp % recipe.getTime();
 			}
 		}
-	}
-
-	public int getCapacity() {
-		return tank.getCapacity();
-	}
-
-	public int getAmount() {
-		return tank.getFluidAmount();
-	}
-
-	public FluidTank getTank() {
-		return tank;
-	}
-
-	public Fluid getFluid() {
-		if (tank.getFluid() != null) {
-			return tank.getFluid().getFluid();
+		FluidStack drained = toDrain > 0 ? tank.drainInternal(toDrain, true) : null;
+		if (drained != null) {
+			if (evaporatedFluid == null || evaporatedFluid.getFluid() != drained.getFluid()) {
+				evaporatedFluid = drained;
+			} else {
+				evaporatedFluid.amount += drained.amount;
+			}
+			sync();
 		}
-		return null;
-	}
-
-	@Override
-	public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
-		return capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY
-				|| capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY
-				|| super.hasCapability(capability, facing);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	@Nullable
-	public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
-		if (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
-			return (T) tank;
-		} else if (capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
-			return (T) itemStackHandler;
+		if (evaporatedFluid != null && evaporatedFluid.amount > 0) {
+			recipe = Recipes.evaporatingRecipesMap.get(evaporatedFluid.getFluid());
+			if (recipe == null) return;
+			ItemStack result = recipe.getOutput();
+			if (evaporatedFluid.amount >= recipe.getAmount() && itemStackHandler.insertItem(0, result, true) == null) {
+				evaporatedFluid.amount -= recipe.getAmount();
+				itemStackHandler.insertItem(0, result.copy(), false);
+				sync();
+			}
 		}
-		return super.getCapability(capability, facing);
-	}
-
-	@Override
-	public NBTTagCompound getUpdateTag() {
-		return writeToNBT(new NBTTagCompound());
-	}
-
-	@Nullable
-	@Override
-	public SPacketUpdateTileEntity getUpdatePacket() {
-		return new SPacketUpdateTileEntity(getPos(), 0, getUpdateTag());
-	}
-
-	@Override
-	public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-		readFromNBT(pkt.getNbtCompound());
 	}
 
 	@Override
 	public void readFromNBT(NBTTagCompound tag) {
 		super.readFromNBT(tag);
-		if (tag.hasKey("items")) {
-			itemStackHandler.deserializeNBT((NBTTagCompound) tag.getTag("items"));
-		}
-		if (tag.hasKey("EvaporatedFluid")) {
-			this.evaporatedFluid = FluidStack.loadFluidStackFromNBT(tag.getCompoundTag("EvaporatedFluid"));
-		}
-		if (tag.hasKey("remainder")) {
-			this.remainder = tag.getInteger("remainder");
-		}
+		if (tag.hasKey("items")) itemStackHandler.deserializeNBT(tag.getCompoundTag("items"));
+		evaporatedFluid = tag.hasKey("EvaporatedFluid") ? FluidStack.loadFluidStackFromNBT(tag.getCompoundTag("EvaporatedFluid")) : null;
+		remainder = tag.getInteger("remainder");
 	}
 
 	@Override
-	public NBTTagCompound writeToNBT(NBTTagCompound tag) {
-		tag = super.writeToNBT(tag);
+	public void writeToNBT(NBTTagCompound tag) {
+		super.writeToNBT(tag);
 		tag.setTag("items", itemStackHandler.serializeNBT());
-		if (this.evaporatedFluid != null) {
-			tag.setTag("EvaporatedFluid", this.evaporatedFluid.writeToNBT(new NBTTagCompound()));
+		if (evaporatedFluid != null) {
+			tag.setTag("EvaporatedFluid", evaporatedFluid.writeToNBT(new NBTTagCompound()));
 		}
-		tag.setInteger("remainder", this.remainder);
-		return tag;
+		tag.setInteger("remainder", remainder);
 	}
 
-	@Override
-	public boolean receiveClientEvent(int id, int type) {
-		if (id == 1) {
-			getWorld().notifyBlockUpdate(pos, getWorld().getBlockState(pos), getWorld().getBlockState(pos), 3);
-			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-			this.markDirty();
-			return true;
-		} else {
-			return super.receiveClientEvent(id, type);
-		}
-	}
-
-	public void breakBlock(World world, BlockPos pos, IBlockState state) {
-		this.invalidate();
-		if (itemStackHandler != null && !world.isRemote) {
-			for (int i = 0; i < itemStackHandler.getSlots(); i++) {
-				if (itemStackHandler.getStackInSlot(i) != null) {
-					Block.spawnAsEntity(world, pos, itemStackHandler.getStackInSlot(i));
-				}
-			}
-		}
-		world.setTileEntity(pos, null);
-	}
-
-	public boolean activate(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand,
-			EnumFacing side, float hitX, float hitY, float hitZ) {
-		ItemStack heldItem = player.getHeldItem(hand);
+	public boolean activate(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY,
+			float hitZ) {
+		ItemStack heldItem = player.getCurrentEquippedItem();
 		if (heldItem != null) {
-			if (FluidUtil.getFluidHandler(heldItem) != null || heldItem.getItem() instanceof ItemBucket || heldItem.getItem() instanceof UniversalBucket) {
-				boolean didFill = FluidUtil.interactWithFluidHandler(player, hand,
-						this.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, side));
-				if (didFill) {
-					//player.setHeldItem(hand, didFill.getResult());
-					this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
-					getWorld().notifyBlockUpdate(pos, state, state, 3);
-					this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-					this.markDirty();
-				}
+			if (FluidHelper.isFluidContainer(heldItem)) {
+				if (!world.isRemote && FluidHelper.interactWithTank(player, tank)) sync();
 				return true; // prevents placing a bucket by clicking a basin with less than 1000mb space
 			}
-		} else if (player.isSneaking() && this.getAmount() > 0) {
-			FluidStack drained = this.tank.drainInternal(capacity, true);
-			SoundEvent soundevent = drained.getFluid().getEmptySound(drained);
-			this.worldObj.playSound(null, this.pos, soundevent, SoundCategory.BLOCKS, 1F, 1F);
-			this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
-			getWorld().notifyBlockUpdate(pos, state, state, 3);
-			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-			markDirty();
+		} else if (player.isSneaking() && getAmount() > 0) {
+			if (!world.isRemote) {
+				tank.drainInternal(CAPACITY, true);
+				world.playSoundEffect(x + 0.5, y + 0.5, z + 0.5, "game.neutral.swim.splash", 1F, 1F);
+				sync();
+			}
 			return true;
 		}
-		if (itemStackHandler.getStackInSlot(0) != null && !world.isRemote) {
-			world.spawnEntity(
-					new EntityItem(world, player.posX, player.posY, player.posZ, itemStackHandler.getStackInSlot(0)));
-			itemStackHandler.setStackInSlot(0, null);
-			this.worldObj.addBlockEvent(this.pos, this.getBlockType(), 1, 0);
-			getWorld().notifyBlockUpdate(pos, state, state, 3);
-			this.worldObj.notifyNeighborsOfStateChange(this.pos, this.getBlockType(), true);
-			markDirty();
+		if (itemStackHandler.getStackInSlot(0) != null) {
+			if (!world.isRemote) {
+				world.spawnEntityInWorld(new EntityItem(world, player.posX, player.posY, player.posZ, itemStackHandler.getStackInSlot(0)));
+				itemStackHandler.setStackInSlot(0, null);
+				sync();
+			}
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public void breakBlock(World world, int x, int y, int z) {
+		if (!world.isRemote) {
+			spawnAsEntity(world, x, y, z, itemStackHandler.getStackInSlot(0));
+			itemStackHandler.getStacks()[0] = null;
+		}
 	}
 
 }
