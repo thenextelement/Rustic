@@ -40,4 +40,9 @@ dependencies {
     // dev-only: test the deepslate / chisel slate integration (rustic.compat.SlateCompat)
     devOnlyNonPublishable("ganymedes01.etfuturum:Et-Futurum-Requiem:2.6.64-GTNH:dev")
     devOnlyNonPublishable("com.github.GTNewHorizons:Chisel:2.17.34-GTNH:dev")
+    // runtime-only: test against Thaumic Tinkerer flight (Robes of the Stratosphere) and its required mods.
+    // Transitives are pinned by hand; TT's optional ThaumicBoots/AE2 deps are left out.
+    runtimeOnlyNonPublishable("com.github.GTNewHorizons:ThaumicTinkerer:2.13.0:dev") { transitive = false }
+    runtimeOnlyNonPublishable("thaumcraft:Thaumcraft:1.7.10-4.2.3.5:dev") { transitive = false }
+    runtimeOnlyNonPublishable("com.github.GTNewHorizons:Baubles-Expanded:2.3.0-GTNH:dev")
 }

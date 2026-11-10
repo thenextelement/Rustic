@@ -147,10 +147,25 @@ public class EventHandlerClient {
         if (event.phase != TickEvent.Phase.END) return;
         EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
         // Input is read and applied within the player's own tick, so zeroing it here would be too late; wrap the
-        // player's MovementInput instead so it is cleared right after each update.
-        if (player != null && player.movementInput != null && !(player.movementInput instanceof FullmetalInput)) {
+        // player's MovementInput instead so it is cleared right after each update. The wrapper is only installed
+        // while the effect is active: leaving it in place permanently fights other mods that replace movementInput
+        // (e.g. Thaumic Tinkerer flight), resetting the jump state each tick and breaking double-tap flight.
+        if (player == null || player.movementInput == null) return;
+        boolean active = player.isPotionActive(PotionsRustic.FULLMETAL_POTION);
+        if (active && !(player.movementInput instanceof FullmetalInput)) {
             player.movementInput = new FullmetalInput(player, player.movementInput);
+        } else if (!active && player.movementInput instanceof FullmetalInput) {
+            FullmetalInput wrapper = (FullmetalInput) player.movementInput;
+            copyInput(wrapper, wrapper.delegate);
+            player.movementInput = wrapper.delegate;
         }
+    }
+
+    private static void copyInput(net.minecraft.util.MovementInput from, net.minecraft.util.MovementInput to) {
+        to.moveStrafe = from.moveStrafe;
+        to.moveForward = from.moveForward;
+        to.jump = from.jump;
+        to.sneak = from.sneak;
     }
 
     /** Clears movement input while the player has the fullmetal effect (1.12: InputUpdateEvent). */
@@ -162,6 +177,7 @@ public class EventHandlerClient {
         FullmetalInput(EntityClientPlayerMP player, net.minecraft.util.MovementInput delegate) {
             this.player = player;
             this.delegate = delegate;
+            copyInput(delegate, this);
         }
 
         @Override
